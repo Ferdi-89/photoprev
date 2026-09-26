@@ -252,7 +252,7 @@
 }
 
 .photo-card:active {
-  transform: scale(0.98);
+  filter: brightness(0.98);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -284,7 +284,7 @@
 }
 
 .photo-card.selected:active {
-  transform: scale(0.98);
+  filter: brightness(0.98);
 }
 
 /* In-Compare State - Warm Amber Proofing Frame */
@@ -308,12 +308,9 @@
   width: 100%;
   height: auto;
   display: block;
-  transition: transform 0.24s var(--ease-out);
   pointer-events: none;
-}
-
-.photo-card:hover .photo-img-wrapper img {
-  transform: scale(1.015);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* Top Meta Bar - Frame Sequence & Selection Indicator */

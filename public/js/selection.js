@@ -114,16 +114,12 @@ class RTFTPSelection {
     }
     this.updateUI();
 
-    // Genjutsu Shutter Feedback on Selected Card
-    if (window.gsap) {
-      const cardId = `card-${filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
-      const card = document.getElementById(cardId);
-      if (card) {
-        gsap.fromTo(card,
-          { scale: 0.96 },
-          { scale: 1, duration: 0.24, ease: "back.out(2)", clearProps: "transform" }
-        );
-      }
+    // Visual Feedback on Selected Card Chip (Photo image is kept 100% stable without scale blur)
+    const cardId = `card-${filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const card = document.getElementById(cardId);
+    if (card) {
+      const chip = card.querySelector('.card-select-chip');
+      if (chip) this.triggerBadgePop(chip);
     }
 
     if (window.galleryApp && window.galleryApp.activeFilter === 'selected') {

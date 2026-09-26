@@ -118,8 +118,8 @@ class RTFTPGallery {
           const newCard = document.getElementById(cardId);
           if (newCard) {
             gsap.fromTo(newCard,
-              { scale: 0.94, y: -12, outline: "2px solid #1d4ed8" },
-              { scale: 1, y: 0, outline: "2px solid transparent", duration: 0.35, ease: "power2.out", clearProps: "outline,transform" }
+              { y: -10, outline: "2px solid #1d4ed8" },
+              { y: 0, outline: "2px solid transparent", duration: 0.35, ease: "power2.out", clearProps: "outline,transform" }
             );
           }
         }
@@ -314,52 +314,21 @@ class RTFTPGallery {
         });
       }
 
-      // Genjutsu 3D Perspective Tilt on Desktop Hover
-      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-        card.addEventListener('mousemove', (e) => {
-          if (!window.gsap) return;
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left - rect.width / 2;
-          const y = e.clientY - rect.top - rect.height / 2;
-          const tiltX = (y / (rect.height / 2)) * -4;
-          const tiltY = (x / (rect.width / 2)) * 4;
-          gsap.to(card, {
-            rotationX: tiltX,
-            rotationY: tiltY,
-            transformPerspective: 900,
-            duration: 0.16,
-            ease: "power1.out"
-          });
-        });
-
-        card.addEventListener('mouseleave', () => {
-          if (!window.gsap) return;
-          gsap.to(card, {
-            rotationX: 0,
-            rotationY: 0,
-            duration: 0.32,
-            ease: "power2.out",
-            clearProps: "transform"
-          });
-        });
-      }
-
       this.container.appendChild(card);
     });
 
-    // GSAP Stagger Entrance for Gallery Cards
+    // GSAP Stagger Entrance for Gallery Cards (Crisp opacity & Y translation without image scale)
     if (window.gsap) {
       const cards = this.container.querySelectorAll('.photo-card');
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (!prefersReducedMotion && cards.length > 0) {
         gsap.fromTo(cards,
-          { autoAlpha: 0, y: 16, scale: 0.97 },
+          { autoAlpha: 0, y: 12 },
           {
             autoAlpha: 1,
             y: 0,
-            scale: 1,
-            duration: 0.28,
-            stagger: { amount: Math.min(0.24, cards.length * 0.025), from: "start" },
+            duration: 0.22,
+            stagger: { amount: Math.min(0.2, cards.length * 0.02), from: "start" },
             ease: "power2.out",
             clearProps: "transform,opacity,visibility"
           }

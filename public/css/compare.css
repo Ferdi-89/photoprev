@@ -151,14 +151,9 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  transition: transform 0.22s var(--ease-out);
   user-select: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .compare-item-viewport:hover img {
-    transform: scale(1.02);
-  }
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .compare-item-footer {
