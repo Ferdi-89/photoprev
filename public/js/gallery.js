@@ -265,25 +265,11 @@ class RTFTPGallery {
         </div>
       `;
 
-      // Primary Action: Clicking/tapping the card toggles print selection
-      // Touchscreen Kiosk Ergonomics: Single tap selects for print; fast double-tap opens Fullscreen Lightbox!
-      let lastTapTime = 0;
+      // Primary Action: Clicking/tapping the card toggles print selection cleanly
       card.addEventListener('click', (e) => {
         // Prevent selection if clicking the explicit zoom or compare buttons
         if (e.target.closest('.btn-zoom-preview') || e.target.closest('.btn-compare-toggle')) return;
-
-        const currentTime = Date.now();
-        const tapInterval = currentTime - lastTapTime;
-        lastTapTime = currentTime;
-
-        if (tapInterval < 320 && tapInterval > 0) {
-          // Double-tap detected: open Lightbox fullscreen & revert single-tap selection
-          window.selectionManager.toggleSelect(photo.filename);
-          window.lightbox.open(filtered, index);
-        } else {
-          // Single tap: toggle print selection
-          window.selectionManager.toggleSelect(photo.filename);
-        }
+        window.selectionManager.toggleSelect(photo.filename);
       });
 
       // Keyboard Accessibility: Enter or Space on the card toggles print selection

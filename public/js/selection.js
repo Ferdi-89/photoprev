@@ -144,9 +144,10 @@ class RTFTPSelection {
   triggerBadgePop(el) {
     if (!el) return;
     if (window.gsap) {
+      gsap.killTweensOf(el);
       gsap.fromTo(el,
-        { scale: 1 },
-        { scale: 1.18, duration: 0.1, yoyo: true, repeat: 1, ease: "power1.out", clearProps: "transform" }
+        { scale: 0.88 },
+        { scale: 1, duration: 0.2, ease: "back.out(2)", clearProps: "transform" }
       );
     } else {
       el.classList.remove('badge-pop');

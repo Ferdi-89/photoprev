@@ -236,13 +236,18 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, box-shadow 0.22s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.16s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   cursor: pointer;
   user-select: none;
   overflow: hidden;
   scroll-margin-bottom: 110px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .photo-card:focus-visible {
@@ -251,20 +256,21 @@
   border-color: var(--accent-blue);
 }
 
+/* Tactile press response - instant snappy elastic compression */
 .photo-card:active {
-  filter: brightness(0.98);
+  transform: scale(0.982) translateZ(0);
+  transition: transform 0.06s ease-out;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .photo-card:hover {
-    transform: translateY(-2px);
     border-color: var(--border-hover);
     box-shadow: var(--shadow-md);
   }
 
   .photo-card.selected:hover {
-    transform: scale(1.035) translateY(-2px);
     border-color: #1d4ed8;
+    box-shadow: 0 12px 28px -4px rgba(29, 78, 216, 0.30), 0 4px 8px -2px rgba(28, 25, 23, 0.08);
   }
 
   .photo-card:hover .btn-compare-toggle,
@@ -280,9 +286,9 @@
   }
 }
 
-/* Selected State - Studio Cyanotype Blue Proofing Frame with Subtle Pop (Membesar halus tanpa menimpa foto lain) */
+/* Selected State - Studio Cyanotype Blue Proofing Frame with Subtle Pop */
 .photo-card.selected {
-  transform: scale(1.035);
+  transform: scale(1.035) translateZ(0);
   outline: 2px solid #1d4ed8;
   outline-offset: -1px;
   border-color: #1d4ed8;
@@ -291,8 +297,8 @@
 }
 
 .photo-card.selected:active {
-  transform: scale(1.02);
-  filter: brightness(0.98);
+  transform: scale(1.015) translateZ(0);
+  transition: transform 0.06s ease-out;
 }
 
 /* In-Compare State - Warm Amber Proofing Frame */
