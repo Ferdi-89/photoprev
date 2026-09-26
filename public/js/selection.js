@@ -275,16 +275,16 @@ class RTFTPSelection {
           <div style="font-size: 0.74rem; color: var(--text-muted);">Ukuran cetak & kuantiti lembar:</div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-          <select class="size-select" style="background: var(--bg-primary); border: 1px solid var(--border-subtle); color: var(--text-main); padding: 6px 10px; border-radius: var(--radius-sm); font-size: 0.8rem; font-family: inherit; font-weight: 600; cursor: pointer;">
+          <select class="size-select" style="background: var(--bg-primary); border: 1px solid var(--border-subtle); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; font-weight: 600; cursor: pointer; min-height: 40px; touch-action: manipulation;">
             ${sizeOptionsHtml}
           </select>
           <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--shadow-sm);">
-            <button class="qty-btn qty-minus" style="background: none; border: none; color: var(--text-main); width: 28px; height: 30px; cursor: pointer; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;" aria-label="Kurangi kuantiti">−</button>
-            <span class="qty-display" style="padding: 0 8px; font-size: 0.86rem; font-weight: 800; color: var(--color-purple-text); font-family: 'JetBrains Mono', monospace; min-width: 24px; text-align: center;">${currentQty}</span>
-            <button class="qty-btn qty-plus" style="background: none; border: none; color: var(--text-main); width: 28px; height: 30px; cursor: pointer; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;" aria-label="Tambah kuantiti">+</button>
+            <button class="qty-btn qty-minus" style="background: none; border: none; color: var(--text-main); width: 38px; height: 40px; cursor: pointer; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; touch-action: manipulation;" aria-label="Kurangi kuantiti">−</button>
+            <span class="qty-display" style="padding: 0 10px; font-size: 0.95rem; font-weight: 800; color: var(--color-purple-text); font-family: 'JetBrains Mono', monospace; min-width: 28px; text-align: center;">${currentQty}</span>
+            <button class="qty-btn qty-plus" style="background: none; border: none; color: var(--text-main); width: 38px; height: 40px; cursor: pointer; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; touch-action: manipulation;" aria-label="Tambah kuantiti">+</button>
           </div>
-          <button class="btn btn-sm btn-danger btn-delete-row" title="Hapus foto ini dari daftar cetak" aria-label="Hapus foto ini" style="padding: 6px 10px;">
-            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <button class="btn btn-sm btn-danger btn-delete-row" title="Hapus foto ini dari daftar cetak" aria-label="Hapus foto ini" style="padding: 8px 12px; min-height: 40px; min-width: 40px; display: flex; align-items: center; justify-content: center; touch-action: manipulation;">
+            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
       `;

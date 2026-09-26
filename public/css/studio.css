@@ -131,6 +131,23 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+}
+
+/* Touchscreen Kiosk UI Hardening: Prevent accidental text selection and touch artifacts */
+.photo-card,
+.gallery-toolbar,
+.selection-dock,
+.lightbox-modal,
+.modal-card,
+.btn,
+button,
+select {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* Studio Theme Browser Surfaces */
