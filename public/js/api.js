@@ -186,7 +186,7 @@ class RTFTPApi {
 
     this.ws.onopen = () => {
       this.isConnected = true;
-      console.log('⚡ Connected to RTFTP WebSocket');
+      console.log('[RTFTP] WebSocket connected');
       if (onStatusChange) onStatusChange(true);
       if (this.reconnectTimer) {
         clearTimeout(this.reconnectTimer);
@@ -196,7 +196,7 @@ class RTFTPApi {
 
     this.ws.onclose = () => {
       this.isConnected = false;
-      console.warn('⚠️ WebSocket disconnected. Reconnecting in 2s...');
+      console.warn('[RTFTP] WebSocket disconnected. Reconnecting in 2s...');
       if (onStatusChange) onStatusChange(false);
       this.reconnectTimer = setTimeout(() => this.connectWebSocket(onStatusChange), 2000);
     };

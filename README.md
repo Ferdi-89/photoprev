@@ -54,6 +54,21 @@ Agar tablet atau PC preview klien di studio bisa membuka aplikasi:
 
 ---
 
+## 🌐 Deployment & Akses Beta Tester
+
+Sistem ini mendukung berbagai opsi deployment untuk uji coba beta tester:
+
+1. **Share Online Instan (Tanpa Cloud/Hosting):**
+   Cukup jalankan `share-beta-online.bat` atau `npm run tunnel` untuk mendapatkan URL HTTPS publik yang bisa langsung dibuka oleh beta tester di mana saja.
+2. **Container Docker:**
+   Gunakan `docker compose up -d --build` untuk deployment container siap produksi.
+3. **Cloud PaaS (Render / Railway):**
+   Sudah dilengkapi file `render.yaml` untuk deploy 1-klik di cloud.
+4. **Panduan Lengkap:**
+   Lihat dokumentasi lengkap di [`DEPLOYMENT.md`](./DEPLOYMENT.md).
+
+---
+
 ## 📂 Struktur Folder
 ```text
 RTFTP/

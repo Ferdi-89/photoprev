@@ -27,4 +27,17 @@ assert.strictEqual(isImageFile('test.exe'), false);
 assert.strictEqual(isImageFile('test.js'), false);
 console.log('✓ Image extension validator OK');
 
+// 4. Config storage fallback check
+const { loadConfig, DEFAULT_STORAGE } = require('./lib/config');
+const cfg = loadConfig();
+assert(cfg.activeSessionPath && typeof cfg.activeSessionPath === 'string', 'Config should have activeSessionPath');
+console.log('✓ Config storage & fallback validation OK');
+
+// 5. Cross-platform drive detection check
+const { getSystemDrives } = require('./lib/folderBrowser');
+const drives = getSystemDrives();
+assert(Array.isArray(drives) && drives.length > 0, 'Drives should return non-empty array');
+assert(drives[0].path && drives[0].name, 'Drive items should have name and path');
+console.log('✓ Cross-platform drive discovery OK');
+
 console.log('\nAll self-checks passed successfully!');

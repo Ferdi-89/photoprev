@@ -886,7 +886,7 @@ class RTFTPOperator {
           <td style="padding: 12px 16px;">
             <button type="button" class="queue-photo-title-btn" title="Klik untuk lihat detail & deep zoom">
               <span class="queue-filename-text">${item.filename}</span>
-              <span class="queue-inspect-chip">Lihat Detail ↗</span>
+              <span class="queue-inspect-chip">Lihat Detail <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg></span>
             </button>
           </td>
           <td style="padding: 12px 16px;">${sizesText}</td>
@@ -2076,7 +2076,10 @@ class RTFTPOperator {
 
           <div>
             ${s.isActive
-              ? `<button class="btn-dir-activate is-current" disabled title="Sesi ini sedang aktif digunakan">✓ Sesi Aktif</button>`
+              ? `<button class="btn-dir-activate is-current" disabled title="Sesi ini sedang aktif digunakan">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Sesi Aktif</span>
+                </button>`
               : `<button class="btn-dir-activate btn-make-active" data-path="${s.path}" data-name="${s.name}" title="Jadikan folder ini sebagai sesi aktif untuk klien dan operator">Jadikan Sesi Aktif</button>`
             }
           </div>

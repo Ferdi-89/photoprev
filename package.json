@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "node test_system.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "tunnel": "npx localtunnel --port 3000",
+    "docker:build": "docker build -t photoprev .",
+    "docker:run": "docker run -p 3000:3000 -v photoprev_storage:/app/storage photoprev"
   },
   "keywords": [],
   "author": "",

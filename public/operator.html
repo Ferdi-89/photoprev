@@ -478,8 +478,13 @@
               <div class="disk-progress-bar" title="Persentase penggunaan harddisk">
                 <div id="dir-disk-progress" class="disk-progress-fill" style="width: 0%;"></div>
               </div>
-              <div id="dir-disk-warning" style="display: none; font-size: 0.74rem; font-weight: 700; color: var(--accent-red); margin-top: 2px;">
-                ⚠️ Ruang penyimpanan menipis (&lt;15 GB)!
+              <div id="dir-disk-warning" style="display: none; font-size: 0.74rem; font-weight: 700; color: var(--accent-red); margin-top: 4px; align-items: center; gap: 5px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0;">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <span>Sisa kapasitas penyimpanan kritis (&lt;15 GB)</span>
               </div>
             </div>
           </div>
@@ -943,12 +948,12 @@
             Preset Template Photoshoot Studio:
           </label>
           <div class="template-presets-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
-            <button type="button" class="btn-template-pill" data-preset="Wedding">💍 Wedding</button>
-            <button type="button" class="btn-template-pill" data-preset="Prewedding">💑 Prewedding</button>
-            <button type="button" class="btn-template-pill" data-preset="Family">👨‍👩‍👦 Family</button>
-            <button type="button" class="btn-template-pill" data-preset="Wisuda">🎓 Wisuda</button>
-            <button type="button" class="btn-template-pill" data-preset="Portrait">📸 Portrait</button>
-            <button type="button" class="btn-template-pill" data-preset="Event">🎪 Event / Komersial</button>
+            <button type="button" class="btn-template-pill" data-preset="Wedding">Wedding</button>
+            <button type="button" class="btn-template-pill" data-preset="Prewedding">Prewedding</button>
+            <button type="button" class="btn-template-pill" data-preset="Family">Family</button>
+            <button type="button" class="btn-template-pill" data-preset="Wisuda">Wisuda</button>
+            <button type="button" class="btn-template-pill" data-preset="Portrait">Portrait</button>
+            <button type="button" class="btn-template-pill" data-preset="Event">Event</button>
           </div>
         </div>
 
