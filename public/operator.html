@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#e7e5e4">
+  <title>RTFTP - Operator Control Panel</title>
+  <meta name="description" content="Dashboard kontrol operator studio untuk mengatur folder sesi photoshoot, memantau antrean foto siap cetak, dan melihat log aktivitas server real-time.">
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/studio.css">
+  <link rel="stylesheet" href="css/operator.css">
+  <link rel="stylesheet" href="css/lightbox.css">
+</head>
+<body>
+  <div class="studio-background"></div>
+
+  <!-- Mobile Top Bar (Aceternity Mobile Mode) -->
+  <header class="operator-mobile-bar" aria-label="Header Operator Mobile">
+    <div class="mobile-bar-brand">
+      <div class="sidebar-brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+        </svg>
+      </div>
+      <div class="mobile-brand-info">
+        <span class="mobile-brand-title">RTFTP STUDIO</span>
+        <span class="mobile-brand-subtitle" id="mobile-view-indicator">Folder & Sesi</span>
+      </div>
+    </div>
+    <button id="btn-mobile-menu" class="mobile-menu-btn" aria-label="Buka Menu Operator" aria-expanded="false" aria-controls="mobile-sidebar-drawer">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Mobile Sidebar Drawer (Aceternity Mobile Sliding Drawer) -->
+  <div id="mobile-sidebar-drawer" class="mobile-drawer-overlay" aria-hidden="true">
+    <div class="mobile-drawer-backdrop" id="mobile-drawer-backdrop"></div>
+    <div class="mobile-drawer-panel" role="dialog" aria-modal="true" aria-label="Menu Navigasi Operator">
+      <div class="mobile-drawer-header">
+        <div class="mobile-bar-brand">
+          <div class="sidebar-brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+              <line x1="4" y1="21" x2="4" y2="14"></line>
+              <line x1="4" y1="10" x2="4" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="3"></line>
+              <line x1="20" y1="21" x2="20" y2="16"></line>
+              <line x1="20" y1="12" x2="20" y2="3"></line>
+            </svg>
+          </div>
+          <div>
+            <span class="mobile-brand-title">RTFTP STUDIO</span>
+            <span class="badge-operator" style="display: block; width: fit-content; margin-top: 2px;">OPERATOR</span>
+          </div>
+        </div>
+        <button id="btn-mobile-close" class="mobile-close-btn" aria-label="Tutup Menu Navigasi">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <nav class="mobile-drawer-nav" role="tablist" aria-label="Menu Mobile Operator">
+        <button class="nav-item mobile-nav-item active" data-view="view-session" role="tab" aria-selected="true">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <span class="nav-label">Folder & Sesi</span>
+        </button>
+        <button class="nav-item mobile-nav-item" data-view="view-queue" role="tab" aria-selected="false">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+          </div>
+          <span class="nav-label">Antrean Siap Cetak</span>
+          <span class="nav-badge" id="mobile-nav-queue-badge">0</span>
+        </button>
+        <button class="nav-item mobile-nav-item" data-view="view-logs" role="tab" aria-selected="false">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+          </div>
+          <span class="nav-label">Log Aktivitas Server</span>
+        </button>
+      </nav>
+
+      <div class="mobile-drawer-footer">
+        <div class="sidebar-connection-status">
+          <span class="live-dot-wrapper">
+            <span class="live-dot" id="mobile-live-dot" style="width: 7px; height: 7px;"></span>
+          </span>
+          <div class="status-info">
+            <span class="status-sub">Server WebSocket</span>
+            <strong id="mobile-status-text" style="color: var(--accent-green);">Terhubung</strong>
+          </div>
+        </div>
+        <div class="mobile-drawer-actions">
+          <a href="index.html" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            Buka Layar Klien
+          </a>
+          <button id="btn-mobile-refresh" class="btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="operator-layout">
+    <!-- Left Vertical Sidebar Navigation (Aceternity Expandable Dock) -->
+    <aside class="operator-sidebar" id="operator-sidebar" aria-label="Navigasi Panel Operator">
+      <div class="sidebar-header">
+        <div class="sidebar-brand-icon" title="RTFTP Studio Operator">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+          </svg>
+        </div>
+        <div class="sidebar-brand-text">
+          <h1>RTFTP STUDIO</h1>
+          <span class="badge-operator">OPERATOR</span>
+        </div>
+        <button class="sidebar-pin-btn" id="btn-pin-sidebar" title="Kunci / Lepas Lebar Sidebar" aria-label="Kunci atau lepas lebar sidebar" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <path d="M5 17h14v-2l-2-2V5a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v8l-2 2v2z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="sidebar-nav" role="tablist" aria-label="Menu Utama Operator">
+        <button class="nav-item active" id="tab-nav-session" data-view="view-session" role="tab" aria-selected="true" aria-controls="view-session" title="Folder & Sesi">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <span class="nav-label">Folder & Sesi</span>
+        </button>
+
+        <button class="nav-item" id="tab-nav-queue" data-view="view-queue" role="tab" aria-selected="false" aria-controls="view-queue" title="Antrean Siap Cetak">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+          </div>
+          <span class="nav-label">Antrean Siap Cetak</span>
+          <span class="nav-badge" id="nav-queue-badge">0</span>
+        </button>
+
+        <button class="nav-item" id="tab-nav-logs" data-view="view-logs" role="tab" aria-selected="false" aria-controls="view-logs" title="Log Aktivitas Server">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+          </div>
+          <span class="nav-label">Log Aktivitas Server</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="sidebar-connection-status" title="Status Server: Terhubung">
+          <span class="live-dot-wrapper">
+            <span class="live-dot" id="sidebar-live-dot" style="width: 7px; height: 7px;"></span>
+          </span>
+          <div class="status-info">
+            <span class="status-sub">Server WebSocket</span>
+            <strong id="sidebar-status-text" style="color: var(--accent-green);">Terhubung</strong>
+          </div>
+        </div>
+
+        <div class="sidebar-actions">
+          <a href="index.html" class="btn btn-primary" target="_blank" rel="noopener noreferrer" title="Buka Layar Klien di tab baru">
+            <div class="btn-icon-wrapper">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <span class="action-btn-label">Buka Layar Klien</span>
+          </a>
+          <button id="btn-refresh" class="btn" title="Perbarui Data Sesi">
+            <div class="btn-icon-wrapper">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </div>
+            <span class="action-btn-label">Refresh Data</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Main Content Area -->
+    <main class="operator-main">
+      <!-- ===================================================================
+           VIEW 1: FOLDER SESI & RINGKASAN
+           =================================================================== -->
+      <section id="view-session" class="operator-view active" role="tabpanel" aria-labelledby="tab-nav-session">
+        <div class="view-header">
+          <div class="view-header-title">
+            <h2>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              Folder Sesi Pemotretan Aktif
+            </h2>
+            <p>Kelola direktori transfer foto kamera studio dan pantau ringkasan statistik sesi photoshoot secara langsung.</p>
+          </div>
+          <div class="view-header-actions">
+            <button id="btn-generate-demo" class="btn btn-gold">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              Buat 6 Foto Contoh (Demo)
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Top Stats Cards Grid with High-Chroma Mounts & Visual Hierarchy -->
+        <div class="stats-grid">
+          <div class="stat-card stat-card-blue">
+            <div class="stat-card-header">
+              <span class="stat-label">Total Foto di Folder</span>
+              <div class="stat-icon stat-icon-blue" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              </div>
+            </div>
+            <div class="stat-card-body">
+              <span id="stat-total-photos" class="stat-value stat-value-blue">0</span>
+              <span class="stat-pill stat-pill-blue">Koleksi Sesi</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-card-amber">
+            <div class="stat-card-header">
+              <span class="stat-label">Foto Terpilih Klien</span>
+              <div class="stat-icon stat-icon-amber" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+              </div>
+            </div>
+            <div class="stat-card-body">
+              <span id="stat-selected-photos" class="stat-value stat-value-amber">0</span>
+              <span class="stat-pill stat-pill-amber">Siap Cetak</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-card-slate">
+            <div class="stat-card-header">
+              <span class="stat-label">Total Lembar Cetak</span>
+              <div class="stat-icon stat-icon-slate" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              </div>
+            </div>
+            <div class="stat-card-body">
+              <span id="stat-total-copies" class="stat-value stat-value-slate">0</span>
+              <span class="stat-pill stat-pill-slate">Akumulasi Fisik</span>
+            </div>
+          </div>
+
+          <div class="stat-card stat-card-green">
+            <div class="stat-card-header">
+              <span class="stat-label">Koneksi Server</span>
+              <div class="stat-icon stat-icon-green" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+              </div>
+            </div>
+            <div class="stat-card-body">
+              <span id="stat-client-status" class="stat-value stat-value-green" style="font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                <span class="live-dot" style="width: 8px; height: 8px;"></span> Aktif
+              </span>
+              <span class="stat-pill stat-pill-green">WebSocket Live</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LAN / Wi-Fi Client Access Panel -->
+        <div class="dashboard-panel" id="network-access-panel" style="margin-bottom: 24px;">
+          <div class="panel-header" style="align-items: center; justify-content: space-between;">
+            <div>
+              <h3 class="panel-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-green);"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                Tautan Akses Klien (Tablet / HP / PC Tamu)
+              </h3>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 4px;">
+                Buka tautan ini di browser perangkat klien yang terhubung ke Wi-Fi / kabel LAN studio yang sama.
+              </p>
+            </div>
+            <div id="lan-copy-status" style="font-size: 0.8rem; color: var(--accent-green); font-weight: 600; display: none;">Tersalin!</div>
+          </div>
+
+          <div id="lan-links-container" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px;">
+            <div style="color: var(--text-muted); font-size: 0.85rem;">Memuat antarmuka jaringan...</div>
+          </div>
+        </div>
+
+        <!-- Folder Management Panel -->
+        <div class="dashboard-panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">Path Direktori Sesi</h3>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 4px;">
+                Sistem memantau folder ini secara otomatis. Setiap foto baru dari kamera atau Lightroom akan langsung disinkronkan ke layar klien.
+              </p>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 16px;">
+            <span style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Path Aktif Saat Ini:</span>
+            <div id="current-path-display" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent-blue); margin-top: 6px; word-break: break-all; font-weight: 600;">
+              Memuat path...
+            </div>
+          </div>
+
+          <div class="path-box" style="margin-top: 16px;">
+            <input type="text" id="session-path-input" class="input-text" placeholder="Masukkan path folder lengkap, misal: D:\Photos\Sesi_Keluarga_01" aria-label="Path direktori sesi foto" autocomplete="off" spellcheck="false"/>
+            <button id="btn-save-folder" class="btn btn-primary">Terapkan Folder Baru</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 2: ANTREAN FOTO SIAP CETAK (Dedicated Page - Per Sesi)
+           =================================================================== -->
+      <section id="view-queue" class="operator-view" role="tabpanel" aria-labelledby="tab-nav-queue">
+        <div class="view-header">
+          <div class="view-header-title">
+            <h2>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              Antrean Foto Siap Cetak
+            </h2>
+            <p>Daftar antrean foto siap cetak dikelompokkan per sesi photoshoot. Anda dapat mengekspor atau mereset pilihan cetak per sesi maupun secara serentak.</p>
+          </div>
+          <div class="view-header-actions">
+            <button id="btn-export-all-print" class="btn btn-gold" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              Ekspor Semua Sesi ke _SIAP_CETAK
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Per-Session Queue Cards Container -->
+        <div id="queue-sessions-container" class="queue-sessions-container">
+          <!-- Populated per-session cards dynamically -->
+        </div>
+
+        <div id="empty-selection-notice" class="empty-queue-notice" style="display: none;">
+          <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 14px; color: var(--text-dim);" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main); margin-bottom: 6px;">Belum Ada Foto dalam Antrean Cetak</div>
+          <p style="font-size: 0.86rem; max-width: 480px; margin: 0 auto; line-height: 1.5;">Saat klien mengklik tombol "Pilih Cetak" di layar galeri atau lightbox, rincian pesanan akan langsung muncul per folder sesi secara real-time.</p>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 3: LOG AKTIVITAS SERVER (Dedicated Page)
+           =================================================================== -->
+      <section id="view-logs" class="operator-view" role="tabpanel" aria-labelledby="tab-nav-logs">
+        <div class="view-header">
+          <div class="view-header-title">
+            <h2>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+              Log Aktivitas Server
+            </h2>
+            <p>Pemantauan aktivitas real-time: koneksi WebSocket klien, penambahan/penghapusan file foto kamera, dan event pemesanan cetak.</p>
+          </div>
+          <div class="view-header-actions">
+            <button id="btn-clear-console" class="btn btn-sm" title="Bersihkan Tampilan Log">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              Bersihkan Layar
+            </button>
+          </div>
+        </div>
+
+        <!-- Dedicated Full-Height Console Terminal -->
+        <div class="console-container">
+          <div class="console-header">
+            <div class="console-title">
+              <span class="terminal-dots" aria-hidden="true">
+                <span class="term-dot term-dot-red"></span>
+                <span class="term-dot term-dot-yellow"></span>
+                <span class="term-dot term-dot-green"></span>
+              </span>
+              <span>LIVE SYSTEM STREAM (EVENT WATCHER)</span>
+            </div>
+            <span class="console-chip">UTF-8 / WS-REACTIVE</span>
+          </div>
+          <div id="log-console" class="console-box" role="log" aria-live="polite">
+            <!-- Live logs append here -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Fullscreen Lightbox Modal (Studio Mojave Inspection View) -->
+  <div id="lightbox-modal" class="lightbox-modal" role="dialog" aria-modal="true" aria-label="Penampil Foto Layar Penuh">
+    <div class="lightbox-header">
+      <div class="lightbox-title-area">
+        <span id="lightbox-index" class="lightbox-index">1 / 10</span>
+        <div class="lightbox-photo-meta">
+          <span id="lightbox-filename" class="lightbox-filename">Nama File Foto</span>
+          <div class="lightbox-badges">
+            <span id="lightbox-badge-res" class="badge-meta badge-meta-slate">-</span>
+            <span id="lightbox-badge-ratio" class="badge-meta badge-meta-amber">-</span>
+            <span id="lightbox-badge-size" class="badge-meta badge-meta-blue">-</span>
+            <span id="lightbox-badge-status" class="badge-meta badge-meta-emerald" style="display: none;">Terpilih</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lightbox-controls">
+        <div class="zoom-tools">
+          <button id="zoom-out-btn" class="btn btn-sm btn-icon" title="Perkecil (−)" aria-label="Perkecil">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <span id="zoom-level-text" class="zoom-level-text" aria-live="polite">100%</span>
+          <button id="zoom-in-btn" class="btn btn-sm btn-icon" title="Perbesar (+)" aria-label="Perbesar">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button id="zoom-reset-btn" class="btn btn-sm" title="Ukuran Pas Layar">Fit</button>
+          <button id="zoom-actual-btn" class="btn btn-sm" title="100% Piksel Asli">1:1</button>
+        </div>
+        <button id="lightbox-close-btn" class="btn btn-icon" title="Tutup (Esc)" aria-label="Tutup penampil foto">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="lightbox-viewport" class="lightbox-viewport">
+      <button id="lightbox-prev-btn" class="nav-arrow nav-prev" title="Sebelumnya (Panah Kiri)" aria-label="Foto sebelumnya">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <img id="lightbox-img" class="lightbox-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Tampilan detail foto studio" draggable="false"/>
+      <button id="lightbox-next-btn" class="nav-arrow nav-next" title="Selanjutnya (Panah Kanan)" aria-label="Foto selanjutnya">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+
+    <div class="lightbox-footer">
+      <div class="lightbox-meta">
+        <span class="lightbox-hint"><kbd class="kbd-hint">Scroll</kbd> Zoom</span>
+        <span class="lightbox-hint"><kbd class="kbd-hint">Drag</kbd> Geser</span>
+        <span class="lightbox-hint"><kbd class="kbd-hint">Panah</kbd> Foto</span>
+        <span class="lightbox-hint"><kbd class="kbd-hint">Esc</kbd> Tutup</span>
+      </div>
+      <div class="lightbox-selection-action">
+        <span id="lightbox-print-info" class="lightbox-print-info"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/vendor/gsap.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/lightbox.js"></script>
+  <script src="js/operator.js"></script>
+</body>
+</html>

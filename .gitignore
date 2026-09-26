@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Runtime storage cache & print outputs
+storage/cache/
+storage/**/_SIAP_CETAK/
+storage/**/.rtftp_selections.json
+
+# Local AI / Agent tooling
+.agents/
+.claude/
+.codex/
+.impeccable/
+skills-lock.json
+
+# OS and system files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

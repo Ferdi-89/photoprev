@@ -1,0 +1,2 @@
+saya ingin membuat sebuah server ftp (untuk gambar) dengan cara kerja seperti ini : 
+sebuah server ftp dimana satu atau beberapa folder dipilih untuk di tampilkan di pc client, saat client mengakses (dengan cara lewat preview website dengan fleksibilitas tinggi) 

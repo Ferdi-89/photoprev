@@ -1,0 +1,385 @@
+/* ==========================================================================
+   RTFTP Studio - Fullscreen Lightbox & Deep Inspection View (Studio Mojave)
+   Tactile warm stone & porcelain gallery inspection suite with vibrant accents.
+   ========================================================================== */
+
+.lightbox-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 25, 23, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s cubic-bezier(0.23, 1, 0.32, 1), visibility 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.lightbox-modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Lightbox Header Bar - Porcelain Crisp Floating Bar */
+.lightbox-header {
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 20;
+  box-shadow: var(--shadow-sm);
+}
+
+.lightbox-title-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.lightbox-index {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-blue-text);
+  background: var(--color-blue-bg);
+  border: 1px solid var(--color-blue-border);
+  padding: 3px 10px;
+  border-radius: var(--radius-xs);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+
+.lightbox-photo-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.lightbox-filename {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.lightbox-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge-meta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: -0.01em;
+}
+
+.badge-meta-slate {
+  background: var(--color-slate-bg);
+  color: var(--color-slate-text);
+  border: 1px solid var(--color-slate-border);
+}
+
+.badge-meta-blue {
+  background: var(--color-blue-bg);
+  color: var(--color-blue-text);
+  border: 1px solid var(--color-blue-border);
+}
+
+.badge-meta-amber {
+  background: var(--color-amber-bg);
+  color: var(--color-amber-text);
+  border: 1px solid var(--color-amber-border);
+}
+
+.badge-meta-emerald {
+  background: var(--color-emerald-bg);
+  color: var(--color-emerald-text);
+  border: 1px solid var(--color-emerald-border);
+}
+
+.lightbox-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Zoom Tools Bar - Precision Segmented Porcelain Pill */
+.zoom-tools {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+  box-shadow: var(--shadow-sm);
+}
+
+.zoom-tools .btn {
+  border: none;
+  border-radius: var(--radius-xs);
+  box-shadow: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  transition: background-color 0.16s ease-out, color 0.16s ease-out, transform 0.14s ease-out;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .zoom-tools .btn:hover {
+    background: #ffffff;
+    color: var(--text-main);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.zoom-tools .btn:active {
+  transform: scale(0.96);
+}
+
+.zoom-level-text {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-blue-text);
+  min-width: 48px;
+  text-align: center;
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Close Button */
+#lightbox-close-btn {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.16s ease-out, border-color 0.16s ease-out, color 0.16s ease-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #lightbox-close-btn:hover {
+    color: var(--accent-red);
+    border-color: var(--color-rose-border);
+    background: var(--color-rose-bg);
+  }
+}
+
+#lightbox-close-btn:active {
+  transform: scale(0.95);
+}
+
+/* Lightbox Viewport - Studio Mat Presentation Canvas */
+.lightbox-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  background: radial-gradient(circle at center, #292524 0%, #1c1917 100%);
+}
+
+.lightbox-viewport:active {
+  cursor: grabbing;
+}
+
+.lightbox-img {
+  max-width: 92%;
+  max-height: 82vh;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.16s cubic-bezier(0.1, 1, 0.1, 1);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  background: #0c0a09;
+}
+
+/* Navigation Arrows - Tactile Porcelain Buttons */
+.nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: var(--shadow-md);
+  touch-action: manipulation;
+  transition: transform 0.16s cubic-bezier(0.23, 1, 0.32, 1), background-color 0.16s ease-out, border-color 0.16s ease-out, color 0.16s ease-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-arrow:hover {
+    background: #ffffff;
+    color: var(--accent-blue);
+    border-color: var(--accent-blue);
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+.nav-arrow:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.nav-prev { left: 24px; }
+.nav-next { right: 24px; }
+
+/* Lightbox Bottom Action Footer - Porcelain Dock */
+.lightbox-footer {
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 20;
+  box-shadow: var(--shadow-sm);
+}
+
+.lightbox-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.lightbox-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kbd-hint {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 1px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.lightbox-selection-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.lightbox-print-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+#lightbox-select-btn {
+  border-radius: var(--radius-sm);
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 0.86rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.16s ease-out, background-color 0.16s ease-out, box-shadow 0.16s ease-out;
+}
+
+#lightbox-select-btn:active {
+  transform: scale(0.97);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .lightbox-header {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+  .lightbox-filename {
+    max-width: 180px;
+    font-size: 0.78rem;
+  }
+  .lightbox-badges {
+    display: none;
+  }
+  .lightbox-footer {
+    padding: 8px 12px;
+  }
+  .lightbox-meta {
+    display: none;
+  }
+  .nav-arrow {
+    width: 36px;
+    height: 36px;
+  }
+  .nav-prev { left: 10px; }
+  .nav-next { right: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-modal {
+    transition: opacity 0.08s ease, visibility 0.08s ease;
+  }
+  .nav-arrow,
+  #lightbox-select-btn,
+  .zoom-tools .btn {
+    transition: none;
+  }
+}

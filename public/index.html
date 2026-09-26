@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#e7e5e4">
+  <title>RTFTP - Live Studio Photo Preview & Selection</title>
+  <meta name="description" content="Layar preview foto real-time untuk studio foto. Lihat hasil photoshoot, bandingkan foto side-by-side, dan pilih foto terbaik untuk dicetak langsung.">
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/studio.css">
+  <link rel="stylesheet" href="css/gallery.css">
+  <link rel="stylesheet" href="css/lightbox.css">
+  <link rel="stylesheet" href="css/compare.css">
+</head>
+<body>
+  <a href="#gallery-grid" class="skip-link">Lewati ke galeri foto</a>
+  <h1 class="sr-only">Galeri Foto Studio</h1>
+  <div class="studio-background"></div>
+
+  <!-- Gallery Control Toolbar -->
+  <nav class="gallery-toolbar" aria-label="Kontrol Galeri">
+    <div class="toolbar-group">
+      <div class="filter-segmented-bar" role="tablist">
+        <button class="filter-tab active" data-filter="all" id="tab-all-photos" role="tab" aria-selected="true">
+          Semua Foto <span class="filter-badge" id="count-all">0</span>
+        </button>
+        <button class="filter-tab" data-filter="selected" id="tab-selected-photos" role="tab" aria-selected="false">
+          Pilihan Cetak <span class="filter-badge" id="count-selected">0</span>
+        </button>
+      </div>
+      <button id="open-compare-btn" class="btn btn-sm btn-primary" style="display: none;">
+        Bandingkan (<span id="compare-badge-count">0</span>)
+      </button>
+    </div>
+
+    <div class="toolbar-group">
+      <span class="toolbar-label">Grid</span>
+      <div class="grid-sizes" role="group" aria-label="Pengaturan kolom grid foto">
+        <button class="size-btn" data-cols="2" id="grid-btn-2" title="2 Kolom (Besar)" aria-label="Tampilan grid 2 kolom">2</button>
+        <button class="size-btn" data-cols="3" id="grid-btn-3" title="3 Kolom" aria-label="Tampilan grid 3 kolom">3</button>
+        <button class="size-btn active" data-cols="4" id="grid-btn-4" title="4 Kolom (Standar)" aria-label="Tampilan grid 4 kolom standar">4</button>
+        <button class="size-btn" data-cols="5" id="grid-btn-5" title="5 Kolom" aria-label="Tampilan grid 5 kolom">5</button>
+        <button class="size-btn" data-cols="6" id="grid-btn-6" title="6 Kolom (Kecil)" aria-label="Tampilan grid 6 kolom">6</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Gallery Main Section -->
+  <main class="gallery-container">
+    <div id="gallery-grid" class="gallery-grid cols-4" tabindex="-1">
+      <!-- Cards dynamically rendered here -->
+    </div>
+
+    <!-- Empty Gallery State -->
+    <div id="empty-gallery" class="empty-gallery" style="display: none;">
+      <svg class="empty-art" viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+      </svg>
+      <h2 class="empty-title">Belum Ada Foto dalam Sesi Ini</h2>
+      <p class="empty-subtitle">
+        Foto akan otomatis tampil secara real-time saat kamera mentransfer file ke folder sesi.
+      </p>
+    </div>
+  </main>
+
+  <!-- Floating Bottom Selection Dock -->
+  <aside id="selection-dock" class="selection-dock" aria-label="Keranjang Pilihan Cetak">
+    <div class="dock-info">
+      <div id="dock-count" class="dock-badge">0</div>
+      <div class="dock-text">
+        <strong>Foto Terpilih</strong>
+        <span id="dock-total-copies">0 lembar cetak</span>
+      </div>
+    </div>
+    <div class="dock-actions">
+      <button id="dock-review-btn" class="btn btn-gold">
+        Lihat & Atur Cetak
+      </button>
+    </div>
+  </aside>
+
+  <!-- Print Selection & Confirmation Modal -->
+  <div id="print-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="print-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="print-modal-title">Rincian Pilihan Cetak</h3>
+        <button id="print-modal-close-btn" class="btn btn-icon" aria-label="Tutup dialog rincian cetak">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="selected-items-list">
+          <!-- Order items rendered here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div id="modal-summary-text" style="font-size: 0.84rem; margin-right: auto; color: var(--text-secondary);">
+          Total: <strong style="color: var(--text-main);">0 Foto</strong>
+        </div>
+        <button id="modal-clear-btn" class="btn btn-danger btn-sm">Batal Semua</button>
+        <button id="modal-cancel-btn" class="btn">Kembali</button>
+        <button id="modal-submit-btn" class="btn btn-gold">Konfirmasi & Siapkan Cetak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Lightbox Modal (Studio Mojave Inspection View) -->
+  <div id="lightbox-modal" class="lightbox-modal" role="dialog" aria-modal="true" aria-label="Penampil Foto Layar Penuh">
+    <div class="lightbox-header">
+      <div class="lightbox-title-area">
+        <span id="lightbox-index" class="lightbox-index">1 / 10</span>
+        <div class="lightbox-photo-meta">
+          <span id="lightbox-filename" class="lightbox-filename">Nama File Foto</span>
+          <div class="lightbox-badges">
+            <span id="lightbox-badge-res" class="badge-meta badge-meta-slate">-</span>
+            <span id="lightbox-badge-ratio" class="badge-meta badge-meta-amber">-</span>
+            <span id="lightbox-badge-size" class="badge-meta badge-meta-blue">-</span>
+            <span id="lightbox-badge-status" class="badge-meta badge-meta-emerald" style="display: none;">Terpilih</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lightbox-controls">
+        <div class="zoom-tools">
+          <button id="zoom-out-btn" class="btn btn-sm btn-icon" title="Perkecil (−)" aria-label="Perkecil">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <span id="zoom-level-text" class="zoom-level-text" aria-live="polite">100%</span>
+          <button id="zoom-in-btn" class="btn btn-sm btn-icon" title="Perbesar (+)" aria-label="Perbesar">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button id="zoom-reset-btn" class="btn btn-sm" title="Ukuran Pas Layar">Fit</button>
+          <button id="zoom-actual-btn" class="btn btn-sm" title="100% Piksel Asli">1:1</button>
+        </div>
+        <button id="lightbox-close-btn" class="btn btn-icon" title="Tutup (Esc)" aria-label="Tutup penampil foto">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="lightbox-viewport" class="lightbox-viewport">
+      <button id="lightbox-prev-btn" class="nav-arrow nav-prev" title="Sebelumnya (Panah Kiri)" aria-label="Foto sebelumnya">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <img id="lightbox-img" class="lightbox-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Tampilan detail foto studio" draggable="false"/>
+      <button id="lightbox-next-btn" class="nav-arrow nav-next" title="Selanjutnya (Panah Kanan)" aria-label="Foto selanjutnya">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+
+    <div class="lightbox-footer">
+      <div class="lightbox-meta">
+        <span class="lightbox-hint"><kbd class="kbd-hint">Scroll</kbd> Zoom</span>
+        <span class="lightbox-hint"><kbd class="kbd-hint">Drag</kbd> Geser</span>
+        <span class="lightbox-hint"><kbd class="kbd-hint">Panah</kbd> Foto</span>
+        <span class="lightbox-hint"><kbd class="kbd-hint">Space</kbd> Pilih</span>
+        <span class="lightbox-hint"><kbd class="kbd-hint">Esc</kbd> Tutup</span>
+      </div>
+      <div class="lightbox-selection-action">
+        <span id="lightbox-print-info" class="lightbox-print-info"></span>
+        <button id="lightbox-select-btn" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Pilih untuk Cetak</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side-by-Side Comparison Modal -->
+  <div id="compare-modal" class="compare-modal-content" role="dialog" aria-modal="true" aria-labelledby="compare-modal-title">
+    <div class="compare-header">
+      <div class="compare-header-left">
+        <h2 id="compare-modal-title" class="compare-title">Bandingkan Foto Berdampingan</h2>
+        <span id="compare-count-badge" class="compare-counter">2 Foto</span>
+      </div>
+      <div class="compare-actions">
+        <span style="font-size: 0.78rem; color: var(--text-muted);">Klik foto untuk memperbesar</span>
+        <button id="compare-close-btn" class="btn btn-primary btn-sm">Selesai</button>
+      </div>
+    </div>
+    <div id="compare-body" class="compare-body items-2">
+      <!-- Compared cards rendered here -->
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/vendor/gsap.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/lightbox.js"></script>
+  <script src="js/compare.js"></script>
+  <script src="js/selection.js"></script>
+  <script src="js/gallery.js"></script>
+</body>
+</html>

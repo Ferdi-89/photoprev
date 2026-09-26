@@ -1,0 +1,219 @@
+/* ==========================================================================
+   RTFTP Studio - Side-by-Side Comparison Modal
+   ========================================================================== */
+.compare-modal-content {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 25, 23, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.compare-modal-content.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Compare Header */
+.compare-header {
+  padding: 10px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+
+.compare-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.compare-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compare-counter {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-amber-text);
+  background: var(--color-amber-bg);
+  border: 1px solid var(--color-amber-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.compare-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Compare Grid Layout */
+.compare-body {
+  flex: 1;
+  padding: 18px 24px;
+  display: grid;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.compare-body.items-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.compare-body.items-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.compare-body.items-4 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+/* Compare Item Card */
+.compare-item {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .compare-item:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+.compare-item.is-selected {
+  outline: 2px solid #1d4ed8;
+  outline-offset: -1px;
+  border-color: #1d4ed8;
+  box-shadow: var(--shadow-md);
+}
+
+.compare-item-header {
+  padding: 8px 14px;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  z-index: 2;
+}
+
+.compare-item-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+
+.compare-item-viewport {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--bg-card-mat);
+  cursor: zoom-in;
+}
+
+.compare-item-viewport img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.22s var(--ease-out);
+  user-select: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .compare-item-viewport:hover img {
+    transform: scale(1.02);
+  }
+}
+
+.compare-item-footer {
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.btn-choose-this {
+  width: 100%;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 0.8rem;
+}
+
+.btn-choose-this:active {
+  transform: scale(0.97);
+}
+
+/* Landscape Mode Compare Optimizations */
+@media (orientation: landscape) and (max-height: 800px) {
+  .compare-header {
+    padding: 8px 24px;
+  }
+
+  .compare-title {
+    font-size: 0.95rem;
+  }
+
+  .compare-body {
+    padding: 14px 24px;
+    gap: 14px;
+  }
+
+  .compare-item-header {
+    padding: 6px 12px;
+  }
+
+  .compare-item-footer {
+    padding: 8px 12px;
+  }
+
+  .btn-choose-this {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compare-modal-content {
+    transition: opacity 0.08s ease, visibility 0.08s ease;
+  }
+}

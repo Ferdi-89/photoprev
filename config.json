@@ -1,0 +1,37 @@
+{
+  "port": 3000,
+  "activeSessionPath": "C:\\Cloud\\seadrive\\Project's\\Desktop\\RTFTP\\storage\\demo_session",
+  "recentFolders": [
+    "C:\\Cloud\\seadrive\\Project's\\Desktop\\RTFTP\\storage\\demo_session"
+  ],
+  "watermark": {
+    "enabled": false,
+    "text": "STUDIO PREVIEW"
+  },
+  "printSizes": [
+    {
+      "id": "4R",
+      "label": "4R (10 x 15 cm)"
+    },
+    {
+      "id": "5R",
+      "label": "5R (13 x 18 cm)"
+    },
+    {
+      "id": "8R",
+      "label": "8R (20 x 25 cm)"
+    },
+    {
+      "id": "10R",
+      "label": "10R (25 x 30 cm)"
+    },
+    {
+      "id": "12R",
+      "label": "12R (30 x 40 cm)"
+    },
+    {
+      "id": "Kanvas",
+      "label": "Kanvas (40 x 60 cm)"
+    }
+  ]
+}

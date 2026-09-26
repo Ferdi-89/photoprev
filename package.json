@@ -1,0 +1,22 @@
+{
+  "name": "rtftp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test_system.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "chokidar": "^5.0.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "gsap": "^3.15.0",
+    "sharp": "^0.35.4",
+    "ws": "^8.21.3"
+  }
+}
