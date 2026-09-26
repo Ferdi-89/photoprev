@@ -86,7 +86,6 @@ class RTFTPSelection {
     if (isCurrentlySelected) {
       this.selections.delete(filename);
       await window.api.setSelection(filename, false);
-      window.showToast(`Foto dilepas dari daftar cetak`, 'info');
     } else {
       const defaultData = {
         filename,
@@ -95,7 +94,6 @@ class RTFTPSelection {
       };
       this.selections.set(filename, defaultData);
       await window.api.setSelection(filename, true, defaultData.sizes, defaultData.notes);
-      window.showToast(`Ditambahkan ke daftar cetak`, 'blue');
     }
     this.updateUI();
 
