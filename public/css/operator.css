@@ -780,21 +780,19 @@ th {
   height: 10px;
   border-radius: 50%;
   display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .term-dot-red {
   background: #f43f5e;
-  box-shadow: 0 1px 3px rgba(244, 63, 94, 0.4);
 }
 
 .term-dot-yellow {
   background: #f59e0b;
-  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.4);
 }
 
 .term-dot-green {
   background: #10b981;
-  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4);
 }
 
 .console-chip {

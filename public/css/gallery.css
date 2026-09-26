@@ -381,10 +381,10 @@
 .card-select-chip.active {
   opacity: 1;
   transform: scale(1);
-  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  background: var(--accent-blue);
   border-color: #ffffff;
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(29, 78, 216, 0.4);
+  box-shadow: 0 2px 4px rgba(28, 25, 23, 0.16);
 }
 
 /* Card Hover Quick Action Bar */
@@ -433,12 +433,21 @@
   }
 }
 
-.btn-compare-toggle:hover,
 .btn-zoom-preview:hover {
   background: #ffffff;
-  color: var(--text-main);
+  color: var(--accent-blue);
   border-color: var(--accent-blue);
-  transform: scale(1.05);
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.25);
+  opacity: 1;
+}
+
+.btn-compare-toggle:hover {
+  background: #ffffff;
+  color: #d97706;
+  border-color: #d97706;
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);
   opacity: 1;
 }
 

@@ -256,36 +256,24 @@ class RTFTPGallery {
         </div>
       `;
 
-      // Tap/Click photo thumbnail -> Open Lightbox for high-resolution inspection
-      const imgWrapper = card.querySelector('.photo-img-wrapper');
-      imgWrapper.addEventListener('click', (e) => {
-        if (e.target.closest('.card-select-chip') || e.target.closest('.btn-compare-toggle') || e.target.closest('.btn-zoom-preview')) return;
-        window.lightbox.open(filtered, index);
+      // Primary Action: Clicking/tapping the card toggles print selection (User Testing Feedback)
+      card.addEventListener('click', (e) => {
+        // Prevent selection if clicking the explicit zoom or compare buttons
+        if (e.target.closest('.btn-zoom-preview') || e.target.closest('.btn-compare-toggle')) return;
+        window.selectionManager.toggleSelect(photo.filename);
       });
 
-      // Tap/Click select chip -> Toggle print selection directly
-      const selectChip = card.querySelector('.card-select-chip');
-      if (selectChip) {
-        selectChip.addEventListener('click', (e) => {
-          e.stopPropagation();
-          window.selectionManager.toggleSelect(photo.filename);
-        });
-      }
-
-      // Keyboard Accessibility: Enter = Inspect (Lightbox), Space = Toggle Select
+      // Keyboard Accessibility: Enter or Space on the card toggles print selection
       card.addEventListener('keydown', (e) => {
         if (e.target === card) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            window.lightbox.open(filtered, index);
-          } else if (e.key === ' ') {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             window.selectionManager.toggleSelect(photo.filename);
           }
         }
       });
 
-      // Explicit zoom button
+      // Dedicated Fullscreen Preview Button -> Opens Lightbox modal
       const zoomBtn = card.querySelector('.btn-zoom-preview');
       if (zoomBtn) {
         zoomBtn.addEventListener('click', (e) => {
@@ -294,7 +282,7 @@ class RTFTPGallery {
         });
       }
 
-      // Click Compare toggle
+      // Dedicated Compare toggle button
       const compBtn = card.querySelector('.btn-compare-toggle');
       if (compBtn) {
         compBtn.addEventListener('click', (e) => {
