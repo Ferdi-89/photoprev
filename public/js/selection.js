@@ -25,6 +25,17 @@ class RTFTPSelection {
   initEvents() {
     // Dock Buttons
     document.getElementById('dock-review-btn').addEventListener('click', () => this.openModal());
+    const dockClearBtn = document.getElementById('dock-clear-btn');
+    if (dockClearBtn) {
+      dockClearBtn.addEventListener('click', () => this.confirmClearAll());
+    }
+
+    // Toolbar Clear Button
+    const toolbarClearBtn = document.getElementById('toolbar-clear-btn');
+    if (toolbarClearBtn) {
+      toolbarClearBtn.addEventListener('click', () => this.confirmClearAll());
+    }
+
     document.getElementById('print-modal-close-btn').addEventListener('click', () => this.closeModal());
     document.getElementById('modal-cancel-btn').addEventListener('click', () => this.closeModal());
 
@@ -41,21 +52,27 @@ class RTFTPSelection {
     });
 
     // Clear all button in modal
-    document.getElementById('modal-clear-btn').addEventListener('click', async () => {
-      const confirmed = await window.showConfirm(
-        'Batalkan Semua Pilihan?',
-        'Semua pilihan ukuran dan kuantiti foto yang Anda pilih dalam sesi ini akan dibatalkan.',
-        'Ya, Batalkan Semua',
-        true
-      );
-      if (confirmed) {
-        await window.api.clearSelections();
-        this.selections.clear();
-        this.updateUI();
-        this.closeModal();
-        window.showToast('Semua pilihan foto telah dibatalkan', 'info');
+    document.getElementById('modal-clear-btn').addEventListener('click', () => this.confirmClearAll());
+  }
+
+  async confirmClearAll() {
+    if (this.totalItems === 0) return;
+    const confirmed = await window.showConfirm(
+      'Batalkan Semua Pilihan?',
+      'Semua foto yang telah Anda pilih untuk dicetak akan dibatalkan sehingga Anda dapat memilih ulang dari awal.',
+      'Ya, Batalkan Semua',
+      true
+    );
+    if (confirmed) {
+      await window.api.clearSelections();
+      this.selections.clear();
+      this.updateUI();
+      this.closeModal();
+      if (window.galleryApp && window.galleryApp.activeFilter === 'selected') {
+        window.galleryApp.render();
       }
-    });
+      window.showToast('Semua pilihan foto telah dibatalkan', 'info');
+    }
   }
 
   setAvailableSizes(sizes) {
@@ -175,6 +192,12 @@ class RTFTPSelection {
     if (filterSelectedBadge) {
       filterSelectedBadge.textContent = this.totalItems;
       this.triggerBadgePop(filterSelectedBadge);
+    }
+
+    // Update toolbar clear button
+    const toolbarClearBtn = document.getElementById('toolbar-clear-btn');
+    if (toolbarClearBtn) {
+      toolbarClearBtn.style.display = this.totalItems > 0 ? 'inline-flex' : 'none';
     }
   }
 

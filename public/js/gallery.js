@@ -209,6 +209,15 @@ class RTFTPGallery {
     if (filtered.length === 0) {
       this.container.innerHTML = '';
       this.emptyState.style.display = 'flex';
+      const emptyTitle = this.emptyState.querySelector('.empty-title');
+      const emptySubtitle = this.emptyState.querySelector('.empty-subtitle');
+      if (this.activeFilter === 'selected') {
+        if (emptyTitle) emptyTitle.textContent = 'Belum Ada Foto Terpilih';
+        if (emptySubtitle) emptySubtitle.textContent = 'Klik foto di galeri untuk memilih foto yang ingin dicetak.';
+      } else {
+        if (emptyTitle) emptyTitle.textContent = 'Belum Ada Foto dalam Sesi Ini';
+        if (emptySubtitle) emptySubtitle.textContent = 'Foto akan otomatis tampil secara real-time saat kamera mentransfer file ke folder sesi.';
+      }
       return;
     }
 

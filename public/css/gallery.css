@@ -268,8 +268,10 @@
     transform: scale(1);
   }
 
-  .photo-card:hover .card-frame-seq {
-    color: var(--text-main);
+  .photo-card:hover .card-frame-seq,
+  .photo-card:focus-within .card-frame-seq {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -332,21 +334,25 @@
   font-size: var(--text-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.88);
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: var(--radius-xs);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   line-height: 1;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  pointer-events: none;
 }
 
 .card-select-chip {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1.5px solid var(--border-medium);
@@ -355,19 +361,25 @@
   justify-content: center;
   color: transparent;
   box-shadow: var(--shadow-sm);
-  opacity: 0.85;
-  transform: scale(0.92);
-  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.92);
+  pointer-events: none;
   cursor: pointer;
   transition: opacity var(--transition-fast), transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
 @media (pointer: coarse) {
   .card-select-chip {
-    width: 36px;
-    height: 36px;
-    opacity: 1;
+    width: 34px;
+    height: 34px;
   }
+}
+
+.photo-card:hover .card-select-chip,
+.photo-card:focus-within .card-select-chip {
+  opacity: 0.92;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .card-select-chip:hover {
@@ -380,11 +392,12 @@
 .photo-card.selected .card-select-chip,
 .card-select-chip.active {
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(0) scale(1);
   background: var(--accent-blue);
   border-color: #ffffff;
   color: #ffffff;
-  box-shadow: 0 2px 4px rgba(28, 25, 23, 0.16);
+  box-shadow: 0 2px 6px rgba(29, 78, 216, 0.35);
+  pointer-events: auto;
 }
 
 /* Card Hover Quick Action Bar */
@@ -581,6 +594,17 @@
   margin-left: auto;
 }
 
+#dock-clear-btn {
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
 #dock-review-btn {
   border-radius: var(--radius-sm);
   padding: 8px 16px;
@@ -592,6 +616,16 @@
   border: 1px solid #1d4ed8;
   box-shadow: var(--shadow-sm);
   transition: transform 0.16s var(--ease-out), box-shadow 0.16s var(--ease-out), background 0.16s var(--ease-out);
+  white-space: nowrap;
+}
+
+#toolbar-clear-btn {
+  margin-left: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
 }
 
 @media (hover: hover) and (pointer: fine) {
