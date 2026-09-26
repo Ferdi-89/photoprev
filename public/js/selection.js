@@ -66,13 +66,6 @@ class RTFTPSelection {
     if (confirmed) {
       await window.api.clearSelections();
       this.selections.clear();
-      if (window.galleryApp) {
-        window.galleryApp.expandedPhotos.clear();
-        document.querySelectorAll('.photo-card.is-expanded').forEach(c => {
-          c.classList.remove('is-expanded');
-          c.setAttribute('aria-expanded', 'false');
-        });
-      }
       this.updateUI();
       this.closeModal();
       if (window.galleryApp && window.galleryApp.activeFilter === 'selected') {
@@ -93,9 +86,6 @@ class RTFTPSelection {
     if (Array.isArray(selectionsArray)) {
       selectionsArray.forEach(item => {
         this.selections.set(item.filename, item);
-        if (window.galleryApp) {
-          window.galleryApp.expandedPhotos.add(item.filename);
-        }
       });
     }
     this.updateUI();
@@ -113,9 +103,6 @@ class RTFTPSelection {
     if (isCurrentlySelected) {
       this.selections.delete(filename);
       await window.api.setSelection(filename, false);
-      if (window.galleryApp) {
-        window.galleryApp.collapseCard(filename);
-      }
     } else {
       const defaultData = {
         filename,
@@ -124,9 +111,6 @@ class RTFTPSelection {
       };
       this.selections.set(filename, defaultData);
       await window.api.setSelection(filename, true, defaultData.sizes, defaultData.notes);
-      if (window.galleryApp) {
-        window.galleryApp.expandCard(filename);
-      }
     }
     this.updateUI();
 
