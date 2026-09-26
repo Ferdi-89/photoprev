@@ -135,7 +135,7 @@ class RTFTPCompare {
           </button>
         </div>
         <div class="compare-item-viewport" title="Klik untuk memperbesar">
-          <img src="/api/photo/${encodeURIComponent(filename)}/preview" alt="Foto perbandingan ${filename}" loading="lazy"/>
+          <img src="/api/photo/${encodeURIComponent(filename)}/original" alt="Foto perbandingan ${filename}" loading="lazy"/>
         </div>
         <div class="compare-item-footer">
           <button class="btn ${isSelected ? 'btn-gold' : 'btn-primary'} btn-choose-this">

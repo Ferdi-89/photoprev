@@ -266,7 +266,7 @@ class RTFTPSelection {
       ).join('');
 
       row.innerHTML = `
-        <img src="/api/photo/${encodeURIComponent(filename)}/thumb" alt="Thumbnail foto #${orderIndex}" style="width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: var(--bg-primary); flex-shrink: 0;"/>
+        <img src="/api/photo/${encodeURIComponent(filename)}/original" alt="Foto #${orderIndex}" style="width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: var(--bg-primary); flex-shrink: 0;"/>
         <div style="flex: 1; min-width: 0;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;">
             <span style="background: var(--color-blue-bg); color: var(--color-blue-text); border: 1px solid var(--color-blue-border); font-size: 0.72rem; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-xs); font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em;">#${orderIndex}</span>

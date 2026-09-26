@@ -245,7 +245,7 @@ class RTFTPGallery {
 
       card.innerHTML = `
         <div class="photo-img-wrapper" ${aspectStyle}>
-          <img src="/api/photo/${encodeURIComponent(photo.filename)}/thumb" alt="Foto ${photo.filename}" loading="lazy"/>
+          <img src="/api/photo/${encodeURIComponent(photo.filename)}/original" alt="Foto ${photo.filename}" loading="lazy"/>
           <div class="card-chrome-top">
             <span class="card-frame-seq">#${String(index + 1).padStart(3, '0')}</span>
             <button type="button" class="card-select-chip ${isSelected ? 'active' : ''}" title="${isSelected ? 'Batalkan pilihan cetak' : 'Pilih untuk dicetak'}" aria-label="Pilih foto ${photo.filename} untuk dicetak" aria-pressed="${isSelected}">

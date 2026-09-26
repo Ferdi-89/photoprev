@@ -220,7 +220,10 @@ app.get('/api/photo/:filename/original', (req, res) => {
   if (!fs.existsSync(fullPath)) {
     return res.status(404).send('Foto tidak ditemukan');
   }
-  res.sendFile(fullPath);
+  res.sendFile(fullPath, {
+    maxAge: '1d',
+    lastModified: true
+  });
 });
 
 // 7. Get Selections (Grouped by Session + active selections)
