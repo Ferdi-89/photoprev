@@ -40,6 +40,18 @@ class RTFTPOperator {
     this.logConsole = document.getElementById('log-console');
     this.sessions = [];
 
+    // Stations Elements
+    this.navStationsBadge = document.getElementById('nav-stations-badge');
+    this.mobileNavStationsBadge = document.getElementById('mobile-nav-stations-badge');
+    this.stationsGrid = document.getElementById('stations-grid');
+    this.statTotalStations = document.getElementById('stat-total-stations');
+    this.statOnlineStations = document.getElementById('stat-online-stations');
+    this.btnAddStation = document.getElementById('btn-add-station');
+    this.addStationModal = document.getElementById('add-station-modal');
+    this.formAddStation = document.getElementById('form-add-station');
+    this.stations = [];
+    this.primaryLanUrl = '';
+
     this.init();
   }
 
@@ -47,6 +59,7 @@ class RTFTPOperator {
     this.initViewRouting();
     this.bindEvents();
     this.initFolderPicker();
+    this.initStationsManager();
 
     // Connect WebSocket for live updates
     window.api.connectWebSocket((isConnected) => {
@@ -68,6 +81,13 @@ class RTFTPOperator {
 
     try {
       const netRes = await window.api.getNetwork();
+      if (netRes.success) {
+        this.primaryLanUrl = netRes.primaryUrl || (netRes.interfaces && netRes.interfaces[0] ? netRes.interfaces[0].url : `http://${window.location.host}`);
+        if (this.stations && this.stations.length > 0) {
+          this.renderStations(this.stations);
+        }
+      }
+
       if (!netRes.success || !netRes.interfaces || netRes.interfaces.length === 0) {
         container.innerHTML = `
           <div style="color: var(--text-muted); font-size: 0.85rem;">
@@ -126,12 +146,14 @@ class RTFTPOperator {
     const viewMap = {
       '#session': 'view-session',
       '#queue': 'view-queue',
+      '#stations': 'view-stations',
       '#logs': 'view-logs'
     };
 
     const viewTitles = {
       'view-session': 'Folder & Sesi',
       'view-queue': 'Antrean Siap Cetak',
+      'view-stations': 'Stasiun & Klien',
       'view-logs': 'Log Aktivitas'
     };
 
@@ -438,6 +460,28 @@ class RTFTPOperator {
       this.log('WebSocket terhubung dengan server lokal studio', 'success');
       const activePath = data.session ? data.session.activeSessionPath : null;
       this.renderSessionQueues(data.sessions || [], activePath);
+      if (data.stations) {
+        this.renderStations(data.stations);
+      }
+    });
+
+    window.api.on('STATION_STATUS_CHANGED', (data) => {
+      this.log(`Status stasiun ${data.stationId}: ${data.isOnline ? 'Terhubung (Online)' : 'Terputus (Offline)'}`, data.isOnline ? 'success' : 'warn');
+      const st = (this.stations || []).find(s => s.id === data.stationId);
+      if (st) {
+        st.isOnline = data.isOnline;
+        st.activeClientsCount = data.activeClientsCount || 0;
+        if (data.remoteIp) st.remoteIp = data.remoteIp;
+        this.renderStations(this.stations);
+      } else {
+        this.refreshStations();
+      }
+    });
+
+    window.api.on('STATIONS_UPDATED', (data) => {
+      if (data.stations) {
+        this.renderStations(data.stations);
+      }
     });
 
     window.api.on('PHOTO_ADDED', (data) => {
@@ -535,6 +579,9 @@ class RTFTPOperator {
       const sessions = selRes.sessions || [];
       const activePath = session.activeSessionPath || selRes.activeSessionPath;
       this.renderSessionQueues(sessions, activePath);
+
+      // Refresh Client Workstations
+      await this.refreshStations();
     } catch (e) {
       console.error('Error refreshing operator data:', e);
     }
@@ -1318,6 +1365,297 @@ class RTFTPOperator {
     }
     if (this.btnFolderConfirm) {
       this.btnFolderConfirm.disabled = !folderPath;
+    }
+  }
+
+  /**
+   * Client Workstations & Booth Slot Manager
+   */
+  initStationsManager() {
+    if (!this.btnAddStation) return;
+
+    // Open Add Station Modal (+)
+    this.btnAddStation.addEventListener('click', () => {
+      if (this.addStationModal) {
+        this.addStationModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        const nameInput = document.getElementById('station-name-input');
+        if (nameInput) {
+          nameInput.value = `PC Klien ${(this.stations ? this.stations.length : 0) + 1} (Kabel LAN)`;
+          nameInput.focus();
+        }
+      }
+    });
+
+    // Close Add Station Modal
+    const closeAddModal = () => {
+      if (this.addStationModal) {
+        this.addStationModal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    };
+
+    const closeBtn = document.getElementById('add-station-close-btn');
+    const cancelBtn = document.getElementById('btn-cancel-add-station');
+    const backdrop = document.getElementById('add-station-backdrop');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeAddModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeAddModal);
+    if (backdrop) backdrop.addEventListener('click', closeAddModal);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.addStationModal && this.addStationModal.style.display === 'flex') {
+        closeAddModal();
+      }
+    });
+
+    // Handle Form Submit (+)
+    if (this.formAddStation) {
+      this.formAddStation.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('station-name-input');
+        const typeSelect = document.getElementById('station-type-select');
+        const noteInput = document.getElementById('station-note-input');
+
+        const name = (nameInput?.value || '').trim();
+        const type = typeSelect?.value || 'lan';
+        const note = (noteInput?.value || '').trim();
+
+        if (!name) return window.showToast('Nama stasiun harus diisi', 'warning');
+
+        try {
+          const res = await window.api.addStation(name, type, note);
+          if (res.success) {
+            this.log(`Stasiun baru ditambahkan: "${name}" (${type})`, 'success');
+            window.showToast(`Stasiun "${name}" berhasil ditambahkan (+)`, 'success');
+            closeAddModal();
+            await this.refreshStations();
+          } else {
+            window.showToast('Gagal menambah stasiun: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+  }
+
+  async refreshStations() {
+    try {
+      const res = await window.api.getStations();
+      if (res.success && res.stations) {
+        this.renderStations(res.stations);
+      }
+    } catch (err) {
+      console.warn('Gagal memuat stasiun:', err);
+    }
+  }
+
+  renderStations(stations) {
+    this.stations = stations || [];
+    const totalCount = this.stations.length;
+    const onlineCount = this.stations.filter(s => s.isOnline).length;
+
+    // Update badges
+    if (this.navStationsBadge) this.navStationsBadge.textContent = String(totalCount);
+    if (this.mobileNavStationsBadge) this.mobileNavStationsBadge.textContent = String(totalCount);
+
+    // Update stats cards
+    if (this.statTotalStations) this.statTotalStations.textContent = String(totalCount);
+    if (this.statOnlineStations) this.statOnlineStations.textContent = String(onlineCount);
+
+    if (!this.stationsGrid) return;
+
+    if (totalCount === 0) {
+      this.stationsGrid.innerHTML = `
+        <div class="stations-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-bottom: 12px; color: var(--text-dim);">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main); margin-bottom: 6px;">Belum Ada Stasiun PC Klien Didaftarkan</div>
+          <p style="font-size: 0.85rem; max-width: 420px; margin: 0 auto 16px auto;">Tambahkan slot stasiun PC klien touchscreen atau tablet booth studio Anda dengan menekan tombol di bawah.</p>
+          <button class="btn btn-gold" id="btn-empty-add-station">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>+ Tambah Stasiun Pertama</span>
+          </button>
+        </div>
+      `;
+      const btnEmpty = document.getElementById('btn-empty-add-station');
+      if (btnEmpty) {
+        btnEmpty.addEventListener('click', () => {
+          if (this.btnAddStation) this.btnAddStation.click();
+        });
+      }
+      return;
+    }
+
+    this.stationsGrid.innerHTML = '';
+
+    const baseUrl = this.primaryLanUrl || window.location.origin;
+
+    this.stations.forEach(s => {
+      const stationUrl = `${baseUrl}/?station=${encodeURIComponent(s.id)}`;
+      const card = document.createElement('div');
+      card.className = `station-card${s.isOnline ? ' is-online' : ''}`;
+      card.id = `card-${s.id}`;
+
+      let typeBadgeClass = 'type-lan';
+      let typeLabel = 'Kabel LAN';
+      if (s.type === 'wifi') {
+        typeBadgeClass = 'type-wifi';
+        typeLabel = 'Wi-Fi';
+      } else if (s.type === 'touchscreen') {
+        typeBadgeClass = 'type-touchscreen';
+        typeLabel = 'Touchscreen';
+      }
+
+      const statusBadge = s.isOnline
+        ? `<span class="station-status-pill is-online"><span class="live-dot" style="width: 7px; height: 7px; background-color: var(--accent-green);"></span> Online</span>`
+        : `<span class="station-status-pill is-offline"><span class="live-dot" style="width: 7px; height: 7px; background-color: var(--text-dim);"></span> Standby</span>`;
+
+      card.innerHTML = `
+        <div class="station-card-header">
+          <div class="station-card-left">
+            <div class="station-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <div class="station-title-info">
+              <div class="station-title-row">
+                <span class="station-title">${s.name}</span>
+                <span class="station-type-badge ${typeBadgeClass}">${typeLabel}</span>
+              </div>
+              <div class="station-note">${s.note || 'Booth Pemilihan Foto Studio'}</div>
+            </div>
+          </div>
+          ${statusBadge}
+        </div>
+
+        <div class="station-card-body">
+          <div style="font-size: 0.72rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Tautan Akses Khusus Stasiun:</div>
+          <div class="station-link-box">
+            <span class="station-url-text" title="${stationUrl}">${stationUrl}</span>
+            <button class="btn btn-sm btn-station-copy" data-url="${stationUrl}" title="Salin tautan ini">
+              Salin
+            </button>
+          </div>
+
+          <div class="station-meta-row">
+            <span>Alamat IP Klien:</span>
+            <strong style="font-family: var(--font-mono); color: var(--text-main);">${s.remoteIp || 'Belum Terhubung'}</strong>
+          </div>
+
+          <div class="station-meta-row">
+            <span>Koneksi Layar:</span>
+            <span style="font-weight: 600; color: ${s.isOnline ? 'var(--accent-green)' : 'var(--text-muted)'};">
+              ${s.activeClientsCount > 0 ? `${s.activeClientsCount} perangkat aktif` : '0 perangkat (Standby)'}
+            </span>
+          </div>
+        </div>
+
+        <div class="station-card-footer">
+          <div class="station-actions-left">
+            <a href="${stationUrl}" target="_blank" rel="noopener noreferrer" class="btn-station-open" title="Buka tampilan layar stasiun ini di tab baru">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              <span>Buka Layar</span>
+            </a>
+            <button class="btn-station-reload" data-id="${s.id}" title="Muat ulang layar PC klien dari jarak jauh">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>Reload Layar</span>
+            </button>
+          </div>
+
+          <button class="btn-remove-station" data-id="${s.id}" data-name="${s.name}" title="Hapus slot stasiun ini (-)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Hapus (-)</span>
+          </button>
+        </div>
+      `;
+
+      // Wire Copy
+      const copyBtn = card.querySelector('.btn-station-copy');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          const url = copyBtn.getAttribute('data-url');
+          if (navigator.clipboard && url) {
+            navigator.clipboard.writeText(url).then(() => {
+              copyBtn.textContent = 'Tersalin!';
+              setTimeout(() => { copyBtn.textContent = 'Salin'; }, 2000);
+            });
+          }
+        });
+      }
+
+      // Wire Reload
+      const reloadBtn = card.querySelector('.btn-station-reload');
+      if (reloadBtn) {
+        reloadBtn.addEventListener('click', async () => {
+          try {
+            await window.api.reloadStation(s.id);
+            window.showToast(`Sinyal reload dikirim ke ${s.name}`, 'blue');
+            this.log(`Operator memicu reload layar untuk ${s.name}`, 'info');
+          } catch (e) {
+            window.showToast('Gagal reload: ' + e.message, 'danger');
+          }
+        });
+      }
+
+      // Wire Remove (-)
+      const removeBtn = card.querySelector('.btn-remove-station');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', async () => {
+          const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus "${s.name}" (-)?\nKoneksi klien pada meja ini akan dinonaktifkan.`);
+          if (!confirmed) return;
+
+          try {
+            const res = await window.api.removeStation(s.id);
+            if (res.success) {
+              this.log(`Stasiun "${s.name}" dihapus (-) oleh operator`, 'warn');
+              window.showToast(`Stasiun "${s.name}" berhasil dihapus (-)`, 'success');
+              await this.refreshStations();
+            } else {
+              window.showToast('Gagal menghapus: ' + res.error, 'danger');
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+          }
+        });
+      }
+
+      this.stationsGrid.appendChild(card);
+    });
+
+    // GSAP entrance
+    if (window.gsap) {
+      const cards = this.stationsGrid.querySelectorAll('.station-card');
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!prefersReducedMotion && cards.length > 0) {
+        gsap.from(cards, {
+          autoAlpha: 0,
+          y: 8,
+          duration: 0.2,
+          stagger: 0.04,
+          ease: 'power2.out',
+          clearProps: 'transform,opacity,visibility'
+        });
+      }
     }
   }
 }

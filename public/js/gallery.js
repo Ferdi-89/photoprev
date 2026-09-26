@@ -22,6 +22,16 @@ class RTFTPGallery {
     // Connect WebSocket with reactive connection status tracking
     window.api.connectWebSocket((isConnected) => {
       this.updateConnectionStatus(isConnected);
+      if (isConnected) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const stationId = urlParams.get('station');
+        if (stationId && window.api.ws && window.api.ws.readyState === WebSocket.OPEN) {
+          window.api.ws.send(JSON.stringify({
+            type: 'REGISTER_STATION',
+            stationId
+          }));
+        }
+      }
     });
 
     // Listen to WebSocket events
@@ -162,6 +172,15 @@ class RTFTPGallery {
       if (this.activeFilter === 'selected') {
         this.render();
       }
+    });
+
+    window.api.on('RELOAD_CLIENT', () => {
+      window.showToast('Memuat ulang layar dari operator...', 'blue', 1500);
+      setTimeout(() => window.location.reload(), 500);
+    });
+
+    window.api.on('STATION_DEACTIVATED', (data) => {
+      window.showToast(data.message || 'Stasiun ini telah dinonaktifkan oleh operator.', 'danger', 8000);
     });
   }
 

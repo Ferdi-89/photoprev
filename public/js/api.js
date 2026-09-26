@@ -102,6 +102,44 @@ class RTFTPApi {
     return await res.json();
   }
 
+  // Workstation / Client Station Management API
+  async getStations() {
+    const res = await fetch('/api/operator/stations');
+    return await res.json();
+  }
+
+  async addStation(name, type = 'lan', note = '') {
+    const res = await fetch('/api/operator/stations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, type, note })
+    });
+    return await res.json();
+  }
+
+  async removeStation(stationId) {
+    const res = await fetch(`/api/operator/stations/${encodeURIComponent(stationId)}`, {
+      method: 'DELETE'
+    });
+    return await res.json();
+  }
+
+  async updateStation(stationId, updates) {
+    const res = await fetch(`/api/operator/stations/${encodeURIComponent(stationId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    return await res.json();
+  }
+
+  async reloadStation(stationId) {
+    const res = await fetch(`/api/operator/stations/${encodeURIComponent(stationId)}/reload`, {
+      method: 'POST'
+    });
+    return await res.json();
+  }
+
   // WebSocket Methods
   connectWebSocket(onStatusChange = null) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

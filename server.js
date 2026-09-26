@@ -18,6 +18,15 @@ const {
   createFolder,
   openNativePicker
 } = require('./lib/folderBrowser');
+const {
+  getStations,
+  addStation,
+  removeStation,
+  updateStation,
+  registerStationClient,
+  unregisterStationClient,
+  reloadStation
+} = require('./lib/stationManager');
 
 const app = express();
 const server = http.createServer(app);
@@ -397,16 +406,100 @@ app.post('/api/operator/open-native-picker', async (req, res) => {
   }
 });
 
+// 16. Operator Stations: Get All Configured Stations with Live Status
+app.get('/api/operator/stations', (req, res) => {
+  try {
+    const stations = getStations(config);
+    res.json({ success: true, stations });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 17. Operator Stations: Add New Workstation / Client Slot (+)
+app.post('/api/operator/stations', (req, res) => {
+  try {
+    const { name, type, note } = req.body;
+    const result = addStation(config, { name, type, note });
+    broadcast({
+      type: 'STATIONS_UPDATED',
+      stations: getStations(config)
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 18. Operator Stations: Remove Workstation / Client Slot (-)
+app.delete('/api/operator/stations/:id', (req, res) => {
+  try {
+    const result = removeStation(config, req.params.id);
+    broadcast({
+      type: 'STATIONS_UPDATED',
+      stations: getStations(config)
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 19. Operator Stations: Update Workstation Info
+app.put('/api/operator/stations/:id', (req, res) => {
+  try {
+    const result = updateStation(config, req.params.id, req.body);
+    broadcast({
+      type: 'STATIONS_UPDATED',
+      stations: getStations(config)
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 20. Operator Stations: Remotely Reload Client Workstation Screen
+app.post('/api/operator/stations/:id/reload', (req, res) => {
+  try {
+    const result = reloadStation(req.params.id, wss);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ---------------- WEBSOCKET HANDLING ----------------
-wss.on('connection', async (ws) => {
+wss.on('connection', async (ws, req) => {
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
+
+  // Check URL query param for station ID (e.g. ws://host:3000/?station=station-1)
+  try {
+    if (req && req.url) {
+      const urlObj = new URL(req.url, 'http://localhost');
+      const stationId = urlObj.searchParams.get('station');
+      if (stationId) {
+        registerStationClient(stationId, ws, req, broadcast);
+      }
+    }
+  } catch (e) {}
+
+  ws.on('message', (raw) => {
+    try {
+      const msg = JSON.parse(raw);
+      if (msg.type === 'REGISTER_STATION' && msg.stationId) {
+        registerStationClient(msg.stationId, ws, req, broadcast);
+      }
+    } catch (e) {}
+  });
 
   console.log('[WebSocket] Client terhubung');
   try {
     const photos = await getSessionPhotos(config.activeSessionPath);
     const selections = printManager.getSelections();
     const sessions = printManager.getAllSessionQueues(config);
+    const stations = getStations(config);
     ws.send(JSON.stringify({
       type: 'INIT',
       session: {
@@ -416,13 +509,15 @@ wss.on('connection', async (ws) => {
       },
       photos,
       selections,
-      sessions
+      sessions,
+      stations
     }));
   } catch (e) {
     console.error('Error on initial WS send:', e.message);
   }
 
   ws.on('close', () => {
+    unregisterStationClient(ws, broadcast);
     console.log('[WebSocket] Client terputus');
   });
 });
