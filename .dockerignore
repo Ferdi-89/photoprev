@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.claude
+.codex
+.agents
+.impeccable
+storage/cache/*
+*.bat
+*.vbs
+*.lnk
+README.md
+PLAN.md
+server ideation.md
