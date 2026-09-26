@@ -174,11 +174,11 @@
   align-items: start;
 }
 
-.gallery-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
-.gallery-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
-.gallery-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
-.gallery-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
-.gallery-grid.cols-6 { grid-template-columns: repeat(6, 1fr); }
+.gallery-grid.cols-2 { grid-template-columns: repeat(2, 1fr); gap: 28px; }
+.gallery-grid.cols-3 { grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.gallery-grid.cols-4 { grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.gallery-grid.cols-5 { grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.gallery-grid.cols-6 { grid-template-columns: repeat(6, 1fr); gap: 14px; }
 
 @media (max-width: 1400px) {
   #grid-btn-6 {
@@ -206,8 +206,13 @@
   #grid-btn-4, #grid-btn-5, #grid-btn-6 {
     display: none;
   }
-  .gallery-grid.cols-3, .gallery-grid.cols-4, .gallery-grid.cols-5, .gallery-grid.cols-6 {
+  .gallery-grid.cols-2,
+  .gallery-grid.cols-3,
+  .gallery-grid.cols-4,
+  .gallery-grid.cols-5,
+  .gallery-grid.cols-6 {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
   .gallery-toolbar {
     padding: 8px 16px;
@@ -224,6 +229,7 @@
   }
   .gallery-grid {
     grid-template-columns: 1fr !important;
+    gap: 16px;
   }
 }
 
@@ -288,7 +294,7 @@
 
 /* Selected State - Studio Cyanotype Blue Proofing Frame with Subtle Pop */
 .photo-card.selected {
-  transform: scale(1.035) translateZ(0);
+  transform: scale(1.026) translateZ(0);
   outline: 2px solid #1d4ed8;
   outline-offset: -1px;
   border-color: #1d4ed8;
@@ -297,8 +303,26 @@
 }
 
 .photo-card.selected:active {
-  transform: scale(1.015) translateZ(0);
+  transform: scale(1.008) translateZ(0);
   transition: transform 0.06s ease-out;
+}
+
+/* Calibrated Scale for Grid 2 (Prevents Crowding/Collision on Large 2-Col Cards) */
+.gallery-grid.cols-2 .photo-card.selected {
+  transform: scale(1.014) translateZ(0);
+}
+
+.gallery-grid.cols-2 .photo-card.selected:active {
+  transform: scale(1.002) translateZ(0);
+}
+
+/* Calibrated Scale for Grid 3 */
+.gallery-grid.cols-3 .photo-card.selected {
+  transform: scale(1.02) translateZ(0);
+}
+
+.gallery-grid.cols-3 .photo-card.selected:active {
+  transform: scale(1.006) translateZ(0);
 }
 
 /* In-Compare State - Warm Amber Proofing Frame */
