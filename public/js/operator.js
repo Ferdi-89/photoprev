@@ -255,18 +255,19 @@ class RTFTPOperator {
     // Save Folder Path
     document.getElementById('btn-save-folder').addEventListener('click', async () => {
       const newPath = this.sessionPathInput.value.trim();
-      if (!newPath) return alert('Masukkan path folder sesi');
+      if (!newPath) return window.showToast('Masukkan path folder sesi', 'warning');
 
       try {
         const res = await window.api.setSessionFolder(newPath);
         if (res.success) {
           this.log(`Folder sesi aktif diubah ke: ${newPath}`, 'success');
+          window.showToast('Folder sesi aktif berhasil diperbarui', 'success');
           await this.refreshData();
         } else {
-          alert('Gagal mengganti folder: ' + res.error);
+          window.showToast('Gagal mengganti folder: ' + res.error, 'danger');
         }
       } catch (err) {
-        alert('Error: ' + err.message);
+        window.showToast('Error: ' + err.message, 'danger');
       }
     });
 
@@ -274,15 +275,17 @@ class RTFTPOperator {
     document.getElementById('btn-generate-demo').addEventListener('click', async () => {
       try {
         this.log('Sedang membuat 6 foto demo studio berkualitas tinggi...', 'info');
+        window.showToast('Membuat 6 foto demo studio...', 'blue', 2000);
         const res = await window.api.generateDemo();
         if (res.success) {
           this.log(res.message, 'success');
+          window.showToast(res.message, 'success');
           await this.refreshData();
         } else {
-          alert('Gagal: ' + res.error);
+          window.showToast('Gagal membuat demo: ' + res.error, 'danger');
         }
       } catch (e) {
-        alert(e.message);
+        window.showToast('Error: ' + e.message, 'danger');
       }
     });
 
@@ -300,13 +303,13 @@ class RTFTPOperator {
           if (res.success) {
             const count = (res.reports || []).reduce((acc, r) => acc + (r.totalCopies || 0), 0);
             this.log(`BERHASIL: Total ${count} lembar foto diekspor dari semua sesi`, 'success');
-            alert(`Sukses! Sebanyak ${count} lembar foto dari seluruh sesi telah disalin ke folder _SIAP_CETAK masing-masing.`);
+            window.showToast(`Sukses! Sebanyak ${count} lembar foto diekspor ke folder _SIAP_CETAK.`, 'success', 5000);
             await this.refreshData();
           } else {
-            alert('Gagal: ' + res.error);
+            window.showToast('Gagal mengekspor: ' + res.error, 'danger');
           }
         } catch (err) {
-          alert('Error: ' + err.message);
+          window.showToast('Error: ' + err.message, 'danger');
         } finally {
           this.btnExportAllPrint.disabled = false;
           this.btnExportAllPrint.innerHTML = `
@@ -686,12 +689,13 @@ class RTFTPOperator {
             const res = await window.api.setSessionFolder(session.sessionPath);
             if (res.success) {
               this.log(`Sesi aktif dialihkan ke: ${session.sessionName}`, 'success');
+              window.showToast(`Sesi aktif dialihkan ke: ${session.sessionName}`, 'success');
               await this.refreshData();
             } else {
-              alert('Gagal mengaktifkan sesi: ' + res.error);
+              window.showToast('Gagal mengaktifkan sesi: ' + res.error, 'danger');
             }
           } catch (err) {
-            alert('Error: ' + err.message);
+            window.showToast('Error: ' + err.message, 'danger');
           }
         });
       }
@@ -711,13 +715,13 @@ class RTFTPOperator {
             if (res.success) {
               const rep = res.report;
               this.log(`BERHASIL: ${rep.totalCopies} lembar foto diekspor ke: ${rep.targetDir}`, 'success');
-              alert(`Sukses! ${rep.totalCopies} lembar foto sesi "${session.sessionName}" telah disalin ke folder:\n${rep.targetDir}\n\nFolder siap dikirim ke mesin cetak.`);
+              window.showToast(`Sukses! ${rep.totalCopies} lembar foto disalin ke _SIAP_CETAK.`, 'success', 5000);
               await this.refreshData();
             } else {
-              alert('Gagal mengekspor: ' + res.error);
+              window.showToast('Gagal mengekspor: ' + res.error, 'danger');
             }
           } catch (err) {
-            alert('Error: ' + err.message);
+            window.showToast('Error: ' + err.message, 'danger');
           } finally {
             btnExport.disabled = false;
             btnExport.innerHTML = origText;
@@ -728,9 +732,16 @@ class RTFTPOperator {
       const btnReset = card.querySelector('.btn-reset-session');
       if (btnReset) {
         btnReset.addEventListener('click', async () => {
-          if (confirm(`Yakin ingin mereset/menghapus pilihan cetak untuk sesi "${session.sessionName}"?`)) {
+          const confirmed = await window.showConfirm(
+            'Reset Pilihan Sesi?',
+            `Hapus seluruh antrean pilihan cetak untuk sesi "${session.sessionName}"?`,
+            'Ya, Reset Sesi',
+            true
+          );
+          if (confirmed) {
             await window.api.clearSelections(session.sessionPath);
             this.log(`Daftar pilihan cetak sesi "${session.sessionName}" telah dibersihkan`, 'warn');
+            window.showToast(`Pilihan cetak sesi "${session.sessionName}" dibersihkan`, 'info');
             await this.refreshData();
           }
         });

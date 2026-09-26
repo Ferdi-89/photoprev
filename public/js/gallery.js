@@ -2,8 +2,6 @@
  * RTFTP Studio - Main Gallery & Real-time Live Stream Controller
  */
 
-window.showToast = function() {};
-
 class RTFTPGallery {
   constructor() {
     this.photos = [];
@@ -21,14 +19,39 @@ class RTFTPGallery {
   async init() {
     this.bindEvents();
 
-    // Connect WebSocket
-    window.api.connectWebSocket();
+    // Connect WebSocket with reactive connection status tracking
+    window.api.connectWebSocket((isConnected) => {
+      this.updateConnectionStatus(isConnected);
+    });
 
     // Listen to WebSocket events
     this.bindWebSocketEvents();
 
     // Initial Load via REST
     await this.loadInitialData();
+  }
+
+  updateConnectionStatus(isConnected) {
+    const pill = document.getElementById('client-conn-pill');
+    const dot = document.getElementById('client-live-dot');
+    const label = document.getElementById('client-conn-label');
+
+    if (!pill || !dot || !label) return;
+
+    if (isConnected) {
+      pill.classList.remove('is-offline');
+      dot.style.backgroundColor = 'var(--accent-green)';
+      label.textContent = 'Live Sync';
+      pill.title = 'Terhubung ke server studio (WebSocket Aktif)';
+    } else {
+      pill.classList.add('is-offline');
+      dot.style.backgroundColor = 'var(--accent-red)';
+      label.textContent = 'Terputus';
+      pill.title = 'Koneksi ke server terputus. Mencoba menghubungkan kembali...';
+      if (window.showToast) {
+        window.showToast('Koneksi studio terputus. Menghubungkan ulang...', 'warning', 4000);
+      }
+    }
   }
 
   bindEvents() {
@@ -216,16 +239,16 @@ class RTFTPGallery {
           <img src="/api/photo/${encodeURIComponent(photo.filename)}/thumb" alt="Foto ${photo.filename}" loading="lazy"/>
           <div class="card-chrome-top">
             <span class="card-frame-seq">#${String(index + 1).padStart(3, '0')}</span>
-            <span class="card-select-chip ${isSelected ? 'active' : ''}" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </span>
+            <button type="button" class="card-select-chip ${isSelected ? 'active' : ''}" title="${isSelected ? 'Batalkan pilihan cetak' : 'Pilih untuk dicetak'}" aria-label="Pilih foto ${photo.filename} untuk dicetak" aria-pressed="${isSelected}">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </button>
           </div>
           <div class="card-overlay">
             <div class="overlay-actions">
-              <button class="btn-compare-toggle" title="Tambah ke perbandingan" aria-label="Bandingkan foto ${photo.filename}">
+              <button type="button" class="btn-compare-toggle" title="Tambah ke perbandingan" aria-label="Bandingkan foto ${photo.filename}">
                 <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               </button>
-              <button class="btn-zoom-preview" title="Lihat detail" aria-label="Perbesar foto ${photo.filename}">
+              <button type="button" class="btn-zoom-preview" title="Lihat detail & deep zoom" aria-label="Perbesar foto ${photo.filename}">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
               </button>
             </div>
@@ -233,22 +256,36 @@ class RTFTPGallery {
         </div>
       `;
 
-      // Click or keyboard Enter/Space -> toggle selection
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-compare-toggle') || e.target.closest('.btn-zoom-preview')) return;
-        window.selectionManager.toggleSelect(photo.filename);
+      // Tap/Click photo thumbnail -> Open Lightbox for high-resolution inspection
+      const imgWrapper = card.querySelector('.photo-img-wrapper');
+      imgWrapper.addEventListener('click', (e) => {
+        if (e.target.closest('.card-select-chip') || e.target.closest('.btn-compare-toggle') || e.target.closest('.btn-zoom-preview')) return;
+        window.lightbox.open(filtered, index);
       });
 
+      // Tap/Click select chip -> Toggle print selection directly
+      const selectChip = card.querySelector('.card-select-chip');
+      if (selectChip) {
+        selectChip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.selectionManager.toggleSelect(photo.filename);
+        });
+      }
+
+      // Keyboard Accessibility: Enter = Inspect (Lightbox), Space = Toggle Select
       card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          if (e.target === card) {
+        if (e.target === card) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            window.lightbox.open(filtered, index);
+          } else if (e.key === ' ') {
             e.preventDefault();
             window.selectionManager.toggleSelect(photo.filename);
           }
         }
       });
 
-      // Optional explicit zoom button
+      // Explicit zoom button
       const zoomBtn = card.querySelector('.btn-zoom-preview');
       if (zoomBtn) {
         zoomBtn.addEventListener('click', (e) => {

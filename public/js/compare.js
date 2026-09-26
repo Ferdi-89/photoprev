@@ -176,7 +176,8 @@ class RTFTPCompare {
       let isZoomed = false;
       viewport.addEventListener('click', () => {
         isZoomed = !isZoomed;
-        img.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
+        img.style.transform = isZoomed ? 'scale(2.2)' : '';
+        viewport.classList.toggle('is-zoomed', isZoomed);
         viewport.style.cursor = isZoomed ? 'zoom-out' : 'zoom-in';
       });
 

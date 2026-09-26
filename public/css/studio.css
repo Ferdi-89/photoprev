@@ -102,12 +102,20 @@
   --radius-lg: 14px;
   --radius-full: 9999px;
 
+  /* Standard 3-Tier Duration Scale (Emil Kowalski Design Engineering) */
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-slow: 350ms;
+
+  /* Focus Ring Token */
+  --focus-ring: 0 0 0 3px rgba(29, 78, 216, 0.28);
+
   /* Transitions & Easing (Emil Kowalski Design Engineering Standards) */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-  --transition-fast: 0.16s var(--ease-out);
-  --transition-normal: 0.22s var(--ease-out);
+  --transition-fast: var(--duration-fast) var(--ease-out);
+  --transition-normal: var(--duration-normal) var(--ease-out);
 }
 
 * {
@@ -135,11 +143,12 @@ input, textarea, select {
   caret-color: var(--accent-blue);
 }
 
-/* Accessible Skip Navigation Link */
+/* Accessible Skip Navigation Link (Hardware-accelerated compositor transform) */
 .skip-link {
   position: absolute;
-  top: -100px;
+  top: 16px;
   left: 20px;
+  transform: translateY(-160%);
   background: var(--accent-blue-deep);
   color: #f8fafc;
   font-weight: 700;
@@ -148,11 +157,12 @@ input, textarea, select {
   border-radius: var(--radius-xs);
   z-index: 999;
   text-decoration: none;
-  transition: top 0.16s ease;
+  transition: transform var(--duration-fast) var(--ease-out);
 }
 
-.skip-link:focus {
-  top: 16px;
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
   outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
 }
@@ -501,9 +511,12 @@ h1, h2, h3, h4 {
 }
 
 .modal-body select:focus,
-.modal-body input:focus {
-  outline: none;
+.modal-body input:focus,
+.modal-body select:focus-visible,
+.modal-body input:focus-visible {
+  outline: 2px solid transparent;
   border-color: var(--accent-blue);
+  box-shadow: var(--focus-ring);
 }
 
 /* Custom Scrollbars */
@@ -596,4 +609,175 @@ h1, h2, h3, h4 {
     padding-left: max(24px, env(safe-area-inset-left));
     padding-right: max(24px, env(safe-area-inset-right));
   }
+}
+
+/* ==========================================================================
+   Studio Mojave Floating Toast Notifications System
+   ========================================================================== */
+.studio-toast-container {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 440px;
+  width: calc(100vw - 32px);
+}
+
+@media (max-width: 768px) {
+  .studio-toast-container {
+    bottom: 96px; /* Above selection dock */
+    right: 16px;
+    left: 16px;
+    width: auto;
+    align-items: center;
+  }
+}
+
+.studio-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(28, 25, 23, 0.94);
+  color: #f5f5f4;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-full);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.35), 0 4px 10px -2px rgba(0, 0, 0, 0.2);
+  font-size: 0.83rem;
+  font-weight: 600;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  user-select: none;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.studio-toast .toast-icon-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.studio-toast.toast-blue .toast-icon-badge {
+  background: rgba(37, 99, 235, 0.25);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.35);
+}
+
+.studio-toast.toast-success .toast-icon-badge {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.studio-toast.toast-warning .toast-icon-badge {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.studio-toast.toast-danger .toast-icon-badge {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.studio-toast.toast-info .toast-icon-badge {
+  background: rgba(148, 163, 184, 0.22);
+  color: #cbd5e1;
+  border: 1px solid rgba(203, 213, 225, 0.3);
+}
+
+.studio-toast .toast-text {
+  flex: 1;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.studio-toast .toast-close-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2px;
+  margin-left: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color var(--transition-fast);
+}
+
+.studio-toast .toast-close-btn:hover {
+  color: #ffffff;
+}
+
+/* Client Live LAN Status Pill in Toolbar */
+.client-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.05);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.client-status-pill .live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--accent-green);
+  transition: background-color var(--transition-fast);
+}
+
+.client-status-pill.is-offline {
+  border-color: #fecdd3;
+  background: #fff1f2;
+}
+
+.client-status-pill.is-offline .live-dot {
+  background-color: var(--accent-red);
+}
+
+.client-status-pill.is-offline .conn-text {
+  color: #be123c;
+}
+
+/* Studio Custom Confirm Dialog Modal */
+.confirm-dialog-card {
+  max-width: 440px;
+  text-align: left;
+}
+
+.confirm-dialog-body {
+  padding: 24px;
+}
+
+.confirm-dialog-body h4 {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.confirm-dialog-body p {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }

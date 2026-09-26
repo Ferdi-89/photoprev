@@ -218,6 +218,7 @@
   justify-content: center;
   cursor: grab;
   user-select: none;
+  touch-action: none;
   background: radial-gradient(circle at center, #292524 0%, #1c1917 100%);
 }
 

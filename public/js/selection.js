@@ -42,12 +42,18 @@ class RTFTPSelection {
 
     // Clear all button in modal
     document.getElementById('modal-clear-btn').addEventListener('click', async () => {
-      if (confirm('Yakin ingin membatalkan semua pilihan foto?')) {
+      const confirmed = await window.showConfirm(
+        'Batalkan Semua Pilihan?',
+        'Semua pilihan ukuran dan kuantiti foto yang Anda pilih dalam sesi ini akan dibatalkan.',
+        'Ya, Batalkan Semua',
+        true
+      );
+      if (confirmed) {
         await window.api.clearSelections();
         this.selections.clear();
         this.updateUI();
         this.closeModal();
-        window.showToast('Semua pilihan telah dibatalkan', 'info');
+        window.showToast('Semua pilihan foto telah dibatalkan', 'info');
       }
     });
   }
@@ -329,13 +335,13 @@ class RTFTPSelection {
 
       const res = await window.api.exportPrint();
       if (res.success) {
-        window.showToast(`Pesanan siap! ${res.report.totalCopies} lembar foto siap dicetak`, 'blue');
+        window.showToast(`Pesanan siap! ${res.report.totalCopies} lembar foto siap dicetak`, 'success');
         this.closeModal();
       } else {
-        alert('Gagal memproses pesanan: ' + res.error);
+        window.showToast('Gagal memproses pesanan: ' + res.error, 'danger');
       }
     } catch (err) {
-      alert('Terjadi kesalahan saat memproses pesanan: ' + err.message);
+      window.showToast('Terjadi kesalahan: ' + err.message, 'danger');
     } finally {
       const submitBtn = document.getElementById('modal-submit-btn');
       submitBtn.disabled = false;

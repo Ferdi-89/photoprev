@@ -28,6 +28,10 @@ class RTFTPLightbox {
     this.startX = 0;
     this.startY = 0;
     this.rafId = null;
+    this.lastTap = 0;
+    this.touchStartX = 0;
+    this.touchStartY = 0;
+    this.touchStartTime = 0;
 
     this.initEvents();
   }
@@ -65,31 +69,106 @@ class RTFTPLightbox {
         this.zoom(delta);
       }, { passive: false });
 
-      // Drag / Pan Events
-      this.viewport.addEventListener('mousedown', (e) => {
+      // Unified Pointer Events (Mouse, Stylus, and Touch Pan / Drag)
+      this.viewport.addEventListener('pointerdown', (e) => {
+        // Double-tap / double-click detection (toggles Fit vs 100% 1:1)
+        const now = Date.now();
+        if (now - this.lastTap < 300) {
+          e.preventDefault();
+          if (this.scale > 1) {
+            this.resetZoom();
+          } else {
+            this.actualPixels();
+          }
+          this.lastTap = 0;
+          return;
+        }
+        this.lastTap = now;
+
         if (this.scale > 1) {
           this.isDragging = true;
           this.startX = e.clientX - this.panX;
           this.startY = e.clientY - this.panY;
+          try { this.viewport.setPointerCapture(e.pointerId); } catch (err) {}
+        } else {
+          this.touchStartX = e.clientX;
+          this.touchStartY = e.clientY;
+          this.touchStartTime = now;
+        }
+      });
+
+      this.viewport.addEventListener('pointermove', (e) => {
+        if (!this.isDragging || this.scale <= 1) return;
+        this.panX = e.clientX - this.startX;
+        this.panY = e.clientY - this.startY;
+        if (!this.rafId) {
+          this.rafId = requestAnimationFrame(() => {
+            this.applyTransform();
+            this.rafId = null;
+          });
+        }
+      });
+
+      const handlePointerEnd = (e) => {
+        if (this.scale <= 1 && this.touchStartX !== 0) {
+          const deltaX = e.clientX - this.touchStartX;
+          const deltaY = e.clientY - this.touchStartY;
+          const deltaTime = Date.now() - this.touchStartTime;
+
+          // Horizontal swipe threshold: > 48px travel, relatively flat (< 80px Y deviation), under 600ms
+          if (Math.abs(deltaX) > 48 && Math.abs(deltaY) < 80 && deltaTime < 600) {
+            if (deltaX < 0) {
+              this.next();
+            } else {
+              this.prev();
+            }
+          }
+        }
+
+        this.isDragging = false;
+        this.touchStartX = 0;
+        this.touchStartY = 0;
+        try { this.viewport.releasePointerCapture(e.pointerId); } catch (err) {}
+      };
+
+      this.viewport.addEventListener('pointerup', handlePointerEnd);
+      this.viewport.addEventListener('pointercancel', handlePointerEnd);
+
+      // Pinch to Zoom for Multitouch Screens (iPad / Tablets)
+      let initialPinchDist = 0;
+      let startScale = 1;
+
+      this.viewport.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          const t1 = e.touches[0];
+          const t2 = e.touches[1];
+          initialPinchDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          startScale = this.scale;
+        }
+      }, { passive: false });
+
+      this.viewport.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && initialPinchDist > 0) {
+          e.preventDefault();
+          const t1 = e.touches[0];
+          const t2 = e.touches[1];
+          const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          const ratio = currentDist / initialPinchDist;
+          let newScale = startScale * ratio;
+          if (newScale < 0.5) newScale = 0.5;
+          if (newScale > 5) newScale = 5;
+          this.scale = newScale;
+          this.applyTransform();
+        }
+      }, { passive: false });
+
+      this.viewport.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) {
+          initialPinchDist = 0;
         }
       });
     }
-
-    window.addEventListener('mousemove', (e) => {
-      if (!this.isDragging) return;
-      this.panX = e.clientX - this.startX;
-      this.panY = e.clientY - this.startY;
-      if (!this.rafId) {
-        this.rafId = requestAnimationFrame(() => {
-          this.applyTransform();
-          this.rafId = null;
-        });
-      }
-    });
-
-    window.addEventListener('mouseup', () => {
-      this.isDragging = false;
-    });
 
     // Keyboard Navigation
     window.addEventListener('keydown', (e) => {
