@@ -27,6 +27,14 @@ const {
   unregisterStationClient,
   reloadStation
 } = require('./lib/stationManager');
+const {
+  getRootDirectory,
+  getDriveStorageInfo,
+  listSessions,
+  createSession,
+  openInWindowsExplorer,
+  setRootDirectory
+} = require('./lib/sessionDirectoryManager');
 
 const app = express();
 const server = http.createServer(app);
@@ -106,6 +114,17 @@ async function getSessionPhotos(folderPath) {
 }
 
 // ---------------- REST API ROUTES ----------------
+
+// 0. Health Check for Container Probes & Cloud Deployment Monitoring
+app.get(['/health', '/api/health'], (req, res) => {
+  res.json({
+    status: 'ok',
+    version: '1.0.0',
+    uptime: Math.round(process.uptime()),
+    timestamp: Date.now(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // 1. Session Information
 app.get('/api/session', async (req, res) => {
@@ -466,6 +485,71 @@ app.post('/api/operator/stations/:id/reload', (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 21. Operator Directory: List All Sessions in Root Directory
+app.get('/api/operator/directory/sessions', (req, res) => {
+  try {
+    const data = listSessions(config);
+    res.json({ success: true, ...data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 22. Operator Directory: Create New Session with Template Preset
+app.post('/api/operator/directory/create', async (req, res) => {
+  try {
+    const { name, rootDir, setAsActive } = req.body;
+    const result = createSession(config, { name, rootDir, setAsActive });
+
+    if (result.isActive) {
+      printManager.setSessionDir(result.sessionPath);
+      setupActiveWatcher(result.sessionPath);
+      const photos = await getSessionPhotos(result.sessionPath);
+      broadcast({
+        type: 'SESSION_CHANGED',
+        sessionName: path.basename(result.sessionPath),
+        activeSessionPath: result.sessionPath,
+        photos
+      });
+    }
+
+    broadcast({
+      type: 'SESSION_DIRECTORIES_UPDATED',
+      ...listSessions(config)
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 23. Operator Directory: Open Folder in Host Windows Explorer
+app.post('/api/operator/directory/open-explorer', async (req, res) => {
+  try {
+    const folderPath = req.body.folderPath || config.activeSessionPath;
+    const result = await openInWindowsExplorer(folderPath);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 24. Operator Directory: Set Working Root Storage Directory
+app.post('/api/operator/directory/set-root', (req, res) => {
+  try {
+    const { rootPath } = req.body;
+    const result = setRootDirectory(config, rootPath);
+    broadcast({
+      type: 'SESSION_DIRECTORIES_UPDATED',
+      ...listSessions(config)
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 

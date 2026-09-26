@@ -140,6 +140,39 @@ class RTFTPApi {
     return await res.json();
   }
 
+  // Dedicated Session Directory Management API
+  async getDirectorySessions() {
+    const res = await fetch('/api/operator/directory/sessions');
+    return await res.json();
+  }
+
+  async createSession(name, rootDir = '', setAsActive = true) {
+    const res = await fetch('/api/operator/directory/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, rootDir, setAsActive })
+    });
+    return await res.json();
+  }
+
+  async openInExplorer(folderPath = '') {
+    const res = await fetch('/api/operator/directory/open-explorer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folderPath })
+    });
+    return await res.json();
+  }
+
+  async setRootDirectory(rootPath) {
+    const res = await fetch('/api/operator/directory/set-root', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rootPath })
+    });
+    return await res.json();
+  }
+
   // WebSocket Methods
   connectWebSocket(onStatusChange = null) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

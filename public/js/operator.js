@@ -52,6 +52,33 @@ class RTFTPOperator {
     this.stations = [];
     this.primaryLanUrl = '';
 
+    // Dedicated Directory Management Elements
+    this.navDirectoriesBadge = document.getElementById('nav-directories-badge');
+    this.mobileNavDirectoriesBadge = document.getElementById('mobile-nav-directories-badge');
+    this.dirSessionsGrid = document.getElementById('dir-sessions-grid');
+    this.dirEmptySessionsNotice = document.getElementById('dir-empty-sessions-notice');
+    this.statDirTotalSessions = document.getElementById('stat-dir-total-sessions');
+    this.statDirActiveName = document.getElementById('stat-dir-active-name');
+    this.statDirDiskFree = document.getElementById('stat-dir-disk-free');
+    this.statDirDiskPercent = document.getElementById('stat-dir-disk-percent');
+    this.dirDiskProgress = document.getElementById('dir-disk-progress');
+    this.dirDiskWarning = document.getElementById('dir-disk-warning');
+    this.dirCurrentRootPath = document.getElementById('dir-current-root-path');
+    this.dirSessionsSearch = document.getElementById('dir-sessions-search');
+    this.btnRefreshDirSessions = document.getElementById('btn-refresh-dir-sessions');
+    this.btnOpenRootExplorer = document.getElementById('btn-open-root-explorer');
+    this.btnChangeRootDir = document.getElementById('btn-change-root-dir');
+    this.btnOpenCreateSessionModal = document.getElementById('btn-open-create-session-modal');
+    this.modalCreateSession = document.getElementById('modal-create-session');
+    this.formCreateSession = document.getElementById('form-create-session');
+    this.createSessionNameInput = document.getElementById('create-session-name-input');
+    this.createSessionActiveCheckbox = document.getElementById('create-session-active-checkbox');
+    this.createSessionRootDisplay = document.getElementById('create-session-root-display');
+    this.createSessionCloseBtn = document.getElementById('create-session-close-btn');
+    this.btnCancelCreateSession = document.getElementById('btn-cancel-create-session');
+    this.directorySessions = [];
+    this.directoryRootPath = '';
+
     this.init();
   }
 
@@ -60,6 +87,7 @@ class RTFTPOperator {
     this.bindEvents();
     this.initFolderPicker();
     this.initStationsManager();
+    this.initDirectoryManager();
 
     // Connect WebSocket for live updates
     window.api.connectWebSocket((isConnected) => {
@@ -145,13 +173,15 @@ class RTFTPOperator {
   initViewRouting() {
     const viewMap = {
       '#session': 'view-session',
+      '#directories': 'view-directories',
       '#queue': 'view-queue',
       '#stations': 'view-stations',
       '#logs': 'view-logs'
     };
 
     const viewTitles = {
-      'view-session': 'Folder & Sesi',
+      'view-session': 'Ringkasan Sesi',
+      'view-directories': 'Direktori Sesi',
       'view-queue': 'Antrean Siap Cetak',
       'view-stations': 'Stasiun & Klien',
       'view-logs': 'Log Aktivitas'
@@ -527,6 +557,10 @@ class RTFTPOperator {
       }
       this.refreshData();
     });
+
+    window.api.on('SESSION_DIRECTORIES_UPDATED', (data) => {
+      this.renderDirectorySessions(data);
+    });
   }
 
   updateConnectionStatus(isConnected) {
@@ -582,6 +616,9 @@ class RTFTPOperator {
 
       // Refresh Client Workstations
       await this.refreshStations();
+
+      // Refresh Studio Session Directories
+      await this.refreshDirectorySessions();
     } catch (e) {
       console.error('Error refreshing operator data:', e);
     }
@@ -1059,9 +1096,16 @@ class RTFTPOperator {
         const targetPath = this.selectedFolderPath || this.currentBrowsePath;
         if (!targetPath) return;
 
-        this.sessionPathInput.value = targetPath;
         closeModal();
 
+        if (typeof this.folderPickerCallback === 'function') {
+          const cb = this.folderPickerCallback;
+          this.folderPickerCallback = null;
+          await cb(targetPath);
+          return;
+        }
+
+        this.sessionPathInput.value = targetPath;
         try {
           const res = await window.api.setSessionFolder(targetPath);
           if (res.success) {
@@ -1091,9 +1135,16 @@ class RTFTPOperator {
           const startDir = this.selectedFolderPath || this.currentBrowsePath || this.sessionPathInput.value;
           const res = await window.api.openNativePicker(startDir);
           if (res.success && !res.canceled && res.selectedPath) {
-            this.sessionPathInput.value = res.selectedPath;
             closeModal();
 
+            if (typeof this.folderPickerCallback === 'function') {
+              const cb = this.folderPickerCallback;
+              this.folderPickerCallback = null;
+              await cb(res.selectedPath);
+              return;
+            }
+
+            this.sessionPathInput.value = res.selectedPath;
             const applyRes = await window.api.setSessionFolder(res.selectedPath);
             if (applyRes.success) {
               this.log(`Folder dipilih via Windows Explorer: ${res.selectedPath}`, 'success');
@@ -1111,7 +1162,8 @@ class RTFTPOperator {
     }
   }
 
-  async openFolderPicker() {
+  async openFolderPicker(initialPath = null, onSelectCallback = null) {
+    this.folderPickerCallback = onSelectCallback;
     this.folderModal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
@@ -1124,8 +1176,8 @@ class RTFTPOperator {
     // Load drives and shortcuts
     await this.loadDrivesAndShortcuts();
 
-    // Start navigating from current session path input or fallback
-    const startPath = this.sessionPathInput.value.trim() || '';
+    // Start navigating from initialPath, current session path input or fallback
+    const startPath = initialPath || this.sessionPathInput.value.trim() || '';
     await this.browseToDirectory(startPath);
   }
 
@@ -1651,6 +1703,476 @@ class RTFTPOperator {
           autoAlpha: 0,
           y: 8,
           duration: 0.2,
+          stagger: 0.04,
+          ease: 'power2.out',
+          clearProps: 'transform,opacity,visibility'
+        });
+      }
+    }
+  }
+
+  /**
+   * Dedicated Photoshoot Session Directory Manager
+   */
+  initDirectoryManager() {
+    if (!this.dirSessionsGrid) return;
+
+    // Open Create Session Modal
+    if (this.btnOpenCreateSessionModal) {
+      this.btnOpenCreateSessionModal.addEventListener('click', () => {
+        if (this.modalCreateSession) {
+          this.modalCreateSession.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          if (this.createSessionNameInput) {
+            this.createSessionNameInput.value = '';
+            this.createSessionNameInput.focus();
+          }
+          if (this.createSessionRootDisplay) {
+            this.createSessionRootDisplay.textContent = this.directoryRootPath || '-';
+          }
+          // Reset pills selection
+          this.modalCreateSession.querySelectorAll('.btn-template-pill').forEach(p => p.classList.remove('is-selected'));
+        }
+      });
+    }
+
+    // Close Create Session Modal
+    const closeCreateModal = () => {
+      if (this.modalCreateSession) {
+        this.modalCreateSession.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    };
+
+    if (this.createSessionCloseBtn) this.createSessionCloseBtn.addEventListener('click', closeCreateModal);
+    if (this.btnCancelCreateSession) this.btnCancelCreateSession.addEventListener('click', closeCreateModal);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modalCreateSession && this.modalCreateSession.style.display === 'flex') {
+        closeCreateModal();
+      }
+    });
+
+    // Template Preset Pills Click
+    if (this.modalCreateSession) {
+      const pills = this.modalCreateSession.querySelectorAll('.btn-template-pill');
+      pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          pills.forEach(p => p.classList.remove('is-selected'));
+          pill.classList.add('is-selected');
+
+          const preset = pill.getAttribute('data-preset') || 'Photoshoot';
+          const now = new Date();
+          const yyyy = now.getFullYear();
+          const mm = String(now.getMonth() + 1).padStart(2, '0');
+          const dd = String(now.getDate()).padStart(2, '0');
+          if (this.createSessionNameInput) {
+            this.createSessionNameInput.value = `${yyyy}-${mm}-${dd}_${preset}_`;
+            this.createSessionNameInput.focus();
+          }
+        });
+      });
+    }
+
+    // Submit Create Session Form
+    if (this.formCreateSession) {
+      this.formCreateSession.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const rawName = this.createSessionNameInput ? this.createSessionNameInput.value.trim() : '';
+        if (!rawName) return;
+
+        const setAsActive = this.createSessionActiveCheckbox ? this.createSessionActiveCheckbox.checked : true;
+        const submitBtn = document.getElementById('btn-submit-create-session');
+        const origBtnText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `<span>Membuat Folder...</span>`;
+        }
+
+        try {
+          const res = await window.api.createSession(rawName, this.directoryRootPath, setAsActive);
+          if (res.success) {
+            this.log(`Folder sesi photoshoot baru dibuat: ${res.name}`, 'success');
+            window.showToast(`Sesi photoshoot "${res.name}" berhasil dibuat!`, 'success');
+            closeCreateModal();
+            this.formCreateSession.reset();
+            await this.refreshDirectorySessions();
+            if (setAsActive) {
+              await this.refreshData();
+            }
+          } else {
+            window.showToast('Gagal membuat sesi: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origBtnText;
+          }
+        }
+      });
+    }
+
+    // Open Root Directory in Windows Explorer
+    if (this.btnOpenRootExplorer) {
+      this.btnOpenRootExplorer.addEventListener('click', async () => {
+        try {
+          const res = await window.api.openInExplorer(this.directoryRootPath);
+          if (res.success) {
+            window.showToast(`Membuka folder induk di Windows Explorer`, 'blue');
+            this.log(`Membuka folder induk di Windows Explorer: ${res.openedPath}`, 'info');
+          } else {
+            window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // Change Root Directory via Interactive Folder Browser
+    if (this.btnChangeRootDir) {
+      this.btnChangeRootDir.addEventListener('click', () => {
+        this.openFolderPicker(this.directoryRootPath, async (newRootPath) => {
+          if (!newRootPath) return;
+          try {
+            const res = await window.api.setRootDirectory(newRootPath);
+            if (res.success) {
+              this.log(`Direktori induk studio diubah ke: ${newRootPath}`, 'success');
+              window.showToast('Folder induk studio berhasil diubah', 'success');
+              await this.refreshDirectorySessions();
+            } else {
+              window.showToast('Gagal mengubah direktori induk: ' + res.error, 'danger');
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+          }
+        });
+      });
+    }
+
+    // Search / Filter Input
+    if (this.dirSessionsSearch) {
+      this.dirSessionsSearch.addEventListener('input', () => {
+        if (this.lastDirectoryData) {
+          this.renderDirectorySessions(this.lastDirectoryData, false);
+        }
+      });
+    }
+
+    // Refresh Directory Sessions Button
+    if (this.btnRefreshDirSessions) {
+      this.btnRefreshDirSessions.addEventListener('click', async () => {
+        await this.refreshDirectorySessions();
+        window.showToast('Daftar sesi diperbarui', 'info');
+      });
+    }
+  }
+
+  /**
+   * Fetch session directories and drive storage metrics
+   */
+  async refreshDirectorySessions() {
+    try {
+      const res = await window.api.getDirectorySessions();
+      if (res && res.success) {
+        this.renderDirectorySessions(res);
+      }
+    } catch (err) {
+      console.warn('Gagal memuat direktori sesi:', err.message);
+    }
+  }
+
+  /**
+   * Render Session Directory Cards, Storage Info, and Thumbnail Strips
+   */
+  renderDirectorySessions(data, animate = true) {
+    if (!data || !this.dirSessionsGrid) return;
+    this.lastDirectoryData = data;
+    this.directorySessions = data.sessions || [];
+    this.directoryRootPath = data.rootPath || '';
+
+    // Update Navigation Badges
+    const count = this.directorySessions.length;
+    if (this.navDirectoriesBadge) {
+      this.navDirectoriesBadge.textContent = count;
+      this.navDirectoriesBadge.classList.toggle('has-items', count > 0);
+    }
+    if (this.mobileNavDirectoriesBadge) {
+      this.mobileNavDirectoriesBadge.textContent = count;
+      this.mobileNavDirectoriesBadge.classList.toggle('has-items', count > 0);
+    }
+
+    // Update Metric Stat Cards
+    if (this.statDirTotalSessions) {
+      this.statDirTotalSessions.textContent = count;
+    }
+
+    const activeSession = this.directorySessions.find(s => s.isActive);
+    if (this.statDirActiveName) {
+      if (activeSession) {
+        this.statDirActiveName.textContent = activeSession.name;
+        this.statDirActiveName.title = activeSession.path;
+      } else {
+        this.statDirActiveName.textContent = '(Tidak Ada Sesi Aktif)';
+        this.statDirActiveName.title = '';
+      }
+    }
+
+    // Update Storage Info Gauge
+    if (data.storageInfo) {
+      const { freeGB, totalGB, usedPercent, driveLetter, isLowSpace } = data.storageInfo;
+      if (this.statDirDiskFree) {
+        this.statDirDiskFree.textContent = `${freeGB} Sisa (${driveLetter})`;
+      }
+      if (this.statDirDiskPercent) {
+        this.statDirDiskPercent.textContent = `${usedPercent}% Terpakai dari ${totalGB}`;
+      }
+      if (this.dirDiskProgress) {
+        this.dirDiskProgress.style.width = `${Math.min(100, Math.max(0, usedPercent))}%`;
+      }
+      if (this.dirDiskWarning) {
+        this.dirDiskWarning.style.display = isLowSpace ? 'block' : 'none';
+      }
+    }
+
+    // Update Current Root Display
+    if (this.dirCurrentRootPath) {
+      this.dirCurrentRootPath.textContent = this.directoryRootPath || '-';
+      this.dirCurrentRootPath.title = this.directoryRootPath || '';
+    }
+    if (this.createSessionRootDisplay) {
+      this.createSessionRootDisplay.textContent = this.directoryRootPath || '-';
+    }
+
+    // Filter Sessions by Search Query
+    const query = (this.dirSessionsSearch ? this.dirSessionsSearch.value : '').trim().toLowerCase();
+    const filteredSessions = query
+      ? this.directorySessions.filter(s => s.name.toLowerCase().includes(query) || s.path.toLowerCase().includes(query))
+      : this.directorySessions;
+
+    // Empty state handling
+    if (filteredSessions.length === 0) {
+      this.dirSessionsGrid.innerHTML = '';
+      if (this.dirEmptySessionsNotice) {
+        this.dirEmptySessionsNotice.style.display = 'block';
+        if (query) {
+          const titleEl = this.dirEmptySessionsNotice.querySelector('div');
+          const pEl = this.dirEmptySessionsNotice.querySelector('p');
+          if (titleEl) titleEl.textContent = `Tidak Ditemukan Sesi "${query}"`;
+          if (pEl) pEl.textContent = 'Silakan coba kata kunci pencarian lain atau buat folder sesi baru.';
+        } else {
+          const titleEl = this.dirEmptySessionsNotice.querySelector('div');
+          const pEl = this.dirEmptySessionsNotice.querySelector('p');
+          if (titleEl) titleEl.textContent = 'Belum Ada Folder Sesi Ditemukan';
+          if (pEl) pEl.textContent = 'Tidak ada folder photoshoot di dalam direktori induk saat ini. Klik tombol "+ Buat Sesi Baru" di atas untuk membuat sesi foto pertama Anda.';
+        }
+      }
+      return;
+    }
+
+    if (this.dirEmptySessionsNotice) {
+      this.dirEmptySessionsNotice.style.display = 'none';
+    }
+
+    this.dirSessionsGrid.innerHTML = '';
+
+    filteredSessions.forEach(s => {
+      const card = document.createElement('div');
+      card.className = `session-dir-card ${s.isActive ? 'is-active' : ''}`;
+
+      const dateStr = s.mtime
+        ? new Date(s.mtime).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '-';
+
+      // Thumbnail strip generator (up to 4 thumbnails)
+      let thumbStripHtml = '';
+      if (s.previewPhotos && s.previewPhotos.length > 0) {
+        const thumbItems = s.previewPhotos.map(photo => {
+          const thumbUrl = `/api/photo/${encodeURIComponent(photo)}/thumb?session=${encodeURIComponent(s.path)}`;
+          return `
+            <div class="session-thumb-item" title="${photo}">
+              <img src="${thumbUrl}" alt="${photo}" loading="lazy" onerror="this.parentElement.style.display='none'"/>
+            </div>
+          `;
+        }).join('');
+        thumbStripHtml = `<div class="session-thumb-strip">${thumbItems}</div>`;
+      } else {
+        thumbStripHtml = `
+          <div class="session-thumb-strip">
+            <div class="session-thumb-empty-placeholder">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              <span>Belum ada foto di sesi ini</span>
+            </div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="session-dir-header">
+          <div class="session-dir-title-area">
+            <h3 class="session-dir-title" title="${s.name}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${s.isActive ? 'var(--accent-gold)' : 'currentColor'}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>${s.name}</span>
+            </h3>
+            <div class="session-dir-time">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span>Diperbarui: ${dateStr}</span>
+            </div>
+          </div>
+          <div>
+            ${s.isActive
+              ? `<span class="badge-session-active"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-green);"></span> SESI AKTIF</span>`
+              : `<span class="badge-session-archive">TERSEDIA</span>`
+            }
+          </div>
+        </div>
+
+        <div class="session-dir-body">
+          <div class="session-dir-path-row" title="${s.path}">
+            <span class="session-dir-path-text">${s.path}</span>
+            <button class="btn btn-sm btn-copy-dir-path" data-path="${s.path}" style="padding: 3px 8px; font-size: 0.72rem; flex-shrink: 0;" title="Salin path lengkap">
+              Salin
+            </button>
+          </div>
+
+          <div class="session-dir-meta-row">
+            <span class="session-photo-count-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <strong>${s.photoCount}</strong> Foto Tersimpan
+            </span>
+          </div>
+
+          ${thumbStripHtml}
+        </div>
+
+        <div class="session-dir-footer">
+          <div class="session-dir-actions-left">
+            <button class="btn-dir-explorer" data-path="${s.path}" title="Buka folder sesi ini langsung di Windows Explorer komputer">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Buka di Explorer</span>
+            </button>
+            <button class="btn-dir-gallery" data-path="${s.path}" title="Buka dan tinjau galeri foto sesi ini di layar klien">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <span>Galeri</span>
+            </button>
+          </div>
+
+          <div>
+            ${s.isActive
+              ? `<button class="btn-dir-activate is-current" disabled title="Sesi ini sedang aktif digunakan">✓ Sesi Aktif</button>`
+              : `<button class="btn-dir-activate btn-make-active" data-path="${s.path}" data-name="${s.name}" title="Jadikan folder ini sebagai sesi aktif untuk klien dan operator">Jadikan Sesi Aktif</button>`
+            }
+          </div>
+        </div>
+      `;
+
+      // Wire Copy Path Button
+      const copyBtn = card.querySelector('.btn-copy-dir-path');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          const pathVal = copyBtn.getAttribute('data-path');
+          if (navigator.clipboard && pathVal) {
+            navigator.clipboard.writeText(pathVal).then(() => {
+              copyBtn.textContent = 'Disalin!';
+              setTimeout(() => { copyBtn.textContent = 'Salin'; }, 2000);
+            });
+          }
+        });
+      }
+
+      // Wire Open in Explorer Button
+      const explorerBtn = card.querySelector('.btn-dir-explorer');
+      if (explorerBtn) {
+        explorerBtn.addEventListener('click', async () => {
+          const p = explorerBtn.getAttribute('data-path');
+          try {
+            const res = await window.api.openInExplorer(p);
+            if (res.success) {
+              window.showToast(`Membuka folder di Explorer: ${s.name}`, 'blue');
+              this.log(`Folder dibuka di Windows Explorer: ${s.name}`, 'info');
+            } else {
+              window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+          }
+        });
+      }
+
+      // Wire Open Gallery Button
+      const galleryBtn = card.querySelector('.btn-dir-gallery');
+      if (galleryBtn) {
+        galleryBtn.addEventListener('click', async () => {
+          const p = galleryBtn.getAttribute('data-path');
+          if (!s.isActive) {
+            try {
+              await window.api.setSessionFolder(p);
+              await this.refreshData();
+              await this.refreshDirectorySessions();
+            } catch (err) {}
+          }
+          window.location.hash = '#session';
+        });
+      }
+
+      // Wire Make Active Button
+      const activateBtn = card.querySelector('.btn-make-active');
+      if (activateBtn) {
+        activateBtn.addEventListener('click', async () => {
+          const p = activateBtn.getAttribute('data-path');
+          const name = activateBtn.getAttribute('data-name');
+          activateBtn.disabled = true;
+          activateBtn.textContent = 'Mengaktifkan...';
+
+          try {
+            const res = await window.api.setSessionFolder(p);
+            if (res.success) {
+              this.log(`Sesi aktif dialihkan ke: ${name}`, 'success');
+              window.showToast(`Sesi photoshoot "${name}" sekarang aktif!`, 'success');
+              await this.refreshData();
+              await this.refreshDirectorySessions();
+            } else {
+              window.showToast('Gagal mengaktifkan sesi: ' + res.error, 'danger');
+              activateBtn.disabled = false;
+              activateBtn.textContent = 'Jadikan Sesi Aktif';
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+            activateBtn.disabled = false;
+            activateBtn.textContent = 'Jadikan Sesi Aktif';
+          }
+        });
+      }
+
+      this.dirSessionsGrid.appendChild(card);
+    });
+
+    // GSAP Stagger Entrance
+    if (animate && window.gsap) {
+      const cards = this.dirSessionsGrid.querySelectorAll('.session-dir-card');
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!prefersReducedMotion && cards.length > 0) {
+        gsap.from(cards, {
+          autoAlpha: 0,
+          y: 10,
+          duration: 0.22,
           stagger: 0.04,
           ease: 'power2.out',
           clearProps: 'transform,opacity,visibility'
