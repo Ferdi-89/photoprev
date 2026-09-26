@@ -5,6 +5,7 @@
 class RTFTPGallery {
   constructor() {
     this.photos = [];
+    this.expandedPhotos = new Set();
     this.activeFilter = 'all'; // 'all' | 'selected'
     this.currentGridCols = 'cols-4';
 
@@ -83,6 +84,42 @@ class RTFTPGallery {
       compareBtn.addEventListener('click', () => {
         window.compareManager.open();
       });
+    }
+  }
+
+  isExpanded(filename) {
+    return this.expandedPhotos.has(filename);
+  }
+
+  expandCard(filename) {
+    this.expandedPhotos.add(filename);
+    const cardId = `card-${filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const card = document.getElementById(cardId);
+    if (card) {
+      card.classList.add('is-expanded');
+      card.setAttribute('aria-expanded', 'true');
+      const expandBtn = card.querySelector('.btn-expand-grid');
+      if (expandBtn) expandBtn.title = 'Perkecil tampilan di galeri';
+    }
+  }
+
+  collapseCard(filename) {
+    this.expandedPhotos.delete(filename);
+    const cardId = `card-${filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const card = document.getElementById(cardId);
+    if (card) {
+      card.classList.remove('is-expanded');
+      card.setAttribute('aria-expanded', 'false');
+      const expandBtn = card.querySelector('.btn-expand-grid');
+      if (expandBtn) expandBtn.title = 'Perbesar tampilan di galeri';
+    }
+  }
+
+  toggleCardExpansion(filename) {
+    if (this.isExpanded(filename)) {
+      this.collapseCard(filename);
+    } else {
+      this.expandCard(filename);
     }
   }
 
@@ -228,14 +265,16 @@ class RTFTPGallery {
     filtered.forEach((photo, index) => {
       const isSelected = window.selectionManager.isSelected(photo.filename);
       const inCompare = window.compareManager.isCompared(photo.filename);
+      const isExpanded = this.isExpanded(photo.filename);
       const isLandscape = (photo.aspectRatio && parseFloat(photo.aspectRatio) > 1.05) || (photo.width > photo.height);
 
       const card = document.createElement('div');
-      card.className = `photo-card ${isLandscape ? 'is-landscape' : 'is-portrait'} ${isSelected ? 'selected' : ''} ${inCompare ? 'in-compare' : ''}`;
+      card.className = `photo-card ${isLandscape ? 'is-landscape' : 'is-portrait'} ${isSelected ? 'selected' : ''} ${inCompare ? 'in-compare' : ''} ${isExpanded ? 'is-expanded' : ''}`;
       card.setAttribute('data-filename', photo.filename);
       card.setAttribute('tabindex', '0');
       card.setAttribute('role', 'button');
       card.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      card.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
       card.setAttribute('aria-label', `Foto ${photo.filename}, ${isSelected ? 'terpilih' : 'belum dipilih'}`);
       card.id = `card-${photo.filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
@@ -252,8 +291,16 @@ class RTFTPGallery {
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
           </div>
+          <div class="card-expanded-indicator">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+            <span>Fokus Detail</span>
+          </div>
           <div class="card-overlay">
             <div class="overlay-actions">
+              <button type="button" class="btn-expand-grid" title="${isExpanded ? 'Perkecil tampilan di galeri' : 'Perbesar tampilan di galeri'}" aria-label="Ubah ukuran tampilan foto ${photo.filename}">
+                <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                <svg class="icon-shrink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+              </button>
               <button type="button" class="btn-compare-toggle" title="Tambah ke perbandingan" aria-label="Bandingkan foto ${photo.filename}">
                 <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               </button>
@@ -269,8 +316,8 @@ class RTFTPGallery {
       // Touchscreen Kiosk Ergonomics: Single tap selects for print; fast double-tap opens Fullscreen Lightbox!
       let lastTapTime = 0;
       card.addEventListener('click', (e) => {
-        // Prevent selection if clicking the explicit zoom or compare buttons
-        if (e.target.closest('.btn-zoom-preview') || e.target.closest('.btn-compare-toggle')) return;
+        // Prevent selection if clicking the explicit zoom, compare, or expand buttons
+        if (e.target.closest('.btn-zoom-preview') || e.target.closest('.btn-compare-toggle') || e.target.closest('.btn-expand-grid')) return;
 
         const currentTime = Date.now();
         const tapInterval = currentTime - lastTapTime;
@@ -295,6 +342,15 @@ class RTFTPGallery {
           }
         }
       });
+
+      // Dedicated In-Grid Expand / Shrink toggle button
+      const expandBtn = card.querySelector('.btn-expand-grid');
+      if (expandBtn) {
+        expandBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleCardExpansion(photo.filename);
+        });
+      }
 
       // Dedicated Fullscreen Preview Button -> Opens Lightbox modal
       const zoomBtn = card.querySelector('.btn-zoom-preview');
