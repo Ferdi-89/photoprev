@@ -11,6 +11,13 @@ const { startWatcher } = require('./lib/watcher');
 const printManager = require('./lib/printManager');
 const { generateSamplePhotos } = require('./lib/demoData');
 const { getLanInterfaces, printNetworkBanner } = require('./lib/network');
+const {
+  getSystemDrives,
+  getSystemShortcuts,
+  browseDirectory,
+  createFolder,
+  openNativePicker
+} = require('./lib/folderBrowser');
 
 const app = express();
 const server = http.createServer(app);
@@ -105,7 +112,8 @@ app.get('/api/session', async (req, res) => {
       totalPhotos: photos.length,
       totalSelections: selections.length,
       printSizes: config.printSizes,
-      watermark: config.watermark
+      watermark: config.watermark,
+      recentFolders: config.recentFolders || []
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -329,6 +337,61 @@ app.post('/api/demo/generate', async (req, res) => {
       photos
     });
     res.json({ success: true, message: 'Foto demo berhasil dibuat!', totalPhotos: photos.length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 12. Operator Folder Browser: Get System Drives & Shortcuts
+app.get('/api/operator/drives', (req, res) => {
+  try {
+    const drives = getSystemDrives();
+    const shortcuts = getSystemShortcuts(config.activeSessionPath);
+    res.json({
+      success: true,
+      drives,
+      shortcuts,
+      activeSessionPath: config.activeSessionPath
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 13. Operator Folder Browser: Browse Directory Tree
+app.get('/api/operator/browse-dir', (req, res) => {
+  try {
+    const targetPath = req.query.path || config.activeSessionPath;
+    const result = browseDirectory(targetPath, config.activeSessionPath);
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 14. Operator Folder Browser: Create New Subfolder
+app.post('/api/operator/create-folder', (req, res) => {
+  try {
+    const { parentPath, folderName } = req.body;
+    if (!parentPath || !folderName) {
+      return res.status(400).json({ success: false, error: 'Parent path dan nama folder harus diisi' });
+    }
+    const result = createFolder(parentPath, folderName);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 15. Operator Folder Browser: Launch Native Windows Folder Picker Dialog
+app.post('/api/operator/open-native-picker', async (req, res) => {
+  try {
+    const initialDir = req.body.initialDir || config.activeSessionPath;
+    const result = await openNativePicker(initialDir);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

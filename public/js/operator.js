@@ -46,6 +46,7 @@ class RTFTPOperator {
   async init() {
     this.initViewRouting();
     this.bindEvents();
+    this.initFolderPicker();
 
     // Connect WebSocket for live updates
     window.api.connectWebSocket((isConnected) => {
@@ -521,6 +522,7 @@ class RTFTPOperator {
       if (session.success) {
         this.currentPathDisplay.textContent = session.activeSessionPath;
         this.sessionPathInput.value = session.activeSessionPath;
+        this.renderRecentFolders(session.recentFolders || [], session.activeSessionPath);
       }
 
       const photos = photosRes.success ? photosRes.photos : [];
@@ -852,6 +854,470 @@ class RTFTPOperator {
           clearProps: "transform,opacity,visibility"
         });
       }
+    }
+  }
+
+  /**
+   * Render Recent Session Folders Quick Chips
+   */
+  renderRecentFolders(recentFolders, activePath) {
+    const wrapper = document.getElementById('recent-folders-wrapper');
+    const container = document.getElementById('recent-folders-list');
+    if (!wrapper || !container) return;
+
+    if (!Array.isArray(recentFolders) || recentFolders.length === 0) {
+      wrapper.style.display = 'none';
+      return;
+    }
+
+    wrapper.style.display = 'block';
+    container.innerHTML = '';
+
+    recentFolders.forEach(folderPath => {
+      if (!folderPath) return;
+      const parts = folderPath.replace(/\\/g, '/').split('/').filter(Boolean);
+      const folderName = parts[parts.length - 1] || folderPath;
+      const isActive = folderPath.toLowerCase() === (activePath || '').toLowerCase();
+
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `recent-folder-chip${isActive ? ' is-active' : ''}`;
+      chip.title = folderPath;
+      chip.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="recent-folder-chip-icon">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>${folderName}</span>
+      `;
+
+      chip.addEventListener('click', async () => {
+        if (isActive) return;
+        this.sessionPathInput.value = folderPath;
+        try {
+          const res = await window.api.setSessionFolder(folderPath);
+          if (res.success) {
+            this.log(`Folder sesi diganti ke: ${folderPath}`, 'success');
+            window.showToast(`Sesi aktif beralih ke: ${folderName}`, 'success');
+            await this.refreshData();
+          } else {
+            window.showToast('Gagal memuat folder: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+
+      container.appendChild(chip);
+    });
+  }
+
+  /**
+   * Interactive In-App Folder Browser and Native Windows Picker
+   */
+  initFolderPicker() {
+    this.btnBrowseFolder = document.getElementById('btn-browse-folder');
+    this.folderModal = document.getElementById('folder-picker-modal');
+    this.folderBackdrop = document.getElementById('folder-picker-backdrop');
+    this.folderCloseBtn = document.getElementById('folder-picker-close-btn');
+    this.btnFolderCancel = document.getElementById('btn-folder-cancel');
+    this.btnFolderConfirm = document.getElementById('btn-folder-select-confirm');
+    this.btnNativePicker = document.getElementById('btn-native-picker');
+    this.btnFolderUp = document.getElementById('btn-folder-up');
+    this.btnCreateSubfolder = document.getElementById('btn-create-subfolder');
+    this.folderSearchInput = document.getElementById('folder-search-input');
+    this.folderItemsContainer = document.getElementById('folder-items-container');
+    this.folderDrivesContainer = document.getElementById('folder-picker-drives');
+    this.folderShortcutsContainer = document.getElementById('folder-picker-shortcuts');
+    this.folderBreadcrumbs = document.getElementById('folder-breadcrumbs');
+    this.folderPreviewPath = document.getElementById('folder-selected-path-preview');
+    this.folderCountBadge = document.getElementById('folder-selected-count-badge');
+
+    if (!this.folderModal) return;
+
+    this.currentBrowsePath = '';
+    this.parentBrowsePath = '';
+    this.selectedFolderPath = '';
+    this.selectedFolderPhotoCount = 0;
+    this.currentFoldersList = [];
+    this.searchFilter = '';
+
+    // Open Modal Trigger
+    if (this.btnBrowseFolder) {
+      this.btnBrowseFolder.addEventListener('click', () => {
+        this.openFolderPicker();
+      });
+    }
+
+    // Close Modal Triggers
+    const closeModal = () => {
+      this.folderModal.style.display = 'none';
+      document.body.style.overflow = '';
+    };
+
+    if (this.folderCloseBtn) this.folderCloseBtn.addEventListener('click', closeModal);
+    if (this.folderBackdrop) this.folderBackdrop.addEventListener('click', closeModal);
+    if (this.btnFolderCancel) this.btnFolderCancel.addEventListener('click', closeModal);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.folderModal.style.display === 'flex') {
+        closeModal();
+      }
+    });
+
+    // Up / Parent Directory Trigger
+    if (this.btnFolderUp) {
+      this.btnFolderUp.addEventListener('click', () => {
+        if (this.parentBrowsePath) {
+          this.browseToDirectory(this.parentBrowsePath);
+        }
+      });
+    }
+
+    // Search filter input
+    if (this.folderSearchInput) {
+      this.folderSearchInput.addEventListener('input', (e) => {
+        this.searchFilter = (e.target.value || '').trim().toLowerCase();
+        this.renderFolderList();
+      });
+    }
+
+    // Create New Subfolder
+    if (this.btnCreateSubfolder) {
+      this.btnCreateSubfolder.addEventListener('click', async () => {
+        if (!this.currentBrowsePath) return;
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+        const defaultName = `Sesi_${dateStr}`;
+        const folderName = window.prompt('Masukkan nama folder sesi pemotretan baru:', defaultName);
+        if (!folderName || !folderName.trim()) return;
+
+        try {
+          const res = await window.api.createFolder(this.currentBrowsePath, folderName.trim());
+          if (res.success) {
+            window.showToast(`Folder "${folderName.trim()}" berhasil dibuat`, 'success');
+            this.log(`Folder baru dibuat: ${res.folderPath}`, 'success');
+            await this.browseToDirectory(res.folderPath);
+          } else {
+            window.showToast('Gagal membuat folder: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // Confirm Folder Selection
+    if (this.btnFolderConfirm) {
+      this.btnFolderConfirm.addEventListener('click', async () => {
+        const targetPath = this.selectedFolderPath || this.currentBrowsePath;
+        if (!targetPath) return;
+
+        this.sessionPathInput.value = targetPath;
+        closeModal();
+
+        try {
+          const res = await window.api.setSessionFolder(targetPath);
+          if (res.success) {
+            this.log(`Folder sesi aktif diubah ke: ${targetPath}`, 'success');
+            window.showToast('Folder sesi aktif berhasil diperbarui', 'success');
+            await this.refreshData();
+          } else {
+            window.showToast('Gagal mengganti folder: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // Native Windows Picker (PowerShell Host Dialog)
+    if (this.btnNativePicker) {
+      this.btnNativePicker.addEventListener('click', async () => {
+        const originalContent = this.btnNativePicker.innerHTML;
+        this.btnNativePicker.disabled = true;
+        this.btnNativePicker.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="spin"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+          <span>Membuka Explorer...</span>
+        `;
+
+        try {
+          const startDir = this.selectedFolderPath || this.currentBrowsePath || this.sessionPathInput.value;
+          const res = await window.api.openNativePicker(startDir);
+          if (res.success && !res.canceled && res.selectedPath) {
+            this.sessionPathInput.value = res.selectedPath;
+            closeModal();
+
+            const applyRes = await window.api.setSessionFolder(res.selectedPath);
+            if (applyRes.success) {
+              this.log(`Folder dipilih via Windows Explorer: ${res.selectedPath}`, 'success');
+              window.showToast('Folder sesi aktif berhasil diperbarui', 'success');
+              await this.refreshData();
+            }
+          }
+        } catch (err) {
+          window.showToast('Gagal membuka dialog Windows: ' + err.message, 'danger');
+        } finally {
+          this.btnNativePicker.disabled = false;
+          this.btnNativePicker.innerHTML = originalContent;
+        }
+      });
+    }
+  }
+
+  async openFolderPicker() {
+    this.folderModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Clear search filter
+    if (this.folderSearchInput) {
+      this.folderSearchInput.value = '';
+      this.searchFilter = '';
+    }
+
+    // Load drives and shortcuts
+    await this.loadDrivesAndShortcuts();
+
+    // Start navigating from current session path input or fallback
+    const startPath = this.sessionPathInput.value.trim() || '';
+    await this.browseToDirectory(startPath);
+  }
+
+  async loadDrivesAndShortcuts() {
+    try {
+      const data = await window.api.getOperatorDrives();
+      if (!data.success) return;
+
+      // Render Drives
+      if (this.folderDrivesContainer) {
+        this.folderDrivesContainer.innerHTML = '';
+        (data.drives || []).forEach(drive => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'drive-chip';
+          btn.title = drive.label || drive.name;
+          btn.innerHTML = `
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="12" x2="2" y2="12"></line>
+              <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+              <line x1="6" y1="16" x2="6.01" y2="16"></line>
+              <line x1="10" y1="16" x2="10.01" y2="16"></line>
+            </svg>
+            <span>${drive.name}</span>
+          `;
+          btn.addEventListener('click', () => {
+            this.browseToDirectory(drive.path);
+          });
+          this.folderDrivesContainer.appendChild(btn);
+        });
+      }
+
+      // Render Shortcuts
+      if (this.folderShortcutsContainer) {
+        this.folderShortcutsContainer.innerHTML = '';
+        (data.shortcuts || []).forEach(sc => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'shortcut-chip';
+          btn.title = sc.path;
+          btn.innerHTML = `<span>${sc.name}</span>`;
+          btn.addEventListener('click', () => {
+            this.browseToDirectory(sc.path);
+          });
+          this.folderShortcutsContainer.appendChild(btn);
+        });
+      }
+    } catch (err) {
+      console.warn('Gagal memuat drives & shortcuts:', err);
+    }
+  }
+
+  async browseToDirectory(dirPath) {
+    if (!this.folderItemsContainer) return;
+
+    this.folderItemsContainer.innerHTML = `
+      <div class="folder-loading-state">
+        <div class="spinner"></div>
+        <span>Membaca direktori folder...</span>
+      </div>
+    `;
+
+    try {
+      const result = await window.api.browseDirectory(dirPath);
+      if (!result.success) {
+        this.folderItemsContainer.innerHTML = `
+          <div class="folder-empty-state">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--accent-red);"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            <div>Gagal membuka folder: ${result.error || 'Akses ditolak atau direktori tidak ditemukan'}</div>
+          </div>
+        `;
+        return;
+      }
+
+      this.currentBrowsePath = result.currentPath;
+      this.parentBrowsePath = result.parentPath || '';
+      this.selectedFolderPath = result.currentPath;
+      this.selectedFolderPhotoCount = result.photoCount || 0;
+      this.currentFoldersList = result.folders || [];
+
+      // Up button state
+      if (this.btnFolderUp) {
+        this.btnFolderUp.disabled = !this.parentBrowsePath;
+      }
+
+      // Update Breadcrumbs
+      this.renderBreadcrumbs(result.breadcrumbs || []);
+
+      // Highlight active drive / shortcuts
+      this.updateActiveDriveChip(result.currentPath);
+
+      // Render Folders
+      this.renderFolderList();
+
+      // Update Footer Preview
+      this.updateFooterSelection(this.selectedFolderPath, this.selectedFolderPhotoCount);
+    } catch (err) {
+      this.folderItemsContainer.innerHTML = `
+        <div class="folder-empty-state">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--accent-red);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <div>Terjadi kesalahan saat memuat direktori: ${err.message}</div>
+        </div>
+      `;
+    }
+  }
+
+  renderBreadcrumbs(breadcrumbs) {
+    if (!this.folderBreadcrumbs) return;
+    this.folderBreadcrumbs.innerHTML = '';
+
+    breadcrumbs.forEach((item, idx) => {
+      const isLast = idx === breadcrumbs.length - 1;
+      const bItem = document.createElement('span');
+      bItem.className = `breadcrumb-item${isLast ? ' is-current' : ''}`;
+      bItem.textContent = item.name;
+
+      if (!isLast) {
+        bItem.title = item.path;
+        bItem.addEventListener('click', () => {
+          this.browseToDirectory(item.path);
+        });
+      }
+
+      this.folderBreadcrumbs.appendChild(bItem);
+
+      if (!isLast) {
+        const sep = document.createElement('span');
+        sep.className = 'breadcrumb-separator';
+        sep.textContent = '>';
+        this.folderBreadcrumbs.appendChild(sep);
+      }
+    });
+
+    // Scroll breadcrumbs to end
+    this.folderBreadcrumbs.scrollLeft = this.folderBreadcrumbs.scrollWidth;
+  }
+
+  updateActiveDriveChip(currentPath) {
+    if (!this.folderDrivesContainer) return;
+    const driveChips = this.folderDrivesContainer.querySelectorAll('.drive-chip');
+    driveChips.forEach(chip => {
+      const text = chip.textContent.trim().toUpperCase();
+      const isActive = currentPath.toUpperCase().startsWith(text);
+      chip.classList.toggle('is-active', isActive);
+    });
+  }
+
+  renderFolderList() {
+    if (!this.folderItemsContainer) return;
+
+    let folders = this.currentFoldersList;
+    if (this.searchFilter) {
+      folders = folders.filter(f => f.name.toLowerCase().includes(this.searchFilter));
+    }
+
+    if (folders.length === 0) {
+      this.folderItemsContainer.innerHTML = `
+        <div class="folder-empty-state">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--text-dim);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          <div>${this.searchFilter ? 'Tidak ada subfolder yang cocok dengan pencarian' : 'Tidak ada subfolder di direktori ini'}</div>
+        </div>
+      `;
+      return;
+    }
+
+    this.folderItemsContainer.innerHTML = '';
+
+    folders.forEach(f => {
+      const isSelected = this.selectedFolderPath.toLowerCase() === f.path.toLowerCase();
+      const itemEl = document.createElement('div');
+      itemEl.className = `folder-item${isSelected ? ' is-selected' : ''}`;
+      itemEl.title = `${f.name} (${f.photoCount} foto pemotretan)`;
+
+      const photoBadge = f.photoCount > 0
+        ? `<span class="folder-badge-photos">${f.photoCount} foto</span>`
+        : `<span style="font-size: 0.70rem; color: var(--text-dim);">kosong</span>`;
+
+      itemEl.innerHTML = `
+        <div class="folder-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <div class="folder-item-body">
+          <div class="folder-item-name">${f.name}</div>
+          <div class="folder-item-meta">
+            ${photoBadge}
+          </div>
+        </div>
+        <button class="folder-item-enter-btn" title="Buka dan masuki folder ini">Buka ></button>
+      `;
+
+      // Single click selects folder
+      itemEl.addEventListener('click', (e) => {
+        if (e.target.closest('.folder-item-enter-btn')) return;
+        this.selectFolderItem(f.path, f.photoCount);
+      });
+
+      // Double click navigates into folder
+      itemEl.addEventListener('dblclick', () => {
+        this.browseToDirectory(f.path);
+      });
+
+      // Enter button navigates into folder
+      const enterBtn = itemEl.querySelector('.folder-item-enter-btn');
+      if (enterBtn) {
+        enterBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.browseToDirectory(f.path);
+        });
+      }
+
+      this.folderItemsContainer.appendChild(itemEl);
+    });
+  }
+
+  selectFolderItem(folderPath, photoCount) {
+    this.selectedFolderPath = folderPath;
+    this.selectedFolderPhotoCount = photoCount;
+
+    // Update highlight
+    const items = this.folderItemsContainer.querySelectorAll('.folder-item');
+    items.forEach(el => {
+      const isMatch = el.title.startsWith(folderPath) || el.querySelector('.folder-item-name')?.textContent === folderPath.split('\\').pop();
+      el.classList.toggle('is-selected', isMatch);
+    });
+
+    this.updateFooterSelection(this.selectedFolderPath, this.selectedFolderPhotoCount);
+  }
+
+  updateFooterSelection(folderPath, photoCount) {
+    if (this.folderPreviewPath) {
+      this.folderPreviewPath.textContent = folderPath || '-';
+    }
+    if (this.folderCountBadge) {
+      this.folderCountBadge.textContent = `${photoCount || 0} foto photoshoot`;
+    }
+    if (this.btnFolderConfirm) {
+      this.btnFolderConfirm.disabled = !folderPath;
     }
   }
 }

@@ -346,9 +346,26 @@
             </div>
           </div>
 
-          <div class="path-box" style="margin-top: 16px;">
-            <input type="text" id="session-path-input" class="input-text" placeholder="Masukkan path folder lengkap, misal: D:\Photos\Sesi_Keluarga_01" aria-label="Path direktori sesi foto" autocomplete="off" spellcheck="false"/>
-            <button id="btn-save-folder" class="btn btn-primary">Terapkan Folder Baru</button>
+          <div class="path-box" style="margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="session-path-input" class="input-text" style="flex: 1; min-width: 240px;" placeholder="Masukkan path folder lengkap, misal: D:\Photos\Sesi_Keluarga_01" aria-label="Path direktori sesi foto" autocomplete="off" spellcheck="false"/>
+            <button id="btn-browse-folder" class="btn btn-gold" type="button" title="Buka penjelajah folder studio">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              <span>Telusuri Folder...</span>
+            </button>
+            <button id="btn-save-folder" class="btn btn-primary" type="button">Terapkan</button>
+          </div>
+
+          <!-- Quick Recent Session Folders Section -->
+          <div id="recent-folders-wrapper" style="margin-top: 14px; display: none;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Folder Sesi Sebelumnya (Klik Cepat):
+              </span>
+            </div>
+            <div id="recent-folders-list" class="recent-folders-chips" style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <!-- Populated dynamically -->
+            </div>
           </div>
         </div>
       </section>
@@ -428,6 +445,122 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Modal Penjelajah Folder Sesi (In-App Directory Browser & Explorer) -->
+  <div id="folder-picker-modal" class="folder-picker-modal" role="dialog" aria-modal="true" aria-label="Penjelajah Folder Sesi" style="display: none;">
+    <div class="folder-picker-backdrop" id="folder-picker-backdrop"></div>
+    <div class="folder-picker-card">
+      <!-- Modal Header -->
+      <div class="folder-picker-header">
+        <div class="folder-picker-title-area">
+          <div class="folder-picker-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="folder-picker-title">Telusuri Direktori Foto Sesi</h3>
+            <p class="folder-picker-subtitle">Pilih folder penyimpanan hasil pemotretan kamera studio atau buat folder sesi baru.</p>
+          </div>
+        </div>
+        <div class="folder-picker-header-actions">
+          <button id="btn-native-picker" class="btn btn-sm btn-native-explorer" type="button" title="Buka dialog pemilih folder bawaan Windows Explorer pada PC operator">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            <span>Windows Explorer</span>
+          </button>
+          <button id="folder-picker-close-btn" class="folder-picker-close-btn" type="button" aria-label="Tutup Penjelajah Folder">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Drives & Shortcut Quick-Chips -->
+      <div class="folder-picker-shortcuts-bar">
+        <div class="shortcuts-section">
+          <span class="shortcuts-label">DRIVE:</span>
+          <div id="folder-picker-drives" class="drives-chip-list">
+            <!-- Populated dynamically with C:\, D:\, etc. -->
+          </div>
+        </div>
+        <div class="shortcuts-divider"></div>
+        <div class="shortcuts-section">
+          <span class="shortcuts-label">LOKASI:</span>
+          <div id="folder-picker-shortcuts" class="shortcuts-chip-list">
+            <!-- Populated dynamically: Pictures, Desktop, Sesi Aktif, etc. -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation & Action Controls Bar -->
+      <div class="folder-picker-nav-bar">
+        <div class="folder-nav-actions">
+          <button id="btn-folder-up" class="btn btn-sm btn-nav-up" title="Naik satu tingkat (Folder Induk)" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            <span>Naik</span>
+          </button>
+          <div id="folder-breadcrumbs" class="folder-breadcrumbs" title="Lokasi Saat Ini">
+            <!-- Breadcrumbs items rendered here -->
+          </div>
+        </div>
+        <div class="folder-tools">
+          <div class="folder-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="folder-search-input" placeholder="Cari folder..." aria-label="Cari folder dalam direktori" autocomplete="off" spellcheck="false"/>
+          </div>
+          <button id="btn-create-subfolder" class="btn btn-sm btn-outline-gold" type="button" title="Buat folder sesi baru di direktori ini">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>+ Folder Baru</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Folder Grid / List View -->
+      <div id="folder-items-container" class="folder-items-container">
+        <!-- Rendered dynamically -->
+        <div class="folder-loading-state">
+          <div class="spinner"></div>
+          <span>Membaca direktori folder...</span>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="folder-picker-footer">
+        <div class="folder-picker-selection-info">
+          <div class="selected-path-label">
+            <span>Folder Terpilih:</span>
+            <span id="folder-selected-count-badge" class="badge-folder-photos">0 foto photoshoot</span>
+          </div>
+          <div id="folder-selected-path-preview" class="selected-path-preview">
+            -
+          </div>
+        </div>
+        <div class="folder-picker-footer-actions">
+          <button id="btn-folder-cancel" class="btn btn-secondary" type="button">Batal</button>
+          <button id="btn-folder-select-confirm" class="btn btn-gold" type="button" disabled>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Pilih Folder Ini</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Fullscreen Lightbox Modal (Studio Mojave Inspection View) -->

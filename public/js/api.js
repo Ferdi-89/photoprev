@@ -72,6 +72,36 @@ class RTFTPApi {
     return await res.json();
   }
 
+  // Folder Browser API Methods
+  async getOperatorDrives() {
+    const res = await fetch('/api/operator/drives');
+    return await res.json();
+  }
+
+  async browseDirectory(targetPath = '') {
+    const url = targetPath ? `/api/operator/browse-dir?path=${encodeURIComponent(targetPath)}` : '/api/operator/browse-dir';
+    const res = await fetch(url);
+    return await res.json();
+  }
+
+  async createFolder(parentPath, folderName) {
+    const res = await fetch('/api/operator/create-folder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parentPath, folderName })
+    });
+    return await res.json();
+  }
+
+  async openNativePicker(initialDir = '') {
+    const res = await fetch('/api/operator/open-native-picker', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initialDir })
+    });
+    return await res.json();
+  }
+
   // WebSocket Methods
   connectWebSocket(onStatusChange = null) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
