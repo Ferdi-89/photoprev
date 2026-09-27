@@ -1,10 +1,16 @@
 # Dependencies
 node_modules/
 
-# Runtime storage cache & print outputs
+# Runtime storage cache & customer photoshoot folders
+storage/*
+!storage/demo_session/
+!storage/.gitkeep
 storage/cache/
 storage/**/_SIAP_CETAK/
 storage/**/.rtftp_selections.json
+
+# Scratch and test workspace
+scratch/
 
 # Local AI / Agent tooling
 .agents/
@@ -22,3 +28,4 @@ Desktop.ini
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
