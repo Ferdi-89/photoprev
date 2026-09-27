@@ -55,6 +55,10 @@ class RTFTPSelection {
     document.getElementById('modal-clear-btn').addEventListener('click', () => this.confirmClearAll());
   }
 
+  getSessionPath() {
+    return (window.galleryApp && window.galleryApp.currentSessionPath) || null;
+  }
+
   async confirmClearAll() {
     if (this.totalItems === 0) return;
     const confirmed = await window.showConfirm(
@@ -64,7 +68,7 @@ class RTFTPSelection {
       true
     );
     if (confirmed) {
-      await window.api.clearSelections();
+      await window.api.clearSelections(this.getSessionPath());
       this.selections.clear();
       this.updateUI();
       this.closeModal();
@@ -100,9 +104,10 @@ class RTFTPSelection {
       navigator.vibrate(10);
     }
     const isCurrentlySelected = this.isSelected(filename);
+    const sessionPath = this.getSessionPath();
     if (isCurrentlySelected) {
       this.selections.delete(filename);
-      await window.api.setSelection(filename, false);
+      await window.api.setSelection(filename, false, null, '', sessionPath);
     } else {
       const defaultData = {
         filename,
@@ -110,7 +115,7 @@ class RTFTPSelection {
         notes: ''
       };
       this.selections.set(filename, defaultData);
-      await window.api.setSelection(filename, true, defaultData.sizes, defaultData.notes);
+      await window.api.setSelection(filename, true, defaultData.sizes, defaultData.notes, sessionPath);
     }
     this.updateUI();
 
@@ -262,8 +267,11 @@ class RTFTPSelection {
         `<option value="${s.id}" ${s.id === currentSize ? 'selected' : ''}>${s.label}</option>`
       ).join('');
 
+      const sPath = this.getSessionPath();
+      const sQuery = sPath ? `?session=${encodeURIComponent(sPath)}` : '';
+
       row.innerHTML = `
-        <img src="/api/photo/${encodeURIComponent(filename)}/original" alt="Foto #${orderIndex}" style="width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: var(--bg-primary); flex-shrink: 0;"/>
+        <img src="/api/photo/${encodeURIComponent(filename)}/original${sQuery}" alt="Foto #${orderIndex}" style="width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: var(--bg-primary); flex-shrink: 0;"/>
         <div style="flex: 1; min-width: 0;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px;">
             <span style="background: var(--color-blue-bg); color: var(--color-blue-text); border: 1px solid var(--color-blue-border); font-size: 0.72rem; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-xs); font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em;">#${orderIndex}</span>
@@ -296,7 +304,7 @@ class RTFTPSelection {
       const saveItemChanges = async (newSize, newQty) => {
         item.sizes = [{ size: newSize, qty: newQty }];
         this.selections.set(filename, item);
-        await window.api.setSelection(filename, true, item.sizes, item.notes);
+        await window.api.setSelection(filename, true, item.sizes, item.notes, this.getSessionPath());
         this.updateUI();
         this.updateModalSummary();
       };
@@ -351,7 +359,7 @@ class RTFTPSelection {
       submitBtn.disabled = true;
       submitBtn.innerHTML = 'Memproses...';
 
-      const res = await window.api.exportPrint();
+      const res = await window.api.exportPrint(this.getSessionPath());
       if (res.success) {
         window.showToast(`Pesanan siap! ${res.report.totalCopies} lembar foto siap dicetak`, 'success');
         this.closeModal();

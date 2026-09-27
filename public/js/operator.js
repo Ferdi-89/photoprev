@@ -79,6 +79,16 @@ class RTFTPOperator {
     this.directorySessions = [];
     this.directoryRootPath = '';
 
+    // Assign Session to Station Modal Elements
+    this.modalAssignSession = document.getElementById('modal-assign-station-session');
+    this.assignModalCloseBtn = document.getElementById('assign-session-close-btn');
+    this.assignModalCancelBtn = document.getElementById('btn-cancel-assign-session');
+    this.formAssignSession = document.getElementById('form-assign-session');
+    this.assignModalSessionName = document.getElementById('assign-modal-session-name');
+    this.assignModalSessionPathText = document.getElementById('assign-modal-session-path-text');
+    this.assignModalSessionPath = document.getElementById('assign-modal-session-path');
+    this.assignModalStationSelect = document.getElementById('assign-modal-station-select');
+
     // Session Timer & Customer Pacing Elements
     this.toggleTimerEnabled = document.getElementById('toggle-timer-enabled');
     this.timerStatusBadge = document.getElementById('timer-status-badge');
@@ -531,27 +541,33 @@ class RTFTPOperator {
     });
 
     window.api.on('TIMER_STARTED', (data) => {
-      this.log(`Timer sesi dimulai: ${data.formattedTime}`, 'info');
+      const timer = (data && data.timer) || data;
+      this.log(`Timer sesi dimulai: ${timer.formattedTime || ''}`, 'info');
       this.renderTimerState(data);
     });
 
     window.api.on('TIMER_PAUSED', (data) => {
-      this.log(`Timer sesi dijeda pada: ${data.formattedTime}`, 'warn');
+      const timer = (data && data.timer) || data;
+      this.log(`Timer sesi dijeda pada: ${timer.formattedTime || ''}`, 'warn');
       this.renderTimerState(data);
     });
 
     window.api.on('TIMER_RESUMED', (data) => {
-      this.log(`Timer sesi dilanjutkan: ${data.formattedTime}`, 'info');
+      const timer = (data && data.timer) || data;
+      this.log(`Timer sesi dilanjutkan: ${timer.formattedTime || ''}`, 'info');
       this.renderTimerState(data);
     });
 
     window.api.on('TIMER_EXTENDED', (data) => {
-      this.log(`Tambahan waktu +${data.addedMinutes} menit diberikan. Sisa: ${data.formattedTime}`, 'success');
+      const timer = (data && data.timer) || data;
+      const added = data.addedMinutes || (data.timer && data.timer.addedMinutes) || 5;
+      this.log(`Tambahan waktu +${added} menit diberikan. Sisa: ${timer.formattedTime || ''}`, 'success');
       this.renderTimerState(data);
     });
 
     window.api.on('TIMER_RESET', (data) => {
-      this.log(`Timer sesi di-reset: ${data.formattedTime}`, 'info');
+      const timer = (data && data.timer) || data;
+      this.log(`Timer sesi di-reset: ${timer.formattedTime || ''}`, 'info');
       this.renderTimerState(data);
     });
 
@@ -586,6 +602,12 @@ class RTFTPOperator {
       if (data.stations) {
         this.renderStations(data.stations);
       }
+    });
+
+    window.api.on('SESSION_ASSIGNED', (data) => {
+      this.log(`Stasiun "${data.stationId}" diarahkan ke: ${data.sessionName}`, 'info');
+      this.refreshStations();
+      this.refreshDirectorySessions();
     });
 
     window.api.on('PHOTO_ADDED', (data) => {
@@ -688,11 +710,11 @@ class RTFTPOperator {
       const activePath = session.activeSessionPath || selRes.activeSessionPath;
       this.renderSessionQueues(sessions, activePath);
 
+      // Refresh Studio Session Directories first so directorySessions is populated for station cards
+      await this.refreshDirectorySessions();
+
       // Refresh Client Workstations
       await this.refreshStations();
-
-      // Refresh Studio Session Directories
-      await this.refreshDirectorySessions();
     } catch (e) {
       console.error('Error refreshing operator data:', e);
     }
@@ -1685,6 +1707,31 @@ class RTFTPOperator {
               ${s.activeClientsCount > 0 ? `${s.activeClientsCount} perangkat aktif` : '0 perangkat (Standby)'}
             </span>
           </div>
+
+          <div class="station-meta-row station-session-binding">
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 0.72rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">
+                Sesi Foto Ditampilkan:
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                ${s.assignedSessionPath
+                  ? `<span class="badge-station-session-custom">Sesi Khusus</span>`
+                  : `<span class="badge-station-session-global">Sesi Global</span>`
+                }
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">
+                  ${s.photoCount || 0} foto
+                </span>
+              </div>
+            </div>
+            <select class="station-session-select" data-id="${s.id}" title="Pilih direktori sesi khusus untuk stasiun ini">
+              <option value="" ${(!s.assignedSessionPath) ? 'selected' : ''}>[ Ikuti Sesi Global: ${this.getActiveSessionName()} ]</option>
+              ${this.directorySessions.map(dir => `
+                <option value="${dir.path}" ${s.assignedSessionPath === dir.path ? 'selected' : ''}>
+                  ${dir.name} (${dir.photoCount || 0} foto)
+                </option>
+              `).join('')}
+            </select>
+          </div>
         </div>
 
         <div class="station-card-footer">
@@ -1714,6 +1761,27 @@ class RTFTPOperator {
           </button>
         </div>
       `;
+
+      // Wire Session Dropdown
+      const sessionSelect = card.querySelector('.station-session-select');
+      if (sessionSelect) {
+        sessionSelect.addEventListener('change', async (e) => {
+          const chosenPath = e.target.value;
+          try {
+            const res = await window.api.assignStationSession(s.id, chosenPath);
+            if (res.success) {
+              window.showToast(`Sesi stasiun "${s.name}" diubah ke: ${res.assignedSessionName || 'Sesi Global'}`, 'success');
+              this.log(`Stasiun "${s.name}" diarahkan ke sesi: ${res.assignedSessionName || 'Sesi Global'}`, 'info');
+              await this.refreshStations();
+              await this.refreshDirectorySessions();
+            } else {
+              window.showToast('Gagal mengubah sesi: ' + res.error, 'danger');
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+          }
+        });
+      }
 
       // Wire Copy
       const copyBtn = card.querySelector('.btn-station-copy');
@@ -1942,6 +2010,92 @@ class RTFTPOperator {
         window.showToast('Daftar sesi diperbarui', 'info');
       });
     }
+
+    // Assign Session to Station Modal Events
+    const closeAssignModal = () => {
+      if (this.modalAssignSession) {
+        this.modalAssignSession.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    };
+
+    if (this.assignModalCloseBtn) this.assignModalCloseBtn.addEventListener('click', closeAssignModal);
+    if (this.assignModalCancelBtn) this.assignModalCancelBtn.addEventListener('click', closeAssignModal);
+    const assignBackdrop = document.getElementById('assign-session-backdrop');
+    if (assignBackdrop) assignBackdrop.addEventListener('click', closeAssignModal);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modalAssignSession && this.modalAssignSession.style.display === 'flex') {
+        closeAssignModal();
+      }
+    });
+
+    if (this.formAssignSession) {
+      this.formAssignSession.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const sessionPath = this.assignModalSessionPath ? this.assignModalSessionPath.value : '';
+        const stationId = this.assignModalStationSelect ? this.assignModalStationSelect.value : '';
+        if (!stationId) return;
+
+        const submitBtn = document.getElementById('btn-submit-assign-session');
+        const origText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span>Menerapkan...</span>';
+        }
+
+        try {
+          const res = await window.api.assignStationSession(stationId, sessionPath);
+          if (res.success) {
+            this.log(`Stasiun dialihkan ke: ${res.assignedSessionName || 'Sesi Global'}`, 'success');
+            window.showToast(`Sesi berhasil diarahkan ke stasiun target!`, 'success');
+            closeAssignModal();
+            await this.refreshStations();
+            await this.refreshDirectorySessions();
+          } else {
+            window.showToast('Gagal mengalihkan sesi: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origText;
+          }
+        }
+      });
+    }
+  }
+
+  openAssignStationModal(session) {
+    if (!this.modalAssignSession || !session) return;
+    if (this.assignModalSessionName) this.assignModalSessionName.textContent = session.name;
+    if (this.assignModalSessionPathText) this.assignModalSessionPathText.textContent = session.path;
+    if (this.assignModalSessionPath) this.assignModalSessionPath.value = session.path;
+
+    if (this.assignModalStationSelect) {
+      if (!this.stations || this.stations.length === 0) {
+        this.assignModalStationSelect.innerHTML = '<option value="" disabled>Belum ada stasiun PC klien terdaftar</option>';
+      } else {
+        this.assignModalStationSelect.innerHTML = this.stations.map(st => {
+          const currentBinding = st.assignedSessionPath
+            ? `(Saat ini: ${st.assignedSessionName || 'Sesi Lain'})`
+            : `(Saat ini: Sesi Global)`;
+          const isCurrent = st.assignedSessionPath === session.path;
+          return `<option value="${st.id}" ${isCurrent ? 'selected' : ''}>${st.name} ${currentBinding}</option>`;
+        }).join('');
+      }
+    }
+
+    this.modalAssignSession.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  getActiveSessionName() {
+    const activeDir = (this.directorySessions || []).find(d => d.isActive);
+    if (activeDir) return activeDir.name;
+    if (this.currentSessionData && this.currentSessionData.sessionName) return this.currentSessionData.sessionName;
+    return 'Demo Studio';
   }
 
   /**
@@ -2128,6 +2282,18 @@ class RTFTPOperator {
           </div>
 
           ${thumbStripHtml}
+
+          ${(s.assignedStations && s.assignedStations.length > 0) ? `
+            <div class="session-assigned-stations-row">
+              <span class="assigned-stations-label">Dibuka di:</span>
+              ${s.assignedStations.map(stName => `
+                <span class="badge-station-binding">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                  <span>${stName}</span>
+                </span>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
 
         <div class="session-dir-footer">
@@ -2145,6 +2311,15 @@ class RTFTPOperator {
                 <line x1="12" y1="17" x2="12" y2="21"></line>
               </svg>
               <span>Galeri</span>
+            </button>
+            <button class="btn-dir-assign-station" data-path="${s.path}" data-name="${s.name}" title="Arahkan sesi folder ini ke salah satu stasiun PC klien">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+              <span>Arahkan ke Stasiun...</span>
             </button>
           </div>
 
@@ -2206,6 +2381,14 @@ class RTFTPOperator {
             } catch (err) {}
           }
           window.location.hash = '#session';
+        });
+      }
+
+      // Wire Assign Station Button
+      const assignStationBtn = card.querySelector('.btn-dir-assign-station');
+      if (assignStationBtn) {
+        assignStationBtn.addEventListener('click', () => {
+          this.openAssignStationModal(s);
         });
       }
 
@@ -2428,34 +2611,35 @@ class RTFTPOperator {
 
   renderTimerTick(data) {
     if (!data) return;
-    this.timerState = data;
+    const timer = (data && data.timer) || data;
+    this.timerState = timer;
 
     if (this.operatorTimerClock) {
-      this.operatorTimerClock.textContent = data.formattedTime || '00:00';
+      this.operatorTimerClock.textContent = timer.formattedTime || '00:00';
     }
 
     if (this.operatorTimerProgressFill) {
-      const pct = data.totalSeconds > 0 ? Math.max(0, Math.min(100, (data.remainingSeconds / data.totalSeconds) * 100)) : 0;
+      const pct = timer.totalSeconds > 0 ? Math.max(0, Math.min(100, (timer.remainingSeconds / timer.totalSeconds) * 100)) : 0;
       this.operatorTimerProgressFill.style.width = pct + '%';
     }
 
     if (this.timerClockBox) {
-      this.timerClockBox.classList.toggle('is-warning', !!data.isWarning);
-      this.timerClockBox.classList.toggle('is-expired', !!data.isExpired);
-      this.timerClockBox.classList.toggle('is-paused', !!data.isPaused);
+      this.timerClockBox.classList.toggle('is-warning', !!timer.isWarning);
+      this.timerClockBox.classList.toggle('is-expired', !!timer.isExpired);
+      this.timerClockBox.classList.toggle('is-paused', !!timer.isPaused);
     }
 
     if (this.operatorTimerStatePill) {
-      if (data.isExpired) {
+      if (timer.isExpired) {
         this.operatorTimerStatePill.className = 'stat-pill stat-pill-red';
         this.operatorTimerStatePill.textContent = 'Waktu Habis';
-      } else if (data.isPaused) {
+      } else if (timer.isPaused) {
         this.operatorTimerStatePill.className = 'stat-pill stat-pill-amber';
         this.operatorTimerStatePill.textContent = 'Dijeda';
-      } else if (data.isWarning) {
+      } else if (timer.isWarning) {
         this.operatorTimerStatePill.className = 'stat-pill stat-pill-amber';
         this.operatorTimerStatePill.textContent = 'Sisa Menit Sedikit';
-      } else if (data.isRunning) {
+      } else if (timer.isRunning) {
         this.operatorTimerStatePill.className = 'stat-pill stat-pill-green';
         this.operatorTimerStatePill.textContent = 'Sedang Berjalan';
       } else {
@@ -2467,31 +2651,32 @@ class RTFTPOperator {
 
   renderTimerState(data) {
     if (!data) return;
-    this.timerState = data;
+    const timer = (data && data.timer) || data;
+    this.timerState = timer;
 
     // Toggle switch & status badge
     if (this.toggleTimerEnabled) {
-      this.toggleTimerEnabled.checked = !!data.enabled;
+      this.toggleTimerEnabled.checked = !!timer.enabled;
     }
     if (this.timerStatusBadge) {
-      this.timerStatusBadge.className = data.enabled ? 'badge-station badge-station-online' : 'badge-station badge-station-offline';
-      this.timerStatusBadge.textContent = data.enabled ? 'Aktif' : 'Nonaktif';
+      this.timerStatusBadge.className = timer.enabled ? 'badge-station badge-station-online' : 'badge-station badge-station-offline';
+      this.timerStatusBadge.textContent = timer.enabled ? 'Aktif' : 'Nonaktif';
     }
     if (this.operatorTimerActiveContainer) {
-      this.operatorTimerActiveContainer.classList.toggle('is-disabled', !data.enabled);
+      this.operatorTimerActiveContainer.classList.toggle('is-disabled', !timer.enabled);
     }
 
     // Tick display elements
-    this.renderTimerTick(data);
+    this.renderTimerTick(timer);
 
     // Play/Pause button icons & label
     if (this.btnTimerStartPause) {
-      if (data.isRunning && !data.isPaused) {
+      if (timer.isRunning && !timer.isPaused) {
         if (this.iconTimerPlay) this.iconTimerPlay.style.display = 'none';
         if (this.iconTimerPause) this.iconTimerPause.style.display = 'inline-block';
         if (this.labelTimerStartPause) this.labelTimerStartPause.textContent = 'Jeda Timer';
         this.btnTimerStartPause.className = 'btn btn-secondary';
-      } else if (data.isPaused) {
+      } else if (timer.isPaused) {
         if (this.iconTimerPlay) this.iconTimerPlay.style.display = 'inline-block';
         if (this.iconTimerPause) this.iconTimerPause.style.display = 'none';
         if (this.labelTimerStartPause) this.labelTimerStartPause.textContent = 'Lanjutkan';
@@ -2506,33 +2691,33 @@ class RTFTPOperator {
 
     // Form fields sync (only if user is not actively editing)
     if (this.timerInputDuration && document.activeElement !== this.timerInputDuration) {
-      this.timerInputDuration.value = data.durationMinutes || 15;
+      this.timerInputDuration.value = timer.durationMinutes || 15;
     }
     if (this.timerInputWarning && document.activeElement !== this.timerInputWarning) {
-      this.timerInputWarning.value = data.warningThresholdMinutes ?? 3;
+      this.timerInputWarning.value = timer.warningThresholdMinutes ?? 3;
     }
     if (this.timerSelectMode && document.activeElement !== this.timerSelectMode) {
-      this.timerSelectMode.value = data.lockOnExpiry ? 'strict' : 'polite';
+      this.timerSelectMode.value = timer.lockOnExpiry ? 'strict' : 'polite';
     }
     if (this.timerCheckAutostart && document.activeElement !== this.timerCheckAutostart) {
-      this.timerCheckAutostart.checked = !!data.autoStartOnSessionChange;
+      this.timerCheckAutostart.checked = !!timer.autoStartOnSessionChange;
     }
     if (this.timerInputMessage && document.activeElement !== this.timerInputMessage) {
-      this.timerInputMessage.value = data.messageOnExpiry || '';
+      this.timerInputMessage.value = timer.messageOnExpiry || '';
     }
 
     // Preset chips sync
     if (this.timerPresetChips) {
       this.timerPresetChips.forEach(chip => {
         const mins = Number(chip.getAttribute('data-mins'));
-        chip.classList.toggle('active', mins === data.durationMinutes);
+        chip.classList.toggle('active', mins === timer.durationMinutes);
       });
     }
 
     // Info footer
     if (this.operatorTimerInfoText) {
-      const modeText = data.lockOnExpiry ? 'Mode: Kunci Layar Klien' : 'Mode: Ramah Pelanggan';
-      this.operatorTimerInfoText.textContent = `Durasi: ${data.durationMinutes} menit | Peringatan: ${data.warningThresholdMinutes} menit terakhir | ${modeText}`;
+      const modeText = timer.lockOnExpiry ? 'Mode: Kunci Layar Klien' : 'Mode: Ramah Pelanggan';
+      this.operatorTimerInfoText.textContent = `Durasi: ${timer.durationMinutes} menit | Peringatan: ${timer.warningThresholdMinutes} menit terakhir | ${modeText}`;
     }
   }
 }

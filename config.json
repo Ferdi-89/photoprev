@@ -36,7 +36,7 @@
   ],
   "sessionTimer": {
     "enabled": true,
-    "durationMinutes": 15,
+    "durationMinutes": 10,
     "warningThresholdMinutes": 3,
     "lockOnExpiry": false,
     "autoStartOnSessionChange": false,
@@ -48,14 +48,18 @@
       "name": "PC Klien 1 (Kabel LAN Booth A)",
       "type": "lan",
       "note": "Layar Sentuh Booth Utama",
-      "createdAt": 1790441561901
+      "assignedSessionPath": null,
+      "assignedSessionName": null,
+      "createdAt": 1790481794704
     },
     {
       "id": "station-2",
       "name": "PC Klien 2 (Kabel LAN Booth B)",
       "type": "lan",
       "note": "Layar Sentuh Booth 2",
-      "createdAt": 1790441561901
+      "assignedSessionPath": null,
+      "assignedSessionName": null,
+      "createdAt": 1790481794704
     }
   ]
 }

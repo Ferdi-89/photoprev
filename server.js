@@ -7,7 +7,7 @@ const { WebSocketServer, WebSocket } = require('ws');
 
 const { loadConfig, saveConfig, getConfig } = require('./lib/config');
 const { isImageFile, getImageMetadata, getOrGenerateImage } = require('./lib/thumbnail');
-const { startWatcher } = require('./lib/watcher');
+const { initWatcher, startWatcher, addWatchFolder, unwatchFolder, syncWatchedFolders, getWatchedFolders } = require('./lib/watcher');
 const printManager = require('./lib/printManager');
 const { generateSamplePhotos } = require('./lib/demoData');
 const { getLanInterfaces, printNetworkBanner } = require('./lib/network');
@@ -20,9 +20,11 @@ const {
 } = require('./lib/folderBrowser');
 const {
   getStations,
+  getStationById,
   addStation,
   removeStation,
   updateStation,
+  assignSessionToStation,
   registerStationClient,
   unregisterStationClient,
   reloadStation
@@ -49,12 +51,27 @@ app.use(express.static(path.join(__dirname, 'public')));
 const config = loadConfig();
 printManager.setSessionDir(config.activeSessionPath);
 
-// WebSocket Broadcast Helper
-function broadcast(data) {
+// WebSocket Broadcast Helper (supports optional targetSessionPath scoping)
+function broadcast(data, targetSessionPath = null) {
   const message = JSON.stringify(data);
+  const resolvedTarget = targetSessionPath ? path.resolve(targetSessionPath).toLowerCase() : null;
+
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
+      if (resolvedTarget) {
+        // Scoped broadcast: send if client is operator dashboard (no stationId) OR assigned to target session
+        if (!client.stationId) {
+          client.send(message);
+        } else {
+          const clientSession = client.assignedSessionPath ? path.resolve(client.assignedSessionPath).toLowerCase() : null;
+          if (clientSession === resolvedTarget) {
+            client.send(message);
+          }
+        }
+      } else {
+        // Global broadcast (stations, timer, etc.)
+        client.send(message);
+      }
     }
   });
 }
@@ -100,38 +117,81 @@ async function reloadSessionPhotos(folderPath) {
   return photos;
 }
 
-// Setup Watcher
-function setupActiveWatcher(folderPath) {
-  const resolved = path.resolve(folderPath);
-  reloadSessionPhotos(resolved).catch(() => {});
+// Collect all photoshoot folders that should be actively monitored
+function getAllActiveSessionFolders() {
+  const folders = new Set();
+  if (config.activeSessionPath && fs.existsSync(config.activeSessionPath)) {
+    folders.add(path.resolve(config.activeSessionPath));
+  }
+  if (Array.isArray(config.clientStations)) {
+    config.clientStations.forEach(st => {
+      if (st.assignedSessionPath && fs.existsSync(st.assignedSessionPath)) {
+        folders.add(path.resolve(st.assignedSessionPath));
+      }
+    });
+  }
+  return Array.from(folders);
+}
 
-  return startWatcher(resolved, {
+// Setup Multi-Session Active Watcher
+function setupActiveWatcher() {
+  const folders = getAllActiveSessionFolders();
+  folders.forEach(f => reloadSessionPhotos(f).catch(() => {}));
+
+  return initWatcher(folders, {
     onPhotoAdded: (photo) => {
-      if (activePhotosCache && activePhotosPath === resolved) {
-        const idx = activePhotosCache.findIndex(p => p.filename === photo.filename);
-        if (idx >= 0) {
-          activePhotosCache[idx] = photo;
-        } else {
-          activePhotosCache.unshift(photo);
+      // If photo belongs to the global active session, update in-memory cache
+      if (photo.sessionPath && path.resolve(photo.sessionPath) === path.resolve(config.activeSessionPath)) {
+        if (activePhotosCache && activePhotosPath === path.resolve(config.activeSessionPath)) {
+          const idx = activePhotosCache.findIndex(p => p.filename === photo.filename);
+          if (idx >= 0) {
+            activePhotosCache[idx] = photo;
+          } else {
+            activePhotosCache.unshift(photo);
+          }
         }
       }
-      broadcast({ type: 'PHOTO_ADDED', photo });
+      broadcast({ type: 'PHOTO_ADDED', photo, sessionPath: photo.sessionPath }, photo.sessionPath);
     },
-    onPhotoRemoved: (filename) => {
-      if (activePhotosCache && activePhotosPath === resolved) {
-        activePhotosCache = activePhotosCache.filter(p => p.filename !== filename);
+    onPhotoRemoved: ({ filename, sessionPath }) => {
+      if (sessionPath && path.resolve(sessionPath) === path.resolve(config.activeSessionPath)) {
+        if (activePhotosCache && activePhotosPath === path.resolve(config.activeSessionPath)) {
+          activePhotosCache = activePhotosCache.filter(p => p.filename !== filename);
+        }
       }
-      broadcast({ type: 'PHOTO_REMOVED', filename });
+      broadcast({ type: 'PHOTO_REMOVED', filename, sessionPath }, sessionPath);
     }
   });
 }
 
-setupActiveWatcher(config.activeSessionPath);
+setupActiveWatcher();
 
-// Path sanitization helpers against path traversal
+// Path sanitization helpers against path traversal & multi-session resolver
 function safeFilename(rawFilename) {
   if (!rawFilename) return '';
   return path.basename(String(rawFilename));
+}
+
+function resolveSessionForRequest(req) {
+  // 1. Explicit session path in query or body
+  const explicit = (req.query && req.query.session) || (req.body && req.body.sessionPath);
+  if (explicit && String(explicit).trim() !== '') {
+    const resolved = path.resolve(String(explicit).trim());
+    if (fs.existsSync(resolved)) return resolved;
+  }
+
+  // 2. Station ID in query or body (e.g. ?station=station-1)
+  const stationId = (req.query && req.query.station) || (req.body && req.body.stationId);
+  if (stationId) {
+    const st = getStationById(config, String(stationId).trim());
+    if (st && st.assignedSessionPath) {
+      const resolved = path.resolve(st.assignedSessionPath);
+      if (fs.existsSync(resolved)) return resolved;
+    }
+  }
+
+  // 3. Fallback to global active session
+  return config.activeSessionPath ? path.resolve(config.activeSessionPath) : '';
 }
 
 function safeSessionDir(reqSession) {
@@ -163,17 +223,17 @@ app.get(['/health', '/api/health'], (req, res) => {
   });
 });
 
-// 1. Session Information
+// 1. Session Information (supports ?station=... or ?session=...)
 app.get('/api/session', async (req, res) => {
   try {
-    const activePath = config.activeSessionPath;
-    const photos = await getSessionPhotos(activePath);
-    const selections = printManager.getSelections();
+    const targetPath = resolveSessionForRequest(req);
+    const photos = await getSessionPhotos(targetPath);
+    const selections = printManager.getSelections(targetPath);
 
     res.json({
       success: true,
-      activeSessionPath: activePath,
-      sessionName: path.basename(activePath),
+      activeSessionPath: targetPath,
+      sessionName: path.basename(targetPath),
       totalPhotos: photos.length,
       totalSelections: selections.length,
       printSizes: config.printSizes,
@@ -202,7 +262,7 @@ app.post('/api/session', async (req, res) => {
     saveConfig({ activeSessionPath: config.activeSessionPath, recentFolders: config.recentFolders });
     printManager.setSessionDir(config.activeSessionPath);
 
-    setupActiveWatcher(config.activeSessionPath);
+    addWatchFolder(config.activeSessionPath);
 
     const photos = await getSessionPhotos(config.activeSessionPath);
     broadcast({
@@ -210,7 +270,7 @@ app.post('/api/session', async (req, res) => {
       sessionName: path.basename(config.activeSessionPath),
       activeSessionPath: config.activeSessionPath,
       photos
-    });
+    }, config.activeSessionPath);
     sessionTimerManager.onSessionChanged();
 
     res.json({
@@ -224,11 +284,12 @@ app.post('/api/session', async (req, res) => {
   }
 });
 
-// 3. List Photos
+// 3. List Photos (supports ?station=... or ?session=...)
 app.get('/api/photos', async (req, res) => {
   try {
-    const photos = await getSessionPhotos(config.activeSessionPath);
-    res.json({ success: true, photos });
+    const targetPath = resolveSessionForRequest(req);
+    const photos = await getSessionPhotos(targetPath);
+    res.json({ success: true, sessionPath: targetPath, photos });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -254,7 +315,7 @@ app.get('/api/network', (req, res) => {
 app.get('/api/photo/:filename/thumb', async (req, res) => {
   try {
     const filename = safeFilename(req.params.filename);
-    const sessionDir = safeSessionDir(req.query.session);
+    const sessionDir = resolveSessionForRequest(req);
     const fullPath = path.join(sessionDir, filename);
     if (!fs.existsSync(fullPath)) {
       return res.status(404).send('Foto tidak ditemukan');
@@ -274,7 +335,7 @@ app.get('/api/photo/:filename/thumb', async (req, res) => {
 app.get('/api/photo/:filename/preview', async (req, res) => {
   try {
     const filename = safeFilename(req.params.filename);
-    const sessionDir = safeSessionDir(req.query.session);
+    const sessionDir = resolveSessionForRequest(req);
     const fullPath = path.join(sessionDir, filename);
     if (!fs.existsSync(fullPath)) {
       return res.status(404).send('Foto tidak ditemukan');
@@ -293,7 +354,7 @@ app.get('/api/photo/:filename/preview', async (req, res) => {
 // 6. Original Photo Download / Stream
 app.get('/api/photo/:filename/original', (req, res) => {
   const filename = safeFilename(req.params.filename);
-  const sessionDir = safeSessionDir(req.query.session);
+  const sessionDir = resolveSessionForRequest(req);
   const fullPath = path.join(sessionDir, filename);
   if (!fs.existsSync(fullPath)) {
     return res.status(404).send('Foto tidak ditemukan');
@@ -304,21 +365,23 @@ app.get('/api/photo/:filename/original', (req, res) => {
   });
 });
 
-// 7. Get Selections (Grouped by Session + active selections)
+// 7. Get Selections (Grouped by Session + active selections, supports ?station=... or ?session=...)
 app.get('/api/selections', (req, res) => {
+  const targetPath = resolveSessionForRequest(req);
   const sessions = printManager.getAllSessionQueues(config);
   res.json({
     success: true,
-    activeSession: path.basename(config.activeSessionPath),
-    activeSessionPath: config.activeSessionPath,
-    selections: printManager.getSelections(),
+    activeSession: path.basename(targetPath),
+    activeSessionPath: targetPath,
+    selections: printManager.getSelections(targetPath),
     sessions
   });
 });
 
 // 8. Update Selection (Select / Deselect photo with sizes)
 app.post('/api/selections', (req, res) => {
-  const { filename, selected, sizes, notes, sessionPath } = req.body;
+  const { filename, selected, sizes, notes } = req.body || {};
+  const sessionPath = resolveSessionForRequest(req);
   if (!filename) {
     return res.status(400).json({ success: false, error: 'Filename dibutuhkan' });
   }
@@ -335,10 +398,10 @@ app.post('/api/selections', (req, res) => {
     type: 'SELECTION_UPDATED',
     filename,
     selected: selected !== false,
-    sessionPath: sessionPath || config.activeSessionPath,
+    sessionPath,
     selections: updatedSelections,
     sessions: allSessions
-  });
+  }, sessionPath);
 
   res.json({
     success: true,
@@ -349,16 +412,17 @@ app.post('/api/selections', (req, res) => {
 
 // 9. Clear Selections
 app.post('/api/selections/clear', (req, res) => {
-  const { sessionPath } = req.body || {};
+  const sessionPath = resolveSessionForRequest(req);
   const updatedSelections = printManager.clearSelections(sessionPath);
   const allSessions = printManager.getAllSessionQueues(config);
 
   broadcast({
     type: 'SELECTION_CLEARED',
-    sessionPath: sessionPath || config.activeSessionPath,
+    sessionPath,
     selections: updatedSelections,
     sessions: allSessions
-  });
+  }, sessionPath);
+
   res.json({
     success: true,
     selections: updatedSelections,
@@ -530,6 +594,19 @@ app.post('/api/operator/stations/:id/reload', (req, res) => {
   }
 });
 
+// 20b. Operator Stations: Assign Photoshoot Session to Station
+app.post(['/api/operator/stations/:id/session', '/api/operator/station/:id/session'], (req, res) => {
+  try {
+    const { sessionPath } = req.body || {};
+    const result = assignSessionToStation(config, req.params.id, sessionPath, broadcast, (effectivePath) => {
+      if (effectivePath) addWatchFolder(effectivePath);
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 // 21. Operator Directory: List All Sessions in Root Directory
 app.get('/api/operator/directory/sessions', (req, res) => {
   try {
@@ -605,7 +682,7 @@ app.get('/api/timer', (req, res) => {
 // 26. Session Timer: Start Countdown
 app.post('/api/timer/start', (req, res) => {
   try {
-    const { durationMinutes } = req.body;
+    const { durationMinutes } = req.body || {};
     const timer = sessionTimerManager.start({ durationMinutes });
     res.json({ success: true, timer, data: timer });
   } catch (err) {
@@ -636,7 +713,7 @@ app.post('/api/timer/resume', (req, res) => {
 // 29. Session Timer: Add Extra Time (+5 Min, +10 Min)
 app.post('/api/timer/add-time', (req, res) => {
   try {
-    const minutes = Number(req.body.minutes) || 5;
+    const minutes = Number(req.body && req.body.minutes) || 5;
     const timer = sessionTimerManager.addTime(minutes);
     res.json({ success: true, timer, data: timer });
   } catch (err) {
@@ -667,7 +744,7 @@ app.post('/api/timer/stop', (req, res) => {
 // 32. Session Timer: Update Settings
 app.post('/api/timer/settings', (req, res) => {
   try {
-    const timer = sessionTimerManager.updateSettings(req.body);
+    const timer = sessionTimerManager.updateSettings(req.body || {});
     res.json({ success: true, timer, data: timer });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -679,48 +756,55 @@ wss.on('connection', async (ws, req) => {
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
 
+  const sendInitToSocket = async (socket) => {
+    try {
+      const targetPath = socket.assignedSessionPath || config.activeSessionPath;
+      const photos = await getSessionPhotos(targetPath);
+      const selections = printManager.getSelections(targetPath);
+      const sessions = printManager.getAllSessionQueues(config);
+      const stations = getStations(config);
+      socket.send(JSON.stringify({
+        type: 'INIT',
+        stationId: socket.stationId || null,
+        session: {
+          activeSessionPath: targetPath,
+          sessionName: path.basename(targetPath),
+          printSizes: config.printSizes
+        },
+        photos,
+        selections,
+        sessions,
+        stations,
+        timer: sessionTimerManager.getState()
+      }));
+    } catch (e) {
+      console.error('Error on initial WS send:', e.message);
+    }
+  };
+
   // Check URL query param for station ID (e.g. ws://host:3000/?station=station-1)
   try {
     if (req && req.url) {
       const urlObj = new URL(req.url, 'http://localhost');
       const stationId = urlObj.searchParams.get('station');
       if (stationId) {
-        registerStationClient(stationId, ws, req, broadcast);
+        registerStationClient(stationId, ws, req, broadcast, config);
       }
     }
   } catch (e) {}
 
-  ws.on('message', (raw) => {
+  ws.on('message', async (raw) => {
     try {
       const msg = JSON.parse(raw);
       if (msg.type === 'REGISTER_STATION' && msg.stationId) {
-        registerStationClient(msg.stationId, ws, req, broadcast);
+        registerStationClient(msg.stationId, ws, req, broadcast, config);
+        await sendInitToSocket(ws);
       }
     } catch (e) {}
   });
 
-  console.log('[WebSocket] Client terhubung');
-  try {
-    const photos = await getSessionPhotos(config.activeSessionPath);
-    const selections = printManager.getSelections();
-    const sessions = printManager.getAllSessionQueues(config);
-    const stations = getStations(config);
-    ws.send(JSON.stringify({
-      type: 'INIT',
-      session: {
-        activeSessionPath: config.activeSessionPath,
-        sessionName: path.basename(config.activeSessionPath),
-        printSizes: config.printSizes
-      },
-      photos,
-      selections,
-      sessions,
-      stations,
-      timer: sessionTimerManager.getState()
-    }));
-  } catch (e) {
-    console.error('Error on initial WS send:', e.message);
-  }
+  console.log(`[WebSocket] Client terhubung ${ws.stationId ? `(Stasiun: ${ws.stationId})` : '(Operator Dashboard)'}`);
+  await sendInitToSocket(ws);
 
   ws.on('close', () => {
     unregisterStationClient(ws, broadcast);

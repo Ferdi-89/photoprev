@@ -8,6 +8,10 @@ class RTFTPGallery {
     this.activeFilter = 'all'; // 'all' | 'selected'
     this.currentGridCols = 'cols-4';
 
+    const urlParams = new URLSearchParams(window.location.search);
+    this.stationId = urlParams.get('station') || null;
+    this.currentSessionPath = urlParams.get('session') || null;
+
     this.container = document.getElementById('gallery-grid');
     this.emptyState = document.getElementById('empty-gallery');
     this.sessionNameEl = document.getElementById('session-name-display');
@@ -23,12 +27,10 @@ class RTFTPGallery {
     window.api.connectWebSocket((isConnected) => {
       this.updateConnectionStatus(isConnected);
       if (isConnected) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const stationId = urlParams.get('station');
-        if (stationId && window.api.ws && window.api.ws.readyState === WebSocket.OPEN) {
+        if (this.stationId && window.api.ws && window.api.ws.readyState === WebSocket.OPEN) {
           window.api.ws.send(JSON.stringify({
             type: 'REGISTER_STATION',
-            stationId
+            stationId: this.stationId
           }));
         }
       }
@@ -99,6 +101,9 @@ class RTFTPGallery {
   bindWebSocketEvents() {
     window.api.on('INIT', (data) => {
       if (data.session) {
+        if (data.session.activeSessionPath) {
+          this.currentSessionPath = data.session.activeSessionPath;
+        }
         if (this.sessionNameEl) this.sessionNameEl.textContent = data.session.sessionName || 'Demo Studio';
         if (data.session.printSizes) {
           window.selectionManager.setAvailableSizes(data.session.printSizes);
@@ -115,6 +120,9 @@ class RTFTPGallery {
     });
 
     window.api.on('PHOTO_ADDED', (data) => {
+      if (data.sessionPath && this.currentSessionPath && data.sessionPath !== this.currentSessionPath) {
+        return;
+      }
       if (data.photo) {
         this.photos = this.photos.filter(p => p.filename !== data.photo.filename);
         this.photos.unshift(data.photo);
@@ -137,6 +145,9 @@ class RTFTPGallery {
     });
 
     window.api.on('PHOTO_REMOVED', (data) => {
+      if (data.sessionPath && this.currentSessionPath && data.sessionPath !== this.currentSessionPath) {
+        return;
+      }
       if (data.filename) {
         this.photos = this.photos.filter(p => p.filename !== data.filename);
         window.compareManager.setPhotos(this.photos);
@@ -145,7 +156,44 @@ class RTFTPGallery {
       }
     });
 
+    window.api.on('SESSION_ASSIGNED', async (data) => {
+      if (this.stationId && data.stationId === this.stationId) {
+        this.currentSessionPath = data.sessionPath;
+        if (this.sessionNameEl) this.sessionNameEl.textContent = data.sessionName || 'Sesi Studio';
+        if (data.photos) {
+          this.photos = data.photos;
+          window.compareManager.setPhotos(this.photos);
+        } else {
+          const photoRes = await window.api.getPhotos(this.stationId, this.currentSessionPath);
+          if (photoRes.success) {
+            this.photos = photoRes.photos;
+            window.compareManager.setPhotos(this.photos);
+          }
+        }
+        if (data.selections) {
+          window.selectionManager.initFromData(data.selections);
+        } else {
+          const selRes = await window.api.getSelections(this.stationId, this.currentSessionPath);
+          if (selRes.success) {
+            window.selectionManager.initFromData(selRes.selections);
+          } else {
+            window.selectionManager.initFromData([]);
+          }
+        }
+        window.compareManager.clear();
+        this.render();
+        window.showToast(`Sesi dialihkan ke: ${data.sessionName}`, 'blue', 3500);
+      }
+    });
+
     window.api.on('SESSION_CHANGED', (data) => {
+      // If station has specific custom session assigned that doesn't match this change, ignore
+      if (data.sessionPath && this.currentSessionPath && data.sessionPath !== this.currentSessionPath) {
+        return;
+      }
+      if (data.sessionPath) {
+        this.currentSessionPath = data.sessionPath;
+      }
       if (data.sessionName && this.sessionNameEl) {
         this.sessionNameEl.textContent = data.sessionName;
       }
@@ -153,12 +201,16 @@ class RTFTPGallery {
         this.photos = data.photos;
         window.compareManager.setPhotos(this.photos);
       }
+      window.compareManager.clear();
       window.selectionManager.initFromData([]);
       this.render();
       window.showToast(`Sesi berganti ke: ${data.sessionName}`, 'blue');
     });
 
     window.api.on('SELECTION_UPDATED', (data) => {
+      if (data.sessionPath && this.currentSessionPath && data.sessionPath !== this.currentSessionPath) {
+        return;
+      }
       if (data.selections) {
         window.selectionManager.initFromData(data.selections);
         if (this.activeFilter === 'selected') {
@@ -167,7 +219,10 @@ class RTFTPGallery {
       }
     });
 
-    window.api.on('SELECTION_CLEARED', () => {
+    window.api.on('SELECTION_CLEARED', (data) => {
+      if (data && data.sessionPath && this.currentSessionPath && data.sessionPath !== this.currentSessionPath) {
+        return;
+      }
       window.selectionManager.initFromData([]);
       if (this.activeFilter === 'selected') {
         this.render();
@@ -186,21 +241,24 @@ class RTFTPGallery {
 
   async loadInitialData() {
     try {
-      const session = await window.api.getSession();
+      const session = await window.api.getSession(this.stationId, this.currentSessionPath);
       if (session.success) {
+        if (session.activeSessionPath) {
+          this.currentSessionPath = session.activeSessionPath;
+        }
         if (this.sessionNameEl) this.sessionNameEl.textContent = session.sessionName || 'Sesi Studio';
         if (session.printSizes) {
           window.selectionManager.setAvailableSizes(session.printSizes);
         }
       }
 
-      const photoRes = await window.api.getPhotos();
+      const photoRes = await window.api.getPhotos(this.stationId, this.currentSessionPath);
       if (photoRes.success) {
         this.photos = photoRes.photos;
         window.compareManager.setPhotos(this.photos);
       }
 
-      const selRes = await window.api.getSelections();
+      const selRes = await window.api.getSelections(this.stationId, this.currentSessionPath);
       if (selRes.success) {
         window.selectionManager.initFromData(selRes.selections);
       }
@@ -261,10 +319,14 @@ class RTFTPGallery {
       const aspectStyle = (photo.width && photo.height)
         ? `style="aspect-ratio: ${photo.width} / ${photo.height};"`
         : '';
+      const sQuery = this.currentSessionPath
+        ? `?session=${encodeURIComponent(this.currentSessionPath)}`
+        : (this.stationId ? `?station=${encodeURIComponent(this.stationId)}` : '');
+      const photoSrc = `/api/photo/${encodeURIComponent(photo.filename)}/original${sQuery}`;
 
       card.innerHTML = `
         <div class="photo-img-wrapper" ${aspectStyle}>
-          <img src="/api/photo/${encodeURIComponent(photo.filename)}/original" alt="Foto ${photo.filename}" loading="lazy"/>
+          <img src="${photoSrc}" alt="Foto ${photo.filename}" loading="lazy"/>
           <div class="card-chrome-top">
             <span class="card-frame-seq">#${String(index + 1).padStart(3, '0')}</span>
             <button type="button" class="card-select-chip ${isSelected ? 'active' : ''}" title="${isSelected ? 'Batalkan pilihan cetak' : 'Pilih untuk dicetak'}" aria-label="Pilih foto ${photo.filename} untuk dicetak" aria-pressed="${isSelected}">

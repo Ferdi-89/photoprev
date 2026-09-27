@@ -124,6 +124,9 @@ class RTFTPCompare {
       item.className = `compare-item ${isSelected ? 'is-selected' : ''}`;
       item.id = `compare-item-${filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
+      const sPath = (photo && photo.sessionPath) || (window.galleryApp && window.galleryApp.currentSessionPath) || '';
+      const sQuery = sPath ? `?session=${encodeURIComponent(sPath)}` : '';
+
       item.innerHTML = `
         <div class="compare-item-header">
           <div style="display: flex; align-items: center; gap: 8px;">
@@ -135,7 +138,7 @@ class RTFTPCompare {
           </button>
         </div>
         <div class="compare-item-viewport" title="Klik untuk memperbesar">
-          <img src="/api/photo/${encodeURIComponent(filename)}/original" alt="Foto perbandingan ${filename}" loading="lazy"/>
+          <img src="/api/photo/${encodeURIComponent(filename)}/original${sQuery}" alt="Foto perbandingan ${filename}" loading="lazy"/>
         </div>
         <div class="compare-item-footer">
           <button class="btn ${isSelected ? 'btn-gold' : 'btn-primary'} btn-choose-this">

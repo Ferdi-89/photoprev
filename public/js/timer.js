@@ -84,7 +84,8 @@ class SessionTimerClient {
       this.hideExpiryModal();
       this.handleTimerState(data);
       if (window.showToast) {
-        window.showToast(`Operator memberikan tambahan waktu +${data.addedMinutes} menit`, 'success', 4000);
+        const added = data.addedMinutes || (data.timer && data.timer.addedMinutes) || 5;
+        window.showToast(`Operator memberikan tambahan waktu +${added} menit`, 'success', 4000);
       }
     });
 
@@ -112,24 +113,26 @@ class SessionTimerClient {
 
   handleTimerTick(data) {
     if (!data) return;
-    this.timerState = data;
+    const timer = (data && data.timer) || data;
+    this.timerState = timer;
 
     if (this.digits) {
-      this.digits.textContent = data.formattedTime || '00:00';
+      this.digits.textContent = timer.formattedTime || '00:00';
     }
 
     if (this.badge) {
-      this.badge.classList.toggle('is-warning', !!data.isWarning);
-      this.badge.classList.toggle('is-expired', !!data.isExpired);
-      this.badge.classList.toggle('is-paused', !!data.isPaused);
+      this.badge.classList.toggle('is-warning', !!timer.isWarning);
+      this.badge.classList.toggle('is-expired', !!timer.isExpired);
+      this.badge.classList.toggle('is-paused', !!timer.isPaused);
     }
   }
 
   handleTimerState(data) {
     if (!data) return;
-    this.timerState = data;
+    const timer = (data && data.timer) || data;
+    this.timerState = timer;
 
-    if (!data.enabled) {
+    if (!timer.enabled) {
       if (this.badge) this.badge.style.display = 'none';
       this.hideExpiryModal();
       return;
@@ -139,9 +142,9 @@ class SessionTimerClient {
       this.badge.style.display = 'inline-flex';
     }
 
-    this.handleTimerTick(data);
+    this.handleTimerTick(timer);
 
-    if (data.isExpired && !this.hasShownExpiryModal) {
+    if (timer.isExpired && !this.hasShownExpiryModal) {
       this.showExpiryModal();
     }
   }

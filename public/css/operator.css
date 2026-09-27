@@ -2100,6 +2100,57 @@ th {
   color: var(--text-muted);
 }
 
+.station-session-binding {
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-primary);
+  padding: 8px 10px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
+}
+
+.station-session-select {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 4px 8px;
+  font-size: 0.76rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--text-main);
+  outline: none;
+  max-width: 200px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.station-session-select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 2px var(--accent-blue-subtle);
+}
+
+.badge-station-session-custom {
+  background: var(--color-purple-bg, #faf5ff);
+  color: var(--color-purple-text, #7e22ce);
+  border: 1px solid var(--color-purple-border, #e9d5ff);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+}
+
+.badge-station-session-global {
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+}
+
 .station-card-footer {
   padding: 12px 16px;
   background: var(--bg-secondary);
@@ -2494,6 +2545,59 @@ th {
   border-color: var(--border-medium);
 }
 
+.btn-dir-assign-station {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-dir-assign-station:hover {
+  background: var(--color-purple-bg, #faf5ff);
+  border-color: var(--color-purple-border, #e9d5ff);
+  color: var(--color-purple-text, #7e22ce);
+}
+
+.session-assigned-stations-row {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.assigned-stations-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-station-binding {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--color-blue-bg);
+  color: var(--color-blue-text);
+  border: 1px solid var(--color-blue-border);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+}
+
 /* Disk Storage Progress Meter */
 .disk-progress-bar {
   width: 100%;
@@ -2635,10 +2739,9 @@ th {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .operator-timer-clock-box.is-warning {

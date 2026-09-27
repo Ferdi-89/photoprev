@@ -11,8 +11,12 @@ class RTFTPApi {
   }
 
   // REST API Methods
-  async getSession() {
-    const res = await fetch('/api/session');
+  async getSession(stationId = null, sessionPath = null) {
+    const params = new URLSearchParams();
+    if (stationId) params.append('station', stationId);
+    if (sessionPath) params.append('session', sessionPath);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`/api/session${qs}`);
     return await res.json();
   }
 
@@ -21,13 +25,21 @@ class RTFTPApi {
     return await res.json();
   }
 
-  async getPhotos() {
-    const res = await fetch('/api/photos');
+  async getPhotos(stationId = null, sessionPath = null) {
+    const params = new URLSearchParams();
+    if (stationId) params.append('station', stationId);
+    if (sessionPath) params.append('session', sessionPath);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`/api/photos${qs}`);
     return await res.json();
   }
 
-  async getSelections() {
-    const res = await fetch('/api/selections');
+  async getSelections(stationId = null, sessionPath = null) {
+    const params = new URLSearchParams();
+    if (stationId) params.append('station', stationId);
+    if (sessionPath) params.append('session', sessionPath);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`/api/selections${qs}`);
     return await res.json();
   }
 
@@ -140,6 +152,15 @@ class RTFTPApi {
     return await res.json();
   }
 
+  async assignStationSession(stationId, sessionPath) {
+    const res = await fetch(`/api/operator/stations/${encodeURIComponent(stationId)}/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionPath })
+    });
+    return await res.json();
+  }
+
   // Dedicated Session Directory Management API
   async getDirectorySessions() {
     const res = await fetch('/api/operator/directory/sessions');
@@ -227,9 +248,14 @@ class RTFTPApi {
   }
 
   // WebSocket Methods
-  connectWebSocket(onStatusChange = null) {
+  connectWebSocket(onStatusChange = null, stationId = null) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    if (!stationId && typeof window !== 'undefined' && window.location) {
+      const p = new URLSearchParams(window.location.search);
+      stationId = p.get('station') || null;
+    }
+    const qs = stationId ? `?station=${encodeURIComponent(stationId)}` : '';
+    const wsUrl = `${protocol}//${window.location.host}${qs}`;
 
     if (this.ws) {
       try { this.ws.close(); } catch (e) {}
