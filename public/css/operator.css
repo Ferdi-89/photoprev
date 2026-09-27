@@ -2598,6 +2598,66 @@ th {
   border-radius: var(--radius-xs);
 }
 
+/* Session Filter Group and Buttons */
+.session-filter-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.session-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-elevated, #ffffff);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.session-filter-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-medium);
+  color: var(--text-main);
+}
+
+.session-filter-btn.active {
+  background: var(--color-blue-bg);
+  border-color: var(--color-blue-border);
+  color: var(--color-blue-text);
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.12);
+}
+
+.session-dir-card.is-completed {
+  opacity: 0.88;
+  border-color: rgba(148, 163, 184, 0.3);
+  background: var(--bg-card);
+}
+
+.session-dir-card.is-completed:hover {
+  opacity: 1;
+  border-color: var(--border-medium);
+}
+
+.btn-complete-session:hover {
+  background: var(--color-emerald-bg) !important;
+  border-color: var(--color-emerald-border) !important;
+  color: var(--color-emerald-text) !important;
+}
+
+.btn-reopen-session:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
 /* Disk Storage Progress Meter */
 .disk-progress-bar {
   width: 100%;

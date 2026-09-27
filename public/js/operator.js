@@ -52,11 +52,16 @@ class RTFTPOperator {
     this.stations = [];
     this.primaryLanUrl = '';
 
-    // Dedicated Directory Management Elements
-    this.navDirectoriesBadge = document.getElementById('nav-directories-badge');
-    this.mobileNavDirectoriesBadge = document.getElementById('mobile-nav-directories-badge');
+    // Studio Sessions Hub & Filter Elements
+    this.navSessionsBadge = document.getElementById('nav-sessions-badge') || document.getElementById('nav-directories-badge');
+    this.mobileNavSessionsBadge = document.getElementById('mobile-nav-sessions-badge') || document.getElementById('mobile-nav-directories-badge');
+    this.navDirectoriesBadge = this.navSessionsBadge;
+    this.mobileNavDirectoriesBadge = this.mobileNavSessionsBadge;
     this.dirSessionsGrid = document.getElementById('dir-sessions-grid');
     this.dirEmptySessionsNotice = document.getElementById('dir-empty-sessions-notice');
+    this.statActiveSessions = document.getElementById('stat-active-sessions');
+    this.statActiveSessionsPill = document.getElementById('stat-active-sessions-pill');
+    this.statTotalStationsKpi = document.getElementById('stat-total-stations-kpi');
     this.statDirTotalSessions = document.getElementById('stat-dir-total-sessions');
     this.statDirActiveName = document.getElementById('stat-dir-active-name');
     this.statDirDiskFree = document.getElementById('stat-dir-disk-free');
@@ -76,6 +81,10 @@ class RTFTPOperator {
     this.createSessionRootDisplay = document.getElementById('create-session-root-display');
     this.createSessionCloseBtn = document.getElementById('create-session-close-btn');
     this.btnCancelCreateSession = document.getElementById('btn-cancel-create-session');
+    this.sessionFilter = 'all';
+    this.countFilterAll = document.getElementById('count-filter-all');
+    this.countFilterActive = document.getElementById('count-filter-active');
+    this.countFilterCompleted = document.getElementById('count-filter-completed');
     this.directorySessions = [];
     this.directoryRootPath = '';
 
@@ -209,16 +218,16 @@ class RTFTPOperator {
    */
   initViewRouting() {
     const viewMap = {
-      '#session': 'view-session',
-      '#directories': 'view-directories',
+      '#sessions': 'view-sessions',
+      '#session': 'view-sessions',
+      '#directories': 'view-sessions',
       '#queue': 'view-queue',
       '#stations': 'view-stations',
       '#logs': 'view-logs'
     };
 
     const viewTitles = {
-      'view-session': 'Ringkasan Sesi',
-      'view-directories': 'Direktori Sesi',
+      'view-sessions': 'Sesi Studio',
       'view-queue': 'Antrean Siap Cetak',
       'view-stations': 'Stasiun & Klien',
       'view-logs': 'Log Aktivitas'
@@ -281,12 +290,12 @@ class RTFTPOperator {
 
     // Handle Hash Changes
     window.addEventListener('hashchange', () => {
-      const targetView = viewMap[window.location.hash] || 'view-session';
+      const targetView = viewMap[window.location.hash] || 'view-sessions';
       switchView(targetView, false);
     });
 
     // Initial View from Hash
-    const initialView = viewMap[window.location.hash] || 'view-session';
+    const initialView = viewMap[window.location.hash] || 'view-sessions';
     switchView(initialView, false);
   }
 
@@ -2093,6 +2102,19 @@ class RTFTPOperator {
       });
     }
 
+    // Filter Buttons (Semua Sesi / Sesi Aktif / Selesai Cetak)
+    const filterBtns = document.querySelectorAll('.session-filter-btn[data-filter]');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.sessionFilter = btn.getAttribute('data-filter') || 'all';
+        if (this.lastDirectoryData) {
+          this.renderDirectorySessions(this.lastDirectoryData, false);
+        }
+      });
+    });
+
     // Refresh Directory Sessions Button
     if (this.btnRefreshDirSessions) {
       this.btnRefreshDirSessions.addEventListener('click', async () => {
@@ -2211,23 +2233,45 @@ class RTFTPOperator {
     this.directorySessions = data.sessions || [];
     this.directoryRootPath = data.rootPath || '';
 
-    // Update Navigation Badges
-    const count = this.directorySessions.length;
+    // Update Filter Tab Count Badges & Navigation Badges
+    const totalAll = this.directorySessions.length;
+    const totalActive = data.totalActive !== undefined ? data.totalActive : this.directorySessions.filter(s => !s.isCompleted).length;
+    const totalCompleted = data.totalCompleted !== undefined ? data.totalCompleted : this.directorySessions.filter(s => s.isCompleted).length;
+
+    if (this.countFilterAll) this.countFilterAll.textContent = totalAll;
+    if (this.countFilterActive) this.countFilterActive.textContent = totalActive;
+    if (this.countFilterCompleted) this.countFilterCompleted.textContent = totalCompleted;
+
+    if (this.navSessionsBadge) {
+      this.navSessionsBadge.textContent = totalActive;
+      this.navSessionsBadge.classList.toggle('has-items', totalActive > 0);
+    }
+    if (this.mobileNavSessionsBadge) {
+      this.mobileNavSessionsBadge.textContent = totalActive;
+      this.mobileNavSessionsBadge.classList.toggle('has-items', totalActive > 0);
+    }
     if (this.navDirectoriesBadge) {
-      this.navDirectoriesBadge.textContent = count;
-      this.navDirectoriesBadge.classList.toggle('has-items', count > 0);
+      this.navDirectoriesBadge.textContent = totalActive;
     }
     if (this.mobileNavDirectoriesBadge) {
-      this.mobileNavDirectoriesBadge.textContent = count;
-      this.mobileNavDirectoriesBadge.classList.toggle('has-items', count > 0);
+      this.mobileNavDirectoriesBadge.textContent = totalActive;
     }
 
-    // Update Metric Stat Cards
+    // Update Global KPI Stat Cards
+    if (this.statActiveSessions) {
+      this.statActiveSessions.textContent = totalActive;
+    }
+    if (this.statActiveSessionsPill) {
+      this.statActiveSessionsPill.textContent = `${totalActive} Aktif (${totalCompleted} Selesai)`;
+    }
+    if (this.statTotalStationsKpi) {
+      this.statTotalStationsKpi.textContent = (this.stations || []).length;
+    }
     if (this.statDirTotalSessions) {
-      this.statDirTotalSessions.textContent = count;
+      this.statDirTotalSessions.textContent = totalAll;
     }
 
-    const activeSession = this.directorySessions.find(s => s.isActive);
+    const activeSession = this.directorySessions.find(s => s.isCurrentActive || (!s.isCompleted && s.isActive));
     if (this.statDirActiveName) {
       if (activeSession) {
         this.statDirActiveName.textContent = activeSession.name;
@@ -2264,25 +2308,37 @@ class RTFTPOperator {
       this.createSessionRootDisplay.textContent = this.directoryRootPath || '-';
     }
 
+    // Filter Sessions by Active Filter Tab (all / active / completed)
+    let displaySessions = this.directorySessions;
+    if (this.sessionFilter === 'active') {
+      displaySessions = displaySessions.filter(s => !s.isCompleted);
+    } else if (this.sessionFilter === 'completed') {
+      displaySessions = displaySessions.filter(s => s.isCompleted);
+    }
+
     // Filter Sessions by Search Query
     const query = (this.dirSessionsSearch ? this.dirSessionsSearch.value : '').trim().toLowerCase();
     const filteredSessions = query
-      ? this.directorySessions.filter(s => s.name.toLowerCase().includes(query) || s.path.toLowerCase().includes(query))
-      : this.directorySessions;
+      ? displaySessions.filter(s => s.name.toLowerCase().includes(query) || s.path.toLowerCase().includes(query))
+      : displaySessions;
 
     // Empty state handling
     if (filteredSessions.length === 0) {
       this.dirSessionsGrid.innerHTML = '';
       if (this.dirEmptySessionsNotice) {
         this.dirEmptySessionsNotice.style.display = 'block';
+        const titleEl = this.dirEmptySessionsNotice.querySelector('div');
+        const pEl = this.dirEmptySessionsNotice.querySelector('p');
         if (query) {
-          const titleEl = this.dirEmptySessionsNotice.querySelector('div');
-          const pEl = this.dirEmptySessionsNotice.querySelector('p');
           if (titleEl) titleEl.textContent = `Tidak Ditemukan Sesi "${query}"`;
           if (pEl) pEl.textContent = 'Silakan coba kata kunci pencarian lain atau buat folder sesi baru.';
+        } else if (this.sessionFilter === 'active') {
+          if (titleEl) titleEl.textContent = 'Tidak Ada Sesi Aktif Saat Ini';
+          if (pEl) pEl.textContent = 'Semua sesi photoshoot telah diselesaikan, atau klik "+ Buat Sesi Baru" untuk memulai sesi baru.';
+        } else if (this.sessionFilter === 'completed') {
+          if (titleEl) titleEl.textContent = 'Belum Ada Sesi yang Selesai';
+          if (pEl) pEl.textContent = 'Sesi yang telah menyelesaikan pemilihan foto dan cetak akan muncul di sini.';
         } else {
-          const titleEl = this.dirEmptySessionsNotice.querySelector('div');
-          const pEl = this.dirEmptySessionsNotice.querySelector('p');
           if (titleEl) titleEl.textContent = 'Belum Ada Folder Sesi Ditemukan';
           if (pEl) pEl.textContent = 'Tidak ada folder photoshoot di dalam direktori induk saat ini. Klik tombol "+ Buat Sesi Baru" di atas untuk membuat sesi foto pertama Anda.';
         }
@@ -2298,7 +2354,10 @@ class RTFTPOperator {
 
     filteredSessions.forEach(s => {
       const card = document.createElement('div');
-      card.className = `session-dir-card ${s.isActive ? 'is-active' : ''}`;
+      card.className = `session-dir-card ${s.isCompleted ? 'is-completed' : (s.isCurrentActive ? 'is-active' : '')}`;
+      if (s.isCompleted) {
+        card.style.opacity = '0.85';
+      }
 
       const dateStr = s.mtime
         ? new Date(s.mtime).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -2331,11 +2390,24 @@ class RTFTPOperator {
         `;
       }
 
+      let statusBadgeHtml = '';
+      if (s.isCompleted) {
+        statusBadgeHtml = `<span class="badge-station badge-station-offline" style="background: rgba(148, 163, 184, 0.12); color: var(--text-muted); border: 1px solid var(--border-subtle); font-weight: 700;">SELESAI CETAK</span>`;
+      } else if (s.assignedStations && s.assignedStations.length > 0) {
+        statusBadgeHtml = `<span class="badge-session-active"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-green);"></span> AKTIF (${s.assignedStations.join(', ')})</span>`;
+      } else if (s.isCurrentActive) {
+        statusBadgeHtml = `<span class="badge-session-active"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-green);"></span> SESI UTAMA</span>`;
+      } else {
+        statusBadgeHtml = `<span class="badge-session-active" style="background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.25); color: var(--accent-blue);"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-blue);"></span> AKTIF (STANDBY)</span>`;
+      }
+
+      const iconStroke = s.isCompleted ? 'var(--text-muted)' : (s.isCurrentActive ? 'var(--accent-gold)' : 'var(--accent-blue)');
+
       card.innerHTML = `
         <div class="session-dir-header">
           <div class="session-dir-title-area">
             <h3 class="session-dir-title" title="${s.name}">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${s.isActive ? 'var(--accent-gold)' : 'currentColor'}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${iconStroke}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
               </svg>
               <span>${s.name}</span>
@@ -2346,10 +2418,7 @@ class RTFTPOperator {
             </div>
           </div>
           <div>
-            ${s.isActive
-              ? `<span class="badge-session-active"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-green);"></span> SESI AKTIF</span>`
-              : `<span class="badge-session-archive">TERSEDIA</span>`
-            }
+            ${statusBadgeHtml}
           </div>
         </div>
 
@@ -2402,25 +2471,44 @@ class RTFTPOperator {
               </svg>
               <span>Galeri</span>
             </button>
-            <button class="btn-dir-assign-station" data-path="${s.path}" data-name="${s.name}" title="Arahkan sesi folder ini ke salah satu stasiun PC klien">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <line x1="20" y1="8" x2="20" y2="14"></line>
-                <line x1="23" y1="11" x2="17" y2="11"></line>
-              </svg>
-              <span>Arahkan ke Stasiun...</span>
-            </button>
+            ${!s.isCompleted ? `
+              <button class="btn-dir-assign-station" data-path="${s.path}" data-name="${s.name}" title="Arahkan sesi folder ini ke salah satu stasiun PC klien">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="8.5" cy="7" r="4"></circle>
+                  <line x1="20" y1="8" x2="20" y2="14"></line>
+                  <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                <span>Arahkan ke Stasiun...</span>
+              </button>
+            ` : ''}
           </div>
 
-          <div>
-            ${s.isActive
-              ? `<button class="btn-dir-activate is-current" disabled title="Sesi ini sedang aktif digunakan">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            ${s.isCompleted ? `
+              <button class="btn btn-sm btn-reopen-session" data-path="${s.path}" data-name="${s.name}" title="Buka kembali sesi ini menjadi aktif" style="font-size: 0.78rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); background: var(--color-blue-bg); border: 1px solid var(--color-blue-border); color: var(--accent-blue); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 4v6h-6"></path>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span>Buka Kembali</span>
+              </button>
+            ` : `
+              <button class="btn btn-sm btn-complete-session" data-path="${s.path}" data-name="${s.name}" title="Selesaikan sesi setelah pelanggan selesai memilih foto dan mencetak" style="font-size: 0.78rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Selesaikan Sesi</span>
+              </button>
+              ${!s.isCurrentActive ? `
+                <button class="btn-dir-activate btn-make-active" data-path="${s.path}" data-name="${s.name}" title="Jadikan folder ini sebagai sesi utama">Jadikan Sesi Utama</button>
+              ` : `
+                <button class="btn-dir-activate is-current" disabled title="Sesi ini adalah sesi utama">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>Sesi Aktif</span>
-                </button>`
-              : `<button class="btn-dir-activate btn-make-active" data-path="${s.path}" data-name="${s.name}" title="Jadikan folder ini sebagai sesi aktif untuk klien dan operator">Jadikan Sesi Aktif</button>`
-            }
+                  <span>Sesi Utama</span>
+                </button>
+              `}
+            `}
           </div>
         </div>
       `;
@@ -2463,14 +2551,14 @@ class RTFTPOperator {
       if (galleryBtn) {
         galleryBtn.addEventListener('click', async () => {
           const p = galleryBtn.getAttribute('data-path');
-          if (!s.isActive) {
-            try {
+          try {
+            if (!s.isCurrentActive) {
               await window.api.setSessionFolder(p);
               await this.refreshData();
               await this.refreshDirectorySessions();
-            } catch (err) {}
-          }
-          window.location.hash = '#session';
+            }
+            window.open('index.html', '_blank');
+          } catch (err) {}
         });
       }
 
@@ -2479,6 +2567,62 @@ class RTFTPOperator {
       if (assignStationBtn) {
         assignStationBtn.addEventListener('click', () => {
           this.openAssignStationModal(s);
+        });
+      }
+
+      // Wire Complete Session Button
+      const completeBtn = card.querySelector('.btn-complete-session');
+      if (completeBtn) {
+        completeBtn.addEventListener('click', async () => {
+          const p = completeBtn.getAttribute('data-path');
+          const name = completeBtn.getAttribute('data-name');
+          completeBtn.disabled = true;
+          completeBtn.textContent = 'Menyelesaikan...';
+          try {
+            const res = await window.api.completeSession(p);
+            if (res.success) {
+              this.log(`Sesi diselesaikan: ${name}`, 'info');
+              window.showToast(`Sesi "${name}" ditandai selesai cetak!`, 'success');
+              await this.refreshDirectorySessions();
+              await this.refreshStations();
+            } else {
+              window.showToast('Gagal menyelesaikan sesi: ' + res.error, 'danger');
+              completeBtn.disabled = false;
+              completeBtn.textContent = 'Selesaikan Sesi';
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+            completeBtn.disabled = false;
+            completeBtn.textContent = 'Selesaikan Sesi';
+          }
+        });
+      }
+
+      // Wire Reopen Session Button
+      const reopenBtn = card.querySelector('.btn-reopen-session');
+      if (reopenBtn) {
+        reopenBtn.addEventListener('click', async () => {
+          const p = reopenBtn.getAttribute('data-path');
+          const name = reopenBtn.getAttribute('data-name');
+          reopenBtn.disabled = true;
+          reopenBtn.textContent = 'Membuka...';
+          try {
+            const res = await window.api.reopenSession(p);
+            if (res.success) {
+              this.log(`Sesi dibuka kembali: ${name}`, 'success');
+              window.showToast(`Sesi "${name}" aktif kembali!`, 'success');
+              await this.refreshDirectorySessions();
+              await this.refreshStations();
+            } else {
+              window.showToast('Gagal membuka sesi: ' + res.error, 'danger');
+              reopenBtn.disabled = false;
+              reopenBtn.textContent = 'Buka Kembali';
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+            reopenBtn.disabled = false;
+            reopenBtn.textContent = 'Buka Kembali';
+          }
         });
       }
 
@@ -2494,19 +2638,19 @@ class RTFTPOperator {
           try {
             const res = await window.api.setSessionFolder(p);
             if (res.success) {
-              this.log(`Sesi aktif dialihkan ke: ${name}`, 'success');
-              window.showToast(`Sesi photoshoot "${name}" sekarang aktif!`, 'success');
+              this.log(`Sesi utama dialihkan ke: ${name}`, 'success');
+              window.showToast(`Sesi photoshoot "${name}" dijadikan sesi utama!`, 'success');
               await this.refreshData();
               await this.refreshDirectorySessions();
             } else {
               window.showToast('Gagal mengaktifkan sesi: ' + res.error, 'danger');
               activateBtn.disabled = false;
-              activateBtn.textContent = 'Jadikan Sesi Aktif';
+              activateBtn.textContent = 'Jadikan Sesi Utama';
             }
           } catch (err) {
             window.showToast('Error: ' + err.message, 'danger');
             activateBtn.disabled = false;
-            activateBtn.textContent = 'Jadikan Sesi Aktif';
+            activateBtn.textContent = 'Jadikan Sesi Utama';
           }
         });
       }

@@ -1,9 +1,7 @@
 {
   "port": 3000,
   "activeSessionPath": "C:\\Cloud\\seadrive\\Project's\\Desktop\\RTFTP\\storage\\demo_session",
-  "recentFolders": [
-    "C:\\Cloud\\seadrive\\Project's\\Desktop\\RTFTP\\storage\\demo_session"
-  ],
+  "recentFolders": [],
   "watermark": {
     "enabled": false,
     "text": "STUDIO PREVIEW"
@@ -35,13 +33,14 @@
     }
   ],
   "sessionTimer": {
-    "enabled": true,
-    "durationMinutes": 10,
+    "enabled": false,
+    "durationMinutes": 15,
     "warningThresholdMinutes": 3,
     "lockOnExpiry": false,
     "autoStartOnSessionChange": false,
     "messageOnExpiry": "Waktu sesi pemilihan foto telah selesai. Tim studio kami siap membantu menyelesaikan pesanan cetak Anda."
   },
+  "completedSessions": [],
   "clientStations": [
     {
       "id": "station-1",
@@ -50,7 +49,7 @@
       "note": "Layar Sentuh Booth Utama",
       "assignedSessionPath": null,
       "assignedSessionName": null,
-      "createdAt": 1790481794704
+      "createdAt": 1790501780440
     },
     {
       "id": "station-2",
@@ -59,7 +58,7 @@
       "note": "Layar Sentuh Booth 2",
       "assignedSessionPath": null,
       "assignedSessionName": null,
-      "createdAt": 1790481794704
+      "createdAt": 1790501780440
     }
   ]
 }

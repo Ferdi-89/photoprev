@@ -35,7 +35,9 @@ const {
   listSessions,
   createSession,
   openInWindowsExplorer,
-  setRootDirectory
+  setRootDirectory,
+  completeSession,
+  reopenSession
 } = require('./lib/sessionDirectoryManager');
 const sessionTimerManager = require('./lib/sessionTimerManager');
 
@@ -130,6 +132,18 @@ function getAllActiveSessionFolders() {
       }
     });
   }
+  // All non-completed sessions in storage root are actively watched
+  try {
+    const listRes = listSessions(config);
+    if (listRes && Array.isArray(listRes.sessions)) {
+      listRes.sessions.forEach(s => {
+        if (!s.isCompleted && fs.existsSync(s.path)) {
+          folders.add(path.resolve(s.path));
+        }
+      });
+    }
+  } catch (e) {}
+
   return Array.from(folders);
 }
 
@@ -442,17 +456,29 @@ app.post('/api/print/export', async (req, res) => {
         if (s.totalItems > 0) {
           const rep = await printManager.exportToPrintFolder(s.sessionPath);
           reports.push(rep);
+          try {
+            sessionDirectoryManager.completeSession(config, s.sessionPath);
+          } catch (e) {}
         }
       }
       broadcast({ type: 'PRINT_EXPORTED', reports });
+      const dirData = sessionDirectoryManager.listSessions(config);
+      broadcast({ type: 'SESSION_DIRECTORIES_UPDATED', ...dirData });
       return res.json({ success: true, reports });
     }
 
     const report = await printManager.exportToPrintFolder(sessionPath);
+    try {
+      if (sessionPath) {
+        sessionDirectoryManager.completeSession(config, sessionPath);
+      }
+    } catch (e) {}
     broadcast({
       type: 'PRINT_EXPORTED',
       report
     });
+    const dirData = sessionDirectoryManager.listSessions(config);
+    broadcast({ type: 'SESSION_DIRECTORIES_UPDATED', ...dirData });
     res.json({ success: true, report });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -655,6 +681,38 @@ app.post('/api/operator/directory/open-explorer', async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 23B. Operator Directory: Mark Session as Completed (Checkout / Print Done)
+app.post('/api/operator/directory/complete', (req, res) => {
+  try {
+    const { sessionPath } = req.body;
+    const result = completeSession(config, sessionPath);
+    setupActiveWatcher();
+    broadcast({
+      type: 'SESSION_DIRECTORIES_UPDATED',
+      ...listSessions(config)
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 23C. Operator Directory: Reopen Completed Session Back to Active
+app.post('/api/operator/directory/reopen', (req, res) => {
+  try {
+    const { sessionPath } = req.body;
+    const result = reopenSession(config, sessionPath);
+    setupActiveWatcher();
+    broadcast({
+      type: 'SESSION_DIRECTORIES_UPDATED',
+      ...listSessions(config)
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 

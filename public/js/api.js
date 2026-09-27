@@ -194,6 +194,24 @@ class RTFTPApi {
     return await res.json();
   }
 
+  async completeSession(sessionPath) {
+    const res = await fetch('/api/operator/directory/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionPath })
+    });
+    return await res.json();
+  }
+
+  async reopenSession(sessionPath) {
+    const res = await fetch('/api/operator/directory/reopen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionPath })
+    });
+    return await res.json();
+  }
+
   // Session Timer & Customer Pacing API
   async getTimer() {
     const res = await fetch('/api/timer');
