@@ -212,6 +212,41 @@ class RTFTPApi {
     return await res.json();
   }
 
+  // Reveal Specific Photo in Windows Explorer
+  async openFileLocation(sessionPath, filename) {
+    const res = await fetch('/api/operator/queue/open-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionPath, filename })
+    });
+    return await res.json();
+  }
+
+  // Open Folder (session or _SIAP_CETAK) in Windows Explorer
+  async openQueueFolder(sessionPath, target = 'session') {
+    const res = await fetch('/api/operator/queue/open-folder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionPath, target })
+    });
+    return await res.json();
+  }
+
+  // Trigger Direct Photo Print Window
+  openDirectPrintWindow(sessionPath, filename = null, sizes = null, isBatch = false) {
+    let url = `/api/print/render?session=${encodeURIComponent(sessionPath)}`;
+    if (filename) {
+      url += `&file=${encodeURIComponent(filename)}`;
+      if (sizes) {
+        url += `&sizes=${encodeURIComponent(JSON.stringify(sizes))}`;
+      }
+    } else if (isBatch) {
+      url += `&batch=true`;
+    }
+    const printWindow = window.open(url, '_blank', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no');
+    return printWindow;
+  }
+
   // Session Timer & Customer Pacing API
   async getTimer() {
     const res = await fetch('/api/timer');

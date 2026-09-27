@@ -923,17 +923,31 @@ class RTFTPOperator {
               </div>
             </div>
           </div>
-          <div class="session-header-actions">
-            ${!isActive ? `
-              <button class="btn btn-sm btn-activate-session" data-path="${session.sessionPath}" title="Aktifkan sesi ini untuk layar klien">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                Aktifkan Sesi
-              </button>
-            ` : ''}
+          <div class="session-header-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button class="btn btn-sm btn-print-session" data-path="${session.sessionPath}" title="Buka jendela cetak langsung untuk semua foto sesi ini (${session.totalCopies} lembar)" style="background: var(--color-blue-bg); border: 1px solid var(--color-blue-border); color: var(--accent-blue); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              <span>Cetak Sesi Ini</span>
+            </button>
+            <button class="btn btn-sm btn-secondary btn-explorer-session" data-path="${session.sessionPath}" title="Buka folder sesi ini di Windows Explorer" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Buka di Explorer</span>
+            </button>
             <button class="btn btn-sm btn-gold btn-export-session" data-path="${session.sessionPath}" title="Salin foto sesi ini ke _SIAP_CETAK">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
               Salin ke _SIAP_CETAK
             </button>
+            ${!isActive ? `
+              <button class="btn btn-sm btn-secondary btn-activate-session" data-path="${session.sessionPath}" title="Aktifkan sesi ini untuk layar klien">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Aktifkan Sesi
+              </button>
+            ` : ''}
             <button class="btn btn-sm btn-danger btn-reset-session" data-path="${session.sessionPath}" data-name="${session.sessionName}" title="Hapus semua pilihan foto pada sesi ini">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               Reset Sesi
@@ -950,7 +964,7 @@ class RTFTPOperator {
                 <th>Nama File</th>
                 <th>Ukuran & Jumlah</th>
                 <th>Waktu Dipilih</th>
-                <th style="text-align: right; width: 140px;">Aksi</th>
+                <th style="text-align: right; width: 250px;">Aksi Cepat</th>
               </tr>
             </thead>
             <tbody class="session-table-body">
@@ -961,6 +975,31 @@ class RTFTPOperator {
       `;
 
       // Wire Header Action Buttons
+      const btnPrintSession = card.querySelector('.btn-print-session');
+      if (btnPrintSession) {
+        btnPrintSession.addEventListener('click', () => {
+          window.api.openDirectPrintWindow(session.sessionPath, null, null, true);
+          this.log(`Membuka jendela cetak batch untuk sesi: ${session.sessionName} (${session.totalCopies} lembar)`, 'info');
+        });
+      }
+
+      const btnExplorerSession = card.querySelector('.btn-explorer-session');
+      if (btnExplorerSession) {
+        btnExplorerSession.addEventListener('click', async () => {
+          try {
+            const res = await window.api.openInExplorer(session.sessionPath);
+            if (res.success) {
+              window.showToast(`Membuka folder sesi di Windows Explorer`, 'blue');
+              this.log(`Folder sesi dibuka di Explorer: ${session.sessionName}`, 'info');
+            } else {
+              window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+          }
+        });
+      }
+
       const btnActivate = card.querySelector('.btn-activate-session');
       if (btnActivate) {
         btnActivate.addEventListener('click', async () => {
@@ -995,6 +1034,9 @@ class RTFTPOperator {
               const rep = res.report;
               this.log(`BERHASIL: ${rep.totalCopies} lembar foto diekspor ke: ${rep.targetDir}`, 'success');
               window.showToast(`Sukses! ${rep.totalCopies} lembar foto disalin ke _SIAP_CETAK.`, 'success', 5000);
+              try {
+                await window.api.openQueueFolder(session.sessionPath, 'print');
+              } catch (e) {}
               await this.refreshData();
             } else {
               window.showToast('Gagal mengekspor: ' + res.error, 'danger');
@@ -1086,18 +1128,59 @@ class RTFTPOperator {
           <td style="padding: 12px 16px; font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
             ${item.selectedAt ? new Date(item.selectedAt).toLocaleTimeString('id-ID') : '-'}
           </td>
-          <td style="padding: 12px 16px; text-align: right;">
-            <div style="display: inline-flex; align-items: center; gap: 6px;">
-              <button type="button" class="btn-inspect-item" title="Lihat detail resolusi penuh">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                Detail
+          <td style="padding: 10px 16px; text-align: right; white-space: nowrap;">
+            <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
+              <button type="button" class="btn btn-sm btn-gold btn-print-item" title="Cetak foto ini sekarang (${item.filename})" style="padding: 5px 10px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span>Cetak</span>
               </button>
-              <button type="button" class="btn btn-sm btn-danger btn-remove-item" title="Batalkan foto ini dari antrean" aria-label="Batalkan foto ini">
+              <button type="button" class="btn btn-sm btn-secondary btn-locate-item" title="Buka dan sorot file ini di Windows Explorer" style="padding: 5px 9px; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Lokasi</span>
+              </button>
+              <button type="button" class="btn-inspect-item" title="Lihat detail resolusi penuh" style="padding: 5px 9px; font-size: 0.78rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                <span>Detail</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-danger btn-remove-item" title="Batalkan foto ini dari antrean" aria-label="Batalkan foto ini" style="padding: 5px 8px;">
                 <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
           </td>
         `;
+
+        // Wire Direct Print Item
+        const btnPrintItem = tr.querySelector('.btn-print-item');
+        if (btnPrintItem) {
+          btnPrintItem.addEventListener('click', () => {
+            window.api.openDirectPrintWindow(session.sessionPath, item.filename, item.sizes);
+            this.log(`Membuka jendela cetak untuk foto: ${item.filename}`, 'info');
+          });
+        }
+
+        // Wire Locate File in Explorer
+        const btnLocateItem = tr.querySelector('.btn-locate-item');
+        if (btnLocateItem) {
+          btnLocateItem.addEventListener('click', async () => {
+            try {
+              const res = await window.api.openFileLocation(session.sessionPath, item.filename);
+              if (res.success) {
+                window.showToast(`Membuka file di Explorer: ${item.filename}`, 'blue');
+                this.log(`Menyorot file di Explorer: ${res.openedPath}`, 'info');
+              } else {
+                window.showToast('Gagal membuka lokasi file: ' + res.error, 'danger');
+              }
+            } catch (err) {
+              window.showToast('Error: ' + err.message, 'danger');
+            }
+          });
+        }
 
         // Wire Inspection Trigger: Thumbnail, Title Button, Inspect Button
         tr.querySelector('.queue-preview-thumb').addEventListener('click', () => openDetailLightbox(index));

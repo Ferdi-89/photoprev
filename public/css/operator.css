@@ -1292,6 +1292,63 @@ th {
   transform: scale(0.96);
 }
 
+.btn-print-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: var(--accent-gold);
+  border: 1px solid transparent;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-print-item:hover {
+  background: #b45309;
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-print-item:active {
+  transform: scale(0.96);
+}
+
+.btn-locate-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-locate-item:hover {
+  background: var(--color-blue-bg);
+  border-color: var(--color-blue-border);
+  color: var(--color-blue-text);
+  transform: translateY(-1px);
+}
+
+.btn-locate-item:active {
+  transform: scale(0.96);
+}
+
+.btn-print-session:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
 /* ==========================================================================
    OPERATOR FOLDER BROWSER & DIRECTORY EXPLORER MODAL
    ========================================================================== */

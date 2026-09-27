@@ -35,6 +35,7 @@ const {
   listSessions,
   createSession,
   openInWindowsExplorer,
+  openFileInWindowsExplorer,
   setRootDirectory,
   completeSession,
   reopenSession
@@ -482,6 +483,324 @@ app.post('/api/print/export', async (req, res) => {
     res.json({ success: true, report });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 10B. Operator Queue: Reveal Specific Photo in Windows Explorer
+app.post('/api/operator/queue/open-file', async (req, res) => {
+  try {
+    const { sessionPath, filename } = req.body || {};
+    if (!filename) {
+      return res.status(400).json({ success: false, error: 'Nama file tidak boleh kosong' });
+    }
+
+    const safeFilename = path.basename(filename);
+    const targetSession = sessionPath ? path.resolve(sessionPath) : config.activeSessionPath;
+    const targetFilePath = path.join(targetSession, safeFilename);
+
+    if (!fs.existsSync(targetFilePath)) {
+      return res.status(404).json({ success: false, error: 'File foto tidak ditemukan di folder sesi' });
+    }
+
+    const result = await openFileInWindowsExplorer(targetFilePath);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 10C. Operator Queue: Open Session or _SIAP_CETAK Folder in Windows Explorer
+app.post('/api/operator/queue/open-folder', async (req, res) => {
+  try {
+    const { sessionPath, target } = req.body || {};
+    const baseSession = sessionPath ? path.resolve(sessionPath) : config.activeSessionPath;
+
+    let targetDir = baseSession;
+    if (target === 'print' || target === '_SIAP_CETAK') {
+      const printFolder = path.join(baseSession, '_SIAP_CETAK');
+      if (fs.existsSync(printFolder)) {
+        targetDir = printFolder;
+      }
+    }
+
+    if (!fs.existsSync(targetDir)) {
+      return res.status(404).json({ success: false, error: 'Direktori tidak ditemukan' });
+    }
+
+    const result = await openInWindowsExplorer(targetDir);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 10D. Web & OS Direct Print Preview / Trigger Route
+app.get('/api/print/render', (req, res) => {
+  try {
+    const sessionPath = req.query.session ? path.resolve(req.query.session) : config.activeSessionPath;
+    const filename = req.query.file ? path.basename(req.query.file) : null;
+    const isBatch = req.query.batch === 'true' || req.query.batch === '1';
+
+    if (!sessionPath || !fs.existsSync(sessionPath)) {
+      return res.status(404).send('Folder sesi tidak ditemukan');
+    }
+
+    let pages = [];
+
+    if (filename) {
+      // Single photo
+      const photoPath = path.join(sessionPath, filename);
+      if (!fs.existsSync(photoPath)) {
+        return res.status(404).send('File foto tidak ditemukan di sesi ini');
+      }
+
+      let parsedSizes = [];
+      if (req.query.sizes) {
+        try {
+          parsedSizes = JSON.parse(req.query.sizes);
+        } catch (e) {
+          parsedSizes = [{ size: req.query.sizes, qty: 1 }];
+        }
+      }
+      if (!Array.isArray(parsedSizes) || parsedSizes.length === 0) {
+        parsedSizes = [{ size: '4R', qty: 1 }];
+      }
+
+      parsedSizes.forEach(s => {
+        const qty = Math.max(1, parseInt(s.qty, 10) || 1);
+        for (let i = 0; i < qty; i++) {
+          pages.push({
+            filename,
+            size: s.size || '4R',
+            copyNum: i + 1,
+            totalCopies: qty
+          });
+        }
+      });
+    } else if (isBatch) {
+      // All selections in session
+      const selections = printManager.getSelections(sessionPath);
+      if (selections.length === 0) {
+        return res.status(400).send('Belum ada foto yang dipilih untuk dicetak pada sesi ini');
+      }
+
+      selections.forEach(item => {
+        const sizes = item.sizes || [{ size: '4R', qty: 1 }];
+        sizes.forEach(s => {
+          const qty = Math.max(1, parseInt(s.qty, 10) || 1);
+          for (let i = 0; i < qty; i++) {
+            pages.push({
+              filename: item.filename,
+              size: s.size || '4R',
+              copyNum: i + 1,
+              totalCopies: qty
+            });
+          }
+        });
+      });
+    } else {
+      return res.status(400).send('Parameter pencetakan tidak valid (harus menyertakan file atau batch=true)');
+    }
+
+    const sessionName = path.basename(sessionPath);
+
+    const esc = (str) => String(str || '').replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag));
+
+    const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cetak Foto - ${esc(sessionName)}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    @page {
+      size: auto;
+      margin: 0mm;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .print-page {
+        width: 100vw;
+        height: 100vh;
+        page-break-after: always;
+        page-break-inside: avoid;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .print-page img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+      }
+    }
+    @media screen {
+      body {
+        background: #090d16;
+        color: #f1f5f9;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .print-toolbar {
+        position: sticky;
+        top: 16px;
+        z-index: 100;
+        background: #131b2e;
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+      }
+      .print-btn {
+        background: #d97706;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 9px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.92rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.15s ease;
+      }
+      .print-btn:hover { background: #b45309; }
+      .close-btn {
+        background: #1e293b;
+        color: #cbd5e1;
+        padding: 9px 16px;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.88rem;
+        font-weight: 600;
+        transition: all 0.15s ease;
+      }
+      .close-btn:hover { background: #334155; color: #ffffff; }
+      .session-tag {
+        font-size: 0.84rem;
+        color: #94a3b8;
+        font-family: monospace;
+      }
+      .preview-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        max-width: 820px;
+        width: 100%;
+      }
+      .preview-sheet {
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+      }
+      .sheet-header {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.76rem;
+        color: #64748b;
+        margin-bottom: 12px;
+        font-family: monospace;
+        font-weight: 600;
+        border-bottom: 1px dashed #e2e8f0;
+        padding-bottom: 8px;
+      }
+      .preview-sheet img {
+        max-width: 100%;
+        max-height: 65vh;
+        object-fit: contain;
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-toolbar no-print">
+    <button class="print-btn" onclick="window.print()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+      <span>Kirim ke Printer (Print)</span>
+    </button>
+    <span class="session-tag">${esc(sessionName)} &bull; ${pages.length} Lembar Foto</span>
+    <button class="close-btn" onclick="window.close()">Tutup Jendela</button>
+  </div>
+  <div class="preview-container">
+    ${pages.map((p, idx) => `
+      <div class="preview-sheet print-page">
+        <div class="sheet-header no-print">
+          <span>Lembar ${idx + 1} dari ${pages.length} &bull; ${esc(p.filename)}</span>
+          <span>Ukuran: ${esc(p.size)} (Salinan ${p.copyNum}/${p.totalCopies})</span>
+        </div>
+        <img src="/api/photo/${encodeURIComponent(p.filename)}/raw?session=${encodeURIComponent(sessionPath)}" alt="${esc(p.filename)}" loading="eager">
+      </div>
+    `).join('')}
+  </div>
+  <script>
+    let loadedCount = 0;
+    const imgs = document.querySelectorAll('.preview-sheet img');
+    const totalImgs = imgs.length;
+
+    function checkReadyAndPrint() {
+      loadedCount++;
+      if (loadedCount >= totalImgs) {
+        setTimeout(() => {
+          window.print();
+        }, 350);
+      }
+    }
+
+    if (totalImgs === 0) {
+      window.print();
+    } else {
+      imgs.forEach(img => {
+        if (img.complete) {
+          checkReadyAndPrint();
+        } else {
+          img.addEventListener('load', checkReadyAndPrint);
+          img.addEventListener('error', checkReadyAndPrint);
+        }
+      });
+    }
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (err) {
+    res.status(500).send('Error rendering print layout: ' + err.message);
   }
 });
 
