@@ -258,6 +258,19 @@ class RTFTPOperator {
       }
     };
 
+    this.switchView = switchView;
+
+    // Delegated click listener for any button with data-switch-view attribute
+    document.addEventListener('click', (e) => {
+      const switchTrigger = e.target.closest('[data-switch-view]');
+      if (switchTrigger) {
+        const targetViewId = switchTrigger.getAttribute('data-switch-view');
+        if (targetViewId) {
+          switchView(targetViewId, true);
+        }
+      }
+    });
+
     // Nav Item Click Listener (Desktop + Mobile)
     this.navItems.forEach(item => {
       item.addEventListener('click', () => {
@@ -342,24 +355,49 @@ class RTFTPOperator {
   }
 
   bindEvents() {
-    // Save Folder Path
-    document.getElementById('btn-save-folder').addEventListener('click', async () => {
-      const newPath = this.sessionPathInput.value.trim();
-      if (!newPath) return window.showToast('Masukkan path folder sesi', 'warning');
+    // Save Folder Path (if legacy input exists)
+    const btnSaveFolder = document.getElementById('btn-save-folder');
+    if (btnSaveFolder) {
+      btnSaveFolder.addEventListener('click', async () => {
+        const newPath = this.sessionPathInput ? this.sessionPathInput.value.trim() : '';
+        if (!newPath) return window.showToast('Masukkan path folder sesi', 'warning');
 
-      try {
-        const res = await window.api.setSessionFolder(newPath);
-        if (res.success) {
-          this.log(`Folder sesi aktif diubah ke: ${newPath}`, 'success');
-          window.showToast('Folder sesi aktif berhasil diperbarui', 'success');
-          await this.refreshData();
-        } else {
-          window.showToast('Gagal mengganti folder: ' + res.error, 'danger');
+        try {
+          const res = await window.api.setSessionFolder(newPath);
+          if (res.success) {
+            this.log(`Folder sesi aktif diubah ke: ${newPath}`, 'success');
+            window.showToast('Folder sesi aktif berhasil diperbarui', 'success');
+            await this.refreshData();
+          } else {
+            window.showToast('Gagal mengganti folder: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
         }
-      } catch (err) {
-        window.showToast('Error: ' + err.message, 'danger');
-      }
-    });
+      });
+    }
+
+    // Active Session Overview: Open in Windows Explorer
+    const btnOpenActiveExplorer = document.getElementById('btn-open-active-explorer');
+    if (btnOpenActiveExplorer) {
+      btnOpenActiveExplorer.addEventListener('click', async () => {
+        const activePath = this.activeSessionPath || (this.currentPathDisplay ? this.currentPathDisplay.textContent.trim() : '');
+        if (!activePath || activePath === 'Memuat path...') {
+          return window.showToast('Path sesi aktif belum tersedia', 'warning');
+        }
+        try {
+          const res = await window.api.openInExplorer(activePath);
+          if (res.success) {
+            window.showToast('Membuka folder sesi aktif di Windows Explorer', 'blue');
+            this.log(`Membuka folder sesi aktif di Windows Explorer: ${res.openedPath}`, 'info');
+          } else {
+            window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
 
     // Generate Demo Photos
     document.getElementById('btn-generate-demo').addEventListener('click', async () => {
@@ -694,9 +732,15 @@ class RTFTPOperator {
       const selRes = await window.api.getSelections();
 
       if (session.success) {
-        this.currentPathDisplay.textContent = session.activeSessionPath;
-        this.sessionPathInput.value = session.activeSessionPath;
+        this.activeSessionPath = session.activeSessionPath;
+        if (this.currentPathDisplay) {
+          this.currentPathDisplay.textContent = session.activeSessionPath;
+        }
+        if (this.sessionPathInput) {
+          this.sessionPathInput.value = session.activeSessionPath;
+        }
         this.renderRecentFolders(session.recentFolders || [], session.activeSessionPath);
+        this.updateActiveSessionOverview(session.activeSessionPath);
       }
 
       const photos = photosRes.success ? photosRes.photos : [];
@@ -715,8 +759,52 @@ class RTFTPOperator {
 
       // Refresh Client Workstations
       await this.refreshStations();
+
+      // Keep overview card stations connectivity up to date
+      this.updateActiveSessionOverview(this.activeSessionPath);
     } catch (e) {
       console.error('Error refreshing operator data:', e);
+    }
+  }
+
+  /**
+   * Update Active Session Status in Overview Card
+   */
+  updateActiveSessionOverview(activePath) {
+    const overviewName = document.getElementById('overview-session-name');
+    if (overviewName) {
+      if (activePath) {
+        const cleanPath = activePath.replace(/\\/g, '/');
+        const parts = cleanPath.split('/').filter(Boolean);
+        overviewName.textContent = parts[parts.length - 1] || activePath;
+      } else {
+        overviewName.textContent = 'Belum Dipilih';
+      }
+    }
+
+    const overviewStations = document.getElementById('overview-session-stations');
+    if (overviewStations) {
+      if (!activePath) {
+        overviewStations.textContent = 'Standby';
+        overviewStations.style.color = 'var(--text-muted)';
+        return;
+      }
+      const actNorm = activePath.toLowerCase().replace(/\\/g, '/');
+      const assignedStations = (this.stations || []).filter(st => {
+        if (!st.assignedSession) return false;
+        const stNorm = st.assignedSession.toLowerCase().replace(/\\/g, '/');
+        return stNorm === actNorm || actNorm.endsWith(stNorm) || stNorm.endsWith(actNorm);
+      });
+      if (assignedStations.length > 0) {
+        overviewStations.textContent = `${assignedStations.length} PC Klien Terhubung`;
+        overviewStations.style.color = 'var(--accent-green)';
+      } else if ((this.stations || []).length > 0) {
+        overviewStations.textContent = 'Semua PC Klien (Default)';
+        overviewStations.style.color = 'var(--accent-blue)';
+      } else {
+        overviewStations.textContent = 'Standby (0 Klien)';
+        overviewStations.style.color = 'var(--text-muted)';
+      }
     }
   }
 
@@ -1072,7 +1160,9 @@ class RTFTPOperator {
 
       chip.addEventListener('click', async () => {
         if (isActive) return;
-        this.sessionPathInput.value = folderPath;
+        if (this.sessionPathInput) {
+          this.sessionPathInput.value = folderPath;
+        }
         try {
           const res = await window.api.setSessionFolder(folderPath);
           if (res.success) {

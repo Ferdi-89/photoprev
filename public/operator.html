@@ -282,10 +282,10 @@
         <div class="view-header">
           <div class="view-header-title">
             <h2>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-              Folder Sesi Pemotretan Aktif
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+              Ringkasan Operasional Sesi
             </h2>
-            <p>Kelola direktori transfer foto kamera studio dan pantau ringkasan statistik sesi photoshoot secara langsung.</p>
+            <p>Pantau foto masuk dari kamera studio, status sesi aktif, statistik pilihan foto klien, dan kelola countdown timer pacing sesi.</p>
           </div>
           <div class="view-header-actions">
             <button id="btn-generate-demo" class="btn btn-gold">
@@ -352,44 +352,78 @@
           </div>
         </div>
 
-        <!-- Folder Management Panel -->
-        <div class="dashboard-panel">
-          <div class="panel-header">
+        <!-- Active Session Status Overview Panel (Monitoring Dashboard & Direct Navigation) -->
+        <div class="dashboard-panel" id="panel-active-session-overview">
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
             <div>
-              <h3 class="panel-title">Path Direktori Sesi</h3>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h3 class="panel-title" style="margin: 0;">Sesi Pemotretan Aktif</h3>
+                <span class="badge-station badge-station-online" style="display: inline-flex; align-items: center; gap: 6px;">
+                  <span class="live-dot" style="width: 6px; height: 6px;"></span>
+                  Dipantau Kamera
+                </span>
+              </div>
               <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 4px;">
-                Sistem memantau folder ini secara otomatis. Setiap foto baru dari kamera atau Lightroom akan langsung disinkronkan ke layar klien.
+                Folder photoshoot yang sedang aktif dipantau. Setiap foto baru dari kamera atau Lightroom disinkronkan secara real-time ke layar klien.
               </p>
             </div>
-          </div>
-
-          <div style="background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 16px;">
-            <span style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Path Aktif Saat Ini:</span>
-            <div id="current-path-display" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent-blue); margin-top: 6px; word-break: break-all; font-weight: 600;">
-              Memuat path...
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button id="btn-open-active-explorer" class="btn btn-secondary" type="button" title="Buka folder sesi aktif di Windows Explorer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Buka di Explorer</span>
+              </button>
+              <button id="btn-goto-directories" class="btn btn-gold" type="button" data-switch-view="view-directories" title="Buka halaman Direktori Sesi untuk memilih, membuat, atau mengarahkan sesi">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Kelola di Direktori Sesi</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div class="path-box" style="margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <input type="text" id="session-path-input" class="input-text" style="flex: 1; min-width: 240px;" placeholder="Masukkan path folder lengkap, misal: D:\Photos\Sesi_Keluarga_01" aria-label="Path direktori sesi foto" autocomplete="off" spellcheck="false"/>
-            <button id="btn-browse-folder" class="btn btn-gold" type="button" title="Buka penjelajah folder studio">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-              <span>Telusuri Folder...</span>
+          <!-- Active Session Info Card -->
+          <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px 18px; margin-top: 14px; align-items: center;">
+            <div style="min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Nama Sesi:</span>
+                <span id="overview-session-name" style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-sans);">Memuat sesi...</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; flex-shrink: 0;">Path Folder:</span>
+                <div id="current-path-display" style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent-blue); word-break: break-all; font-weight: 600;">
+                  Memuat path...
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+              <div style="text-align: right;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stasiun Klien:</div>
+                <div id="overview-session-stations" style="font-size: 0.82rem; font-weight: 600; color: var(--accent-green); margin-top: 2px;">Terhubung</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Direct Navigation Link / Architecture Clarification Guide -->
+          <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 10px; flex-wrap: wrap; gap: 8px;">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--accent-gold);">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Ingin mengganti sesi aktif, membuat folder sesi baru, atau mengarahkan ke PC Klien tertentu? Kelola semuanya di menu <strong>Direktori Sesi</strong>.
+            </span>
+            <button type="button" class="btn btn-sm btn-outline-gold" data-switch-view="view-directories" style="text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.75rem;">
+              <span>Buka Direktori Sesi</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </button>
-            <button id="btn-save-folder" class="btn btn-primary" type="button">Terapkan</button>
-          </div>
-
-          <!-- Quick Recent Session Folders Section -->
-          <div id="recent-folders-wrapper" style="margin-top: 14px; display: none;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-              <span style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                Folder Sesi Sebelumnya (Klik Cepat):
-              </span>
-            </div>
-            <div id="recent-folders-list" class="recent-folders-chips" style="display: flex; flex-wrap: wrap; gap: 8px;">
-              <!-- Populated dynamically -->
-            </div>
           </div>
         </div>
 
