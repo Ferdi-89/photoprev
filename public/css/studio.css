@@ -798,3 +798,189 @@ h1, h2, h3, h4 {
   color: var(--text-secondary);
   line-height: 1.5;
 }
+
+/* ==========================================================================
+   Client Session Countdown Timer & Customer Pacing System
+   ========================================================================== */
+
+.client-timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.client-timer-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-blue);
+  transition: color var(--transition-fast);
+}
+
+.client-timer-details {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.client-timer-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.client-timer-digits {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* Warning State (When approaching expiry threshold, e.g. last 3 minutes) */
+.client-timer-badge.is-warning {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  animation: pulse-timer-warning 2s infinite ease-in-out;
+}
+
+.client-timer-badge.is-warning .client-timer-icon-wrap {
+  color: #d97706;
+}
+
+.client-timer-badge.is-warning .client-timer-digits {
+  color: #b45309;
+}
+
+/* Expired State */
+.client-timer-badge.is-expired {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.client-timer-badge.is-expired .client-timer-icon-wrap {
+  color: #dc2626;
+}
+
+.client-timer-badge.is-expired .client-timer-digits {
+  color: #dc2626;
+}
+
+/* Paused State */
+.client-timer-badge.is-paused {
+  opacity: 0.7;
+}
+
+@keyframes pulse-timer-warning {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+/* Client Expiry Modal & Card */
+.client-timer-modal-overlay {
+  z-index: 200;
+}
+
+.client-timer-card {
+  max-width: 480px;
+  text-align: center;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.client-timer-modal-icon-badge {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.client-timer-card.is-strict .client-timer-modal-icon-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.client-timer-modal-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.client-timer-modal-desc {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.client-timer-modal-summary {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 22px;
+}
+
+.client-timer-modal-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.client-timer-stat-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.client-timer-stat-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--accent-blue);
+  font-family: var(--font-display);
+}
+
+.client-timer-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.client-timer-modal-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+}
+

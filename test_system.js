@@ -40,4 +40,25 @@ assert(Array.isArray(drives) && drives.length > 0, 'Drives should return non-emp
 assert(drives[0].path && drives[0].name, 'Drive items should have name and path');
 console.log('✓ Cross-platform drive discovery OK');
 
-console.log('\nAll self-checks passed successfully!');
+// 6. Thumbnail deduplication and concurrent processing check
+async function runAsyncTests() {
+  const { getOrGenerateImage } = require('./lib/thumbnail');
+  const fs = require('fs');
+  const demoImg = path.join(__dirname, 'storage/demo_session/STUDIO_001_16x9_MasterSet.jpg');
+  if (fs.existsSync(demoImg)) {
+    const [thumb1, thumb2] = await Promise.all([
+      getOrGenerateImage(demoImg, 'thumb'),
+      getOrGenerateImage(demoImg, 'thumb')
+    ]);
+    assert.strictEqual(thumb1, thumb2, 'Concurrent thumbnail requests must resolve to identical path');
+    assert(fs.existsSync(thumb1), 'Generated thumbnail file must exist');
+    console.log('✓ Thumbnail concurrent deduplication & atomic caching OK');
+  }
+
+  console.log('\nAll self-checks passed successfully!');
+}
+
+runAsyncTests().catch(err => {
+  console.error('Test failed:', err);
+  process.exit(1);
+});

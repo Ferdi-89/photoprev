@@ -34,6 +34,14 @@
       "label": "Kanvas (40 x 60 cm)"
     }
   ],
+  "sessionTimer": {
+    "enabled": true,
+    "durationMinutes": 15,
+    "warningThresholdMinutes": 3,
+    "lockOnExpiry": false,
+    "autoStartOnSessionChange": false,
+    "messageOnExpiry": "Waktu sesi pemilihan foto telah selesai. Tim studio kami siap membantu menyelesaikan pesanan cetak Anda."
+  },
   "clientStations": [
     {
       "id": "station-1",

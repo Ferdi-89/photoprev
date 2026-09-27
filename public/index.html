@@ -38,6 +38,20 @@
       </button>
     </div>
 
+    <!-- Client Session Countdown Timer Badge -->
+    <div id="client-session-timer" class="client-timer-badge" style="display: none;" aria-live="polite" title="Sisa waktu pemilihan foto sesi ini">
+      <div class="client-timer-icon-wrap" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <div class="client-timer-details">
+        <span class="client-timer-label">Sisa Waktu</span>
+        <span id="client-timer-digits" class="client-timer-digits">15:00</span>
+      </div>
+    </div>
+
     <div class="toolbar-group">
       <span class="toolbar-label">Grid</span>
       <div class="grid-sizes" role="group" aria-label="Pengaturan kolom grid foto">
@@ -197,6 +211,45 @@
     </div>
   </div>
 
+  <!-- Client Session Timer Expiry Modal -->
+  <div id="client-timer-modal" class="modal-overlay client-timer-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="client-timer-modal-title" style="display: none;">
+    <div class="modal-card client-timer-card">
+      <div class="client-timer-modal-icon-badge" id="client-timer-modal-icon">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <h3 id="client-timer-modal-title" class="client-timer-modal-title">Waktu Pemilihan Selesai</h3>
+      <p id="client-timer-modal-desc" class="client-timer-modal-desc">
+        Waktu sesi pemilihan foto telah selesai. Tim studio kami siap membantu menyelesaikan pesanan cetak Anda.
+      </p>
+
+      <div class="client-timer-modal-summary">
+        <div class="client-timer-modal-stat">
+          <span class="client-timer-stat-label">Total Foto Terpilih:</span>
+          <strong id="client-timer-modal-count" class="client-timer-stat-value">0 Foto</strong>
+        </div>
+      </div>
+
+      <div class="client-timer-modal-actions" id="client-timer-modal-actions">
+        <button id="btn-timer-review-selection" class="btn btn-gold client-timer-modal-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Tinjau & Selesaikan Cetak</span>
+        </button>
+        <button id="btn-timer-dismiss-dialog" class="btn btn-secondary client-timer-modal-btn">
+          <span>Tetap di Galeri</span>
+        </button>
+      </div>
+
+      <div id="client-timer-strict-notice" style="display: none; margin-top: 14px; font-size: 0.82rem; color: var(--accent-red); font-weight: 600; text-align: center;">
+        Layar terkunci. Silakan hubungi operator studio di kasir untuk membuka kunci atau melanjutkan cetak.
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="js/vendor/gsap.min.js"></script>
   <script src="js/toast.js"></script>
@@ -204,6 +257,7 @@
   <script src="js/lightbox.js"></script>
   <script src="js/compare.js"></script>
   <script src="js/selection.js"></script>
+  <script src="js/timer.js"></script>
   <script src="js/gallery.js"></script>
 </body>
 </html>

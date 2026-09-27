@@ -35,6 +35,7 @@ const {
   openInWindowsExplorer,
   setRootDirectory
 } = require('./lib/sessionDirectoryManager');
+const sessionTimerManager = require('./lib/sessionTimerManager');
 
 const app = express();
 const server = http.createServer(app);
@@ -58,13 +59,68 @@ function broadcast(data) {
   });
 }
 
+// Initialize Session Timer Manager
+sessionTimerManager.init(config, broadcast);
+
+// In-memory cache for active session photos (instant 0ms response)
+let activePhotosCache = null;
+let activePhotosPath = '';
+
+async function reloadSessionPhotos(folderPath) {
+  const resolved = path.resolve(folderPath);
+  if (!fs.existsSync(resolved)) {
+    activePhotosCache = [];
+    activePhotosPath = resolved;
+    return [];
+  }
+  const entries = await fs.promises.readdir(resolved, { withFileTypes: true });
+  const photoFiles = entries
+    .filter(e => e.isFile() && isImageFile(e.name) && !e.name.startsWith('.'))
+    .map(e => e.name);
+
+  // Read metadata in parallel with in-memory caching
+  const photos = await Promise.all(photoFiles.map(async (filename) => {
+    const fullPath = path.join(resolved, filename);
+    const meta = await getImageMetadata(fullPath);
+    return {
+      id: filename,
+      filename,
+      size: meta.size,
+      mtime: meta.mtime,
+      width: meta.width,
+      height: meta.height,
+      aspectRatio: meta.aspectRatio
+    };
+  }));
+
+  // Sort by newest first
+  photos.sort((a, b) => b.mtime - a.mtime);
+  activePhotosCache = photos;
+  activePhotosPath = resolved;
+  return photos;
+}
+
 // Setup Watcher
 function setupActiveWatcher(folderPath) {
-  return startWatcher(folderPath, {
+  const resolved = path.resolve(folderPath);
+  reloadSessionPhotos(resolved).catch(() => {});
+
+  return startWatcher(resolved, {
     onPhotoAdded: (photo) => {
+      if (activePhotosCache && activePhotosPath === resolved) {
+        const idx = activePhotosCache.findIndex(p => p.filename === photo.filename);
+        if (idx >= 0) {
+          activePhotosCache[idx] = photo;
+        } else {
+          activePhotosCache.unshift(photo);
+        }
+      }
       broadcast({ type: 'PHOTO_ADDED', photo });
     },
     onPhotoRemoved: (filename) => {
+      if (activePhotosCache && activePhotosPath === resolved) {
+        activePhotosCache = activePhotosCache.filter(p => p.filename !== filename);
+      }
       broadcast({ type: 'PHOTO_REMOVED', filename });
     }
   });
@@ -85,32 +141,13 @@ function safeSessionDir(reqSession) {
   return resolved;
 }
 
-// Helper: Read all photos in current session (parallelized + cached)
+// Helper: Read all photos in session (instant in-memory if active session, otherwise reads disk)
 async function getSessionPhotos(folderPath) {
-  if (!fs.existsSync(folderPath)) return [];
-  const entries = fs.readdirSync(folderPath, { withFileTypes: true });
-  const photoFiles = entries
-    .filter(e => e.isFile() && isImageFile(e.name) && !e.name.startsWith('.'))
-    .map(e => e.name);
-
-  // Read metadata in parallel with in-memory caching
-  const photos = await Promise.all(photoFiles.map(async (filename) => {
-    const fullPath = path.join(folderPath, filename);
-    const meta = await getImageMetadata(fullPath);
-    return {
-      id: filename,
-      filename,
-      size: meta.size,
-      mtime: meta.mtime,
-      width: meta.width,
-      height: meta.height,
-      aspectRatio: meta.aspectRatio
-    };
-  }));
-
-  // Sort by newest first
-  photos.sort((a, b) => b.mtime - a.mtime);
-  return photos;
+  const resolved = path.resolve(folderPath);
+  if (activePhotosCache && activePhotosPath === resolved) {
+    return activePhotosCache;
+  }
+  return await reloadSessionPhotos(resolved);
 }
 
 // ---------------- REST API ROUTES ----------------
@@ -174,6 +211,7 @@ app.post('/api/session', async (req, res) => {
       activeSessionPath: config.activeSessionPath,
       photos
     });
+    sessionTimerManager.onSessionChanged();
 
     res.json({
       success: true,
@@ -212,7 +250,7 @@ app.get('/api/network', (req, res) => {
   }
 });
 
-// 4. Stream Thumbnail
+// 4. Stream Thumbnail (with HTTP 304 Not Modified & ETag caching)
 app.get('/api/photo/:filename/thumb', async (req, res) => {
   try {
     const filename = safeFilename(req.params.filename);
@@ -222,15 +260,17 @@ app.get('/api/photo/:filename/thumb', async (req, res) => {
       return res.status(404).send('Foto tidak ditemukan');
     }
     const cachedThumb = await getOrGenerateImage(fullPath, 'thumb');
-    res.setHeader('Content-Type', 'image/webp');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    fs.createReadStream(cachedThumb).pipe(res);
+    res.sendFile(cachedThumb, {
+      maxAge: '7d',
+      lastModified: true,
+      immutable: true
+    });
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
 
-// 5. Stream Preview (High-Res WebP)
+// 5. Stream Preview (High-Res WebP with HTTP 304 Not Modified & ETag caching)
 app.get('/api/photo/:filename/preview', async (req, res) => {
   try {
     const filename = safeFilename(req.params.filename);
@@ -240,9 +280,11 @@ app.get('/api/photo/:filename/preview', async (req, res) => {
       return res.status(404).send('Foto tidak ditemukan');
     }
     const cachedPreview = await getOrGenerateImage(fullPath, 'preview');
-    res.setHeader('Content-Type', 'image/webp');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    fs.createReadStream(cachedPreview).pipe(res);
+    res.sendFile(cachedPreview, {
+      maxAge: '7d',
+      lastModified: true,
+      immutable: true
+    });
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -358,7 +400,7 @@ app.post('/api/demo/generate', async (req, res) => {
   try {
     const force = req.body && req.body.force !== undefined ? req.body.force : true;
     await generateSamplePhotos(config.activeSessionPath, force);
-    const photos = await getSessionPhotos(config.activeSessionPath);
+    const photos = await reloadSessionPhotos(config.activeSessionPath);
     broadcast({
       type: 'SESSION_CHANGED',
       sessionName: path.basename(config.activeSessionPath),
@@ -514,6 +556,7 @@ app.post('/api/operator/directory/create', async (req, res) => {
         activeSessionPath: result.sessionPath,
         photos
       });
+      sessionTimerManager.onSessionChanged();
     }
 
     broadcast({
@@ -548,6 +591,84 @@ app.post('/api/operator/directory/set-root', (req, res) => {
       ...listSessions(config)
     });
     res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 25. Session Timer: Get Current State & Settings
+app.get('/api/timer', (req, res) => {
+  const timer = sessionTimerManager.getState();
+  res.json({ success: true, timer, data: timer });
+});
+
+// 26. Session Timer: Start Countdown
+app.post('/api/timer/start', (req, res) => {
+  try {
+    const { durationMinutes } = req.body;
+    const timer = sessionTimerManager.start({ durationMinutes });
+    res.json({ success: true, timer, data: timer });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 27. Session Timer: Pause Countdown
+app.post('/api/timer/pause', (req, res) => {
+  try {
+    const timer = sessionTimerManager.pause();
+    res.json({ success: true, timer, data: timer });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 28. Session Timer: Resume Countdown
+app.post('/api/timer/resume', (req, res) => {
+  try {
+    const timer = sessionTimerManager.resume();
+    res.json({ success: true, timer, data: timer });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 29. Session Timer: Add Extra Time (+5 Min, +10 Min)
+app.post('/api/timer/add-time', (req, res) => {
+  try {
+    const minutes = Number(req.body.minutes) || 5;
+    const timer = sessionTimerManager.addTime(minutes);
+    res.json({ success: true, timer, data: timer });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 30. Session Timer: Reset Timer
+app.post('/api/timer/reset', (req, res) => {
+  try {
+    const timer = sessionTimerManager.reset();
+    res.json({ success: true, timer, data: timer });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 31. Session Timer: Stop / Deactivate Timer
+app.post('/api/timer/stop', (req, res) => {
+  try {
+    const timer = sessionTimerManager.stop();
+    res.json({ success: true, timer, data: timer });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 32. Session Timer: Update Settings
+app.post('/api/timer/settings', (req, res) => {
+  try {
+    const timer = sessionTimerManager.updateSettings(req.body);
+    res.json({ success: true, timer, data: timer });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
@@ -594,7 +715,8 @@ wss.on('connection', async (ws, req) => {
       photos,
       selections,
       sessions,
-      stations
+      stations,
+      timer: sessionTimerManager.getState()
     }));
   } catch (e) {
     console.error('Error on initial WS send:', e.message);

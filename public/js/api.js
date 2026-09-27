@@ -173,6 +173,59 @@ class RTFTPApi {
     return await res.json();
   }
 
+  // Session Timer & Customer Pacing API
+  async getTimer() {
+    const res = await fetch('/api/timer');
+    return await res.json();
+  }
+
+  async startTimer(durationMinutes = null) {
+    const res = await fetch('/api/timer/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ durationMinutes })
+    });
+    return await res.json();
+  }
+
+  async pauseTimer() {
+    const res = await fetch('/api/timer/pause', { method: 'POST' });
+    return await res.json();
+  }
+
+  async resumeTimer() {
+    const res = await fetch('/api/timer/resume', { method: 'POST' });
+    return await res.json();
+  }
+
+  async addTimerTime(minutes = 5) {
+    const res = await fetch('/api/timer/add-time', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ minutes })
+    });
+    return await res.json();
+  }
+
+  async resetTimer() {
+    const res = await fetch('/api/timer/reset', { method: 'POST' });
+    return await res.json();
+  }
+
+  async stopTimer() {
+    const res = await fetch('/api/timer/stop', { method: 'POST' });
+    return await res.json();
+  }
+
+  async updateTimerSettings(settings) {
+    const res = await fetch('/api/timer/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    });
+    return await res.json();
+  }
+
   // WebSocket Methods
   connectWebSocket(onStatusChange = null) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

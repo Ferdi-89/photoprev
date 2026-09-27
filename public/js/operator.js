@@ -79,6 +79,32 @@ class RTFTPOperator {
     this.directorySessions = [];
     this.directoryRootPath = '';
 
+    // Session Timer & Customer Pacing Elements
+    this.toggleTimerEnabled = document.getElementById('toggle-timer-enabled');
+    this.timerStatusBadge = document.getElementById('timer-status-badge');
+    this.operatorTimerActiveContainer = document.getElementById('operator-timer-active-container');
+    this.operatorTimerClock = document.getElementById('operator-timer-clock');
+    this.operatorTimerStatePill = document.getElementById('operator-timer-state-pill');
+    this.operatorTimerProgressFill = document.getElementById('operator-timer-progress-fill');
+    this.operatorTimerInfoText = document.getElementById('operator-timer-info-text');
+    this.btnTimerStartPause = document.getElementById('btn-timer-start-pause');
+    this.iconTimerPlay = document.getElementById('icon-timer-play');
+    this.iconTimerPause = document.getElementById('icon-timer-pause');
+    this.labelTimerStartPause = document.getElementById('label-timer-start-pause');
+    this.btnTimerAdd5 = document.getElementById('btn-timer-add-5');
+    this.btnTimerAdd10 = document.getElementById('btn-timer-add-10');
+    this.btnTimerReset = document.getElementById('btn-timer-reset');
+    this.btnTimerStop = document.getElementById('btn-timer-stop');
+    this.formTimerSettings = document.getElementById('form-timer-settings');
+    this.timerInputDuration = document.getElementById('timer-input-duration');
+    this.timerInputWarning = document.getElementById('timer-input-warning');
+    this.timerSelectMode = document.getElementById('timer-select-mode');
+    this.timerCheckAutostart = document.getElementById('timer-check-autostart');
+    this.timerInputMessage = document.getElementById('timer-input-message');
+    this.timerClockBox = document.querySelector('.operator-timer-clock-box');
+    this.timerPresetChips = document.querySelectorAll('.btn-timer-chip');
+    this.timerState = null;
+
     this.init();
   }
 
@@ -88,6 +114,7 @@ class RTFTPOperator {
     this.initFolderPicker();
     this.initStationsManager();
     this.initDirectoryManager();
+    this.initSessionTimer();
 
     // Connect WebSocket for live updates
     window.api.connectWebSocket((isConnected) => {
@@ -493,6 +520,53 @@ class RTFTPOperator {
       if (data.stations) {
         this.renderStations(data.stations);
       }
+      if (data.timer) {
+        this.renderTimerState(data.timer);
+      }
+    });
+
+    // Session Timer & Customer Pacing WebSocket Events
+    window.api.on('TIMER_TICK', (data) => {
+      this.renderTimerTick(data);
+    });
+
+    window.api.on('TIMER_STARTED', (data) => {
+      this.log(`Timer sesi dimulai: ${data.formattedTime}`, 'info');
+      this.renderTimerState(data);
+    });
+
+    window.api.on('TIMER_PAUSED', (data) => {
+      this.log(`Timer sesi dijeda pada: ${data.formattedTime}`, 'warn');
+      this.renderTimerState(data);
+    });
+
+    window.api.on('TIMER_RESUMED', (data) => {
+      this.log(`Timer sesi dilanjutkan: ${data.formattedTime}`, 'info');
+      this.renderTimerState(data);
+    });
+
+    window.api.on('TIMER_EXTENDED', (data) => {
+      this.log(`Tambahan waktu +${data.addedMinutes} menit diberikan. Sisa: ${data.formattedTime}`, 'success');
+      this.renderTimerState(data);
+    });
+
+    window.api.on('TIMER_RESET', (data) => {
+      this.log(`Timer sesi di-reset: ${data.formattedTime}`, 'info');
+      this.renderTimerState(data);
+    });
+
+    window.api.on('TIMER_STOPPED', (data) => {
+      this.log('Timer sesi dihentikan', 'info');
+      this.renderTimerState(data);
+    });
+
+    window.api.on('TIMER_EXPIRED', (data) => {
+      this.log('Waktu sesi pemilihan foto telah habis!', 'warn');
+      this.renderTimerState(data);
+    });
+
+    window.api.on('TIMER_SETTINGS_UPDATED', (data) => {
+      this.renderTimerState(data);
     });
 
     window.api.on('STATION_STATUS_CHANGED', (data) => {
@@ -2181,6 +2255,284 @@ class RTFTPOperator {
           clearProps: 'transform,opacity,visibility'
         });
       }
+    }
+  }
+
+  /* ===================================================================
+   * SESSION TIMER & CUSTOMER PACING LOGIC
+   * =================================================================== */
+
+  initSessionTimer() {
+    // Master Toggle Switch
+    if (this.toggleTimerEnabled) {
+      this.toggleTimerEnabled.addEventListener('change', async (e) => {
+        const enabled = e.target.checked;
+        try {
+          const res = await window.api.updateTimerSettings({ enabled });
+          if (res.success) {
+            window.showToast(`Timer sesi ${enabled ? 'diaktifkan' : 'dinonaktifkan'}`, 'info');
+            this.renderTimerState(res.data);
+          } else {
+            window.showToast('Gagal mengubah status timer: ' + res.error, 'danger');
+            e.target.checked = !enabled;
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+          e.target.checked = !enabled;
+        }
+      });
+    }
+
+    // Start / Pause / Resume Button
+    if (this.btnTimerStartPause) {
+      this.btnTimerStartPause.addEventListener('click', async () => {
+        try {
+          if (!this.timerState || !this.timerState.isRunning) {
+            const res = await window.api.startTimer();
+            if (res.success) {
+              window.showToast('Timer sesi dimulai', 'success');
+              this.renderTimerState(res.data);
+            }
+          } else if (this.timerState.isPaused) {
+            const res = await window.api.resumeTimer();
+            if (res.success) {
+              window.showToast('Timer sesi dilanjutkan', 'info');
+              this.renderTimerState(res.data);
+            }
+          } else {
+            const res = await window.api.pauseTimer();
+            if (res.success) {
+              window.showToast('Timer sesi dijeda', 'info');
+              this.renderTimerState(res.data);
+            }
+          }
+        } catch (err) {
+          window.showToast('Error timer: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // +5 Menit Quick Extension
+    if (this.btnTimerAdd5) {
+      this.btnTimerAdd5.addEventListener('click', async () => {
+        try {
+          const res = await window.api.addTimerTime(5);
+          if (res.success) {
+            window.showToast('Tambahan +5 menit berhasil diberikan', 'success');
+            this.renderTimerState(res.data);
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // +10 Menit Quick Extension
+    if (this.btnTimerAdd10) {
+      this.btnTimerAdd10.addEventListener('click', async () => {
+        try {
+          const res = await window.api.addTimerTime(10);
+          if (res.success) {
+            window.showToast('Tambahan +10 menit berhasil diberikan', 'success');
+            this.renderTimerState(res.data);
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // Reset Button
+    if (this.btnTimerReset) {
+      this.btnTimerReset.addEventListener('click', async () => {
+        try {
+          const res = await window.api.resetTimer();
+          if (res.success) {
+            window.showToast('Timer sesi di-reset ke durasi penuh', 'info');
+            this.renderTimerState(res.data);
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // Stop Button
+    if (this.btnTimerStop) {
+      this.btnTimerStop.addEventListener('click', async () => {
+        try {
+          const res = await window.api.stopTimer();
+          if (res.success) {
+            window.showToast('Timer sesi dihentikan', 'info');
+            this.renderTimerState(res.data);
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // Preset Duration Chips (10m, 15m, 20m, 30m)
+    if (this.timerPresetChips) {
+      this.timerPresetChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          const mins = Number(chip.getAttribute('data-mins'));
+          if (this.timerInputDuration) {
+            this.timerInputDuration.value = mins;
+          }
+          this.timerPresetChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+        });
+      });
+    }
+
+    // Settings Form Submission
+    if (this.formTimerSettings) {
+      this.formTimerSettings.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const durationMinutes = Number(this.timerInputDuration.value) || 15;
+        const warningThresholdMinutes = Number(this.timerInputWarning.value) || 3;
+        const lockOnExpiry = this.timerSelectMode.value === 'strict';
+        const autoStartOnSessionChange = this.timerCheckAutostart.checked;
+        const messageOnExpiry = this.timerInputMessage.value.trim();
+
+        try {
+          const res = await window.api.updateTimerSettings({
+            durationMinutes,
+            warningThresholdMinutes,
+            lockOnExpiry,
+            autoStartOnSessionChange,
+            messageOnExpiry
+          });
+          if (res.success) {
+            window.showToast('Pengaturan timer berhasil disimpan ke server', 'success');
+            this.renderTimerState(res.data);
+          } else {
+            window.showToast('Gagal menyimpan pengaturan: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // Fetch initial timer state from server
+    window.api.getTimer().then(res => {
+      if (res && res.success && res.data) {
+        this.renderTimerState(res.data);
+      }
+    }).catch(err => {
+      console.warn('Gagal memuat status awal timer:', err);
+    });
+  }
+
+  renderTimerTick(data) {
+    if (!data) return;
+    this.timerState = data;
+
+    if (this.operatorTimerClock) {
+      this.operatorTimerClock.textContent = data.formattedTime || '00:00';
+    }
+
+    if (this.operatorTimerProgressFill) {
+      const pct = data.totalSeconds > 0 ? Math.max(0, Math.min(100, (data.remainingSeconds / data.totalSeconds) * 100)) : 0;
+      this.operatorTimerProgressFill.style.width = pct + '%';
+    }
+
+    if (this.timerClockBox) {
+      this.timerClockBox.classList.toggle('is-warning', !!data.isWarning);
+      this.timerClockBox.classList.toggle('is-expired', !!data.isExpired);
+      this.timerClockBox.classList.toggle('is-paused', !!data.isPaused);
+    }
+
+    if (this.operatorTimerStatePill) {
+      if (data.isExpired) {
+        this.operatorTimerStatePill.className = 'stat-pill stat-pill-red';
+        this.operatorTimerStatePill.textContent = 'Waktu Habis';
+      } else if (data.isPaused) {
+        this.operatorTimerStatePill.className = 'stat-pill stat-pill-amber';
+        this.operatorTimerStatePill.textContent = 'Dijeda';
+      } else if (data.isWarning) {
+        this.operatorTimerStatePill.className = 'stat-pill stat-pill-amber';
+        this.operatorTimerStatePill.textContent = 'Sisa Menit Sedikit';
+      } else if (data.isRunning) {
+        this.operatorTimerStatePill.className = 'stat-pill stat-pill-green';
+        this.operatorTimerStatePill.textContent = 'Sedang Berjalan';
+      } else {
+        this.operatorTimerStatePill.className = 'stat-pill stat-pill-blue';
+        this.operatorTimerStatePill.textContent = 'Siap Mulai';
+      }
+    }
+  }
+
+  renderTimerState(data) {
+    if (!data) return;
+    this.timerState = data;
+
+    // Toggle switch & status badge
+    if (this.toggleTimerEnabled) {
+      this.toggleTimerEnabled.checked = !!data.enabled;
+    }
+    if (this.timerStatusBadge) {
+      this.timerStatusBadge.className = data.enabled ? 'badge-station badge-station-online' : 'badge-station badge-station-offline';
+      this.timerStatusBadge.textContent = data.enabled ? 'Aktif' : 'Nonaktif';
+    }
+    if (this.operatorTimerActiveContainer) {
+      this.operatorTimerActiveContainer.classList.toggle('is-disabled', !data.enabled);
+    }
+
+    // Tick display elements
+    this.renderTimerTick(data);
+
+    // Play/Pause button icons & label
+    if (this.btnTimerStartPause) {
+      if (data.isRunning && !data.isPaused) {
+        if (this.iconTimerPlay) this.iconTimerPlay.style.display = 'none';
+        if (this.iconTimerPause) this.iconTimerPause.style.display = 'inline-block';
+        if (this.labelTimerStartPause) this.labelTimerStartPause.textContent = 'Jeda Timer';
+        this.btnTimerStartPause.className = 'btn btn-secondary';
+      } else if (data.isPaused) {
+        if (this.iconTimerPlay) this.iconTimerPlay.style.display = 'inline-block';
+        if (this.iconTimerPause) this.iconTimerPause.style.display = 'none';
+        if (this.labelTimerStartPause) this.labelTimerStartPause.textContent = 'Lanjutkan';
+        this.btnTimerStartPause.className = 'btn btn-primary';
+      } else {
+        if (this.iconTimerPlay) this.iconTimerPlay.style.display = 'inline-block';
+        if (this.iconTimerPause) this.iconTimerPause.style.display = 'none';
+        if (this.labelTimerStartPause) this.labelTimerStartPause.textContent = 'Mulai Timer';
+        this.btnTimerStartPause.className = 'btn btn-primary';
+      }
+    }
+
+    // Form fields sync (only if user is not actively editing)
+    if (this.timerInputDuration && document.activeElement !== this.timerInputDuration) {
+      this.timerInputDuration.value = data.durationMinutes || 15;
+    }
+    if (this.timerInputWarning && document.activeElement !== this.timerInputWarning) {
+      this.timerInputWarning.value = data.warningThresholdMinutes ?? 3;
+    }
+    if (this.timerSelectMode && document.activeElement !== this.timerSelectMode) {
+      this.timerSelectMode.value = data.lockOnExpiry ? 'strict' : 'polite';
+    }
+    if (this.timerCheckAutostart && document.activeElement !== this.timerCheckAutostart) {
+      this.timerCheckAutostart.checked = !!data.autoStartOnSessionChange;
+    }
+    if (this.timerInputMessage && document.activeElement !== this.timerInputMessage) {
+      this.timerInputMessage.value = data.messageOnExpiry || '';
+    }
+
+    // Preset chips sync
+    if (this.timerPresetChips) {
+      this.timerPresetChips.forEach(chip => {
+        const mins = Number(chip.getAttribute('data-mins'));
+        chip.classList.toggle('active', mins === data.durationMinutes);
+      });
+    }
+
+    // Info footer
+    if (this.operatorTimerInfoText) {
+      const modeText = data.lockOnExpiry ? 'Mode: Kunci Layar Klien' : 'Mode: Ramah Pelanggan';
+      this.operatorTimerInfoText.textContent = `Durasi: ${data.durationMinutes} menit | Peringatan: ${data.warningThresholdMinutes} menit terakhir | ${modeText}`;
     }
   }
 }

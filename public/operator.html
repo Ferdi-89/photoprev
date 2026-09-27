@@ -392,6 +392,152 @@
             </div>
           </div>
         </div>
+
+        <!-- Session Countdown Timer & Customer Pacing Panel -->
+        <div class="dashboard-panel" id="panel-session-timer" style="margin-top: 24px;">
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h3 class="panel-title" style="margin: 0;">Timer Batas Waktu Sesi (Pacing Klien)</h3>
+                <span id="timer-status-badge" class="badge-station badge-station-offline">Nonaktif</span>
+              </div>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 4px;">
+                Bantu kendalikan alur antrean studio saat hari ramai agar pelanggan tidak memilih foto terlalu lama. Timer tersinkronisasi otomatis ke layar PC klien secara real-time.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">Aktifkan Timer:</span>
+              <label class="timer-switch" title="Nyalakan / Matikan Timer Sesi">
+                <input type="checkbox" id="toggle-timer-enabled" aria-label="Aktifkan atau Matikan Timer Sesi">
+                <span class="timer-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Main Timer Display & Quick Controls -->
+          <div id="operator-timer-active-container" class="operator-timer-container">
+            <div class="operator-timer-dashboard-row">
+              <!-- Big Monospace Countdown Display -->
+              <div class="operator-timer-clock-box">
+                <div class="operator-timer-clock-header">
+                  <span class="operator-timer-clock-label">Sisa Waktu Pemilihan Foto</span>
+                  <span id="operator-timer-state-pill" class="stat-pill stat-pill-blue">Siap Mulai</span>
+                </div>
+                <div class="operator-timer-clock-display" id="operator-timer-clock">15:00</div>
+                <!-- Visual countdown progress track -->
+                <div class="operator-timer-progress-track">
+                  <div id="operator-timer-progress-fill" class="operator-timer-progress-fill" style="width: 100%;"></div>
+                </div>
+                <div class="operator-timer-clock-footer">
+                  <span id="operator-timer-info-text">Durasi: 15 menit | Peringatan: 3 menit terakhir</span>
+                </div>
+              </div>
+
+              <!-- Action Controls Row -->
+              <div class="operator-timer-controls-box">
+                <span style="font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Kontrol Cepat Operator:</span>
+                <div class="operator-timer-actions-grid">
+                  <button type="button" id="btn-timer-start-pause" class="btn btn-primary" title="Mulai atau jeda countdown">
+                    <svg id="icon-timer-play" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <svg id="icon-timer-pause" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    <span id="label-timer-start-pause">Mulai Timer</span>
+                  </button>
+
+                  <button type="button" id="btn-timer-add-5" class="btn btn-secondary" title="Beri tambahan waktu 5 menit toleransi">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline><path d="M16 10h4m-2-2v4"></path></svg>
+                    <span>+5 Menit</span>
+                  </button>
+
+                  <button type="button" id="btn-timer-add-10" class="btn btn-secondary" title="Beri tambahan waktu 10 menit toleransi">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline><path d="M16 10h4m-2-2v4"></path></svg>
+                    <span>+10 Menit</span>
+                  </button>
+
+                  <button type="button" id="btn-timer-reset" class="btn btn-secondary" title="Reset hitungan ke durasi penuh">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    <span>Reset</span>
+                  </button>
+
+                  <button type="button" id="btn-timer-stop" class="btn btn-secondary" title="Hentikan timer">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+                    <span>Stop</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timer Configuration Form -->
+            <div class="operator-timer-settings-wrapper" style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 18px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  Pengaturan Opsi Sesi Timer
+                </span>
+                <span style="font-size: 0.78rem; color: var(--text-muted);">Tersimpan permanen di konfigurasi studio</span>
+              </div>
+
+              <form id="form-timer-settings" class="timer-settings-form">
+                <div class="timer-settings-grid">
+                  <!-- Duration Field -->
+                  <div class="setting-field">
+                    <label for="timer-input-duration" class="setting-label">Durasi Standar Sesi (Menit):</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" id="timer-input-duration" class="input-text" min="1" max="180" value="15" style="width: 80px; text-align: center; font-weight: 700;">
+                      <div class="timer-preset-chips">
+                        <button type="button" class="btn-timer-chip" data-mins="10">10m</button>
+                        <button type="button" class="btn-timer-chip active" data-mins="15">15m</button>
+                        <button type="button" class="btn-timer-chip" data-mins="20">20m</button>
+                        <button type="button" class="btn-timer-chip" data-mins="30">30m</button>
+                      </div>
+                    </div>
+                    <span class="setting-hint">Alokasi waktu normal bagi pelanggan memilih foto.</span>
+                  </div>
+
+                  <!-- Warning Threshold Field -->
+                  <div class="setting-field">
+                    <label for="timer-input-warning" class="setting-label">Peringatan Awal (Menit Sebelum Selesai):</label>
+                    <input type="number" id="timer-input-warning" class="input-text" min="1" max="30" value="3" style="width: 80px; text-align: center; font-weight: 700;">
+                    <span class="setting-hint">Layar klien akan berubah warna amber/kuning untuk memberi sinyal halus sisa waktu.</span>
+                  </div>
+
+                  <!-- Expiry Mode Field -->
+                  <div class="setting-field">
+                    <label for="timer-select-mode" class="setting-label">Tindakan Saat Waktu Habis:</label>
+                    <select id="timer-select-mode" class="input-text" style="width: 100%;">
+                      <option value="polite" selected>Mode Ramah Pelanggan (Rekomendasi - Dialog Pengingat, Foto Tetap Terpilih)</option>
+                      <option value="strict">Mode Kunci Layar Klien (Strict - Minta Pelanggan Hubungi Operator)</option>
+                    </select>
+                    <span class="setting-hint">Pilihan tindakan yang muncul di monitor klien ketika countdown mencapai 00:00.</span>
+                  </div>
+                </div>
+
+                <!-- Second Row: Checkbox & Expiry Message -->
+                <div class="timer-settings-row-secondary" style="margin-top: 14px; display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: flex-start;">
+                  <div style="padding-top: 6px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); cursor: pointer;">
+                      <input type="checkbox" id="timer-check-autostart" style="width: 16px; height: 16px; cursor: pointer;">
+                      <span>Mulai Otomatis Saat Ganti Sesi</span>
+                    </label>
+                    <span class="setting-hint" style="margin-left: 24px; display: block;">Countdown langsung berjalan saat folder sesi baru dipilih.</span>
+                  </div>
+
+                  <div>
+                    <label for="timer-input-message" class="setting-label">Pesan Ramah Pada Layar Klien Saat Waktu Habis:</label>
+                    <input type="text" id="timer-input-message" class="input-text" style="width: 100%;" value="Waktu sesi pemilihan foto telah selesai. Tim studio kami siap membantu menyelesaikan pesanan cetak Anda.">
+                  </div>
+                </div>
+
+                <!-- Form Submit Button -->
+                <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px;">
+                  <button type="submit" id="btn-save-timer-settings" class="btn btn-gold">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>Simpan Pengaturan Timer</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ===================================================================
