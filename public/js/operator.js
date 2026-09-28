@@ -389,16 +389,14 @@ class RTFTPOperator {
     // Active Session Overview: Open in Windows Explorer
     const btnOpenActiveExplorer = document.getElementById('btn-open-active-explorer');
     if (btnOpenActiveExplorer) {
-      btnOpenActiveExplorer.addEventListener('click', async () => {
+      btnOpenActiveExplorer.addEventListener('click', async (e) => {
+        if (e) e.stopPropagation();
         const activePath = this.activeSessionPath || (this.currentPathDisplay ? this.currentPathDisplay.textContent.trim() : '');
-        if (!activePath || activePath === 'Memuat path...') {
-          return window.showToast('Path sesi aktif belum tersedia', 'warning');
-        }
         try {
           const res = await window.api.openInExplorer(activePath);
           if (res.success) {
-            window.showToast('Membuka folder sesi aktif di Windows Explorer', 'blue');
-            this.log(`Membuka folder sesi aktif di Windows Explorer: ${res.openedPath}`, 'info');
+            window.showToast('Membuka folder sesi di Windows Explorer', 'blue');
+            this.log(`Membuka folder sesi di Windows Explorer: ${res.openedPath}`, 'info');
           } else {
             window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
           }
@@ -985,7 +983,8 @@ class RTFTPOperator {
 
       const btnExplorerSession = card.querySelector('.btn-explorer-session');
       if (btnExplorerSession) {
-        btnExplorerSession.addEventListener('click', async () => {
+        btnExplorerSession.addEventListener('click', async (e) => {
+          if (e) e.stopPropagation();
           try {
             const res = await window.api.openInExplorer(session.sessionPath);
             if (res.success) {
@@ -1167,7 +1166,8 @@ class RTFTPOperator {
         // Wire Locate File in Explorer
         const btnLocateItem = tr.querySelector('.btn-locate-item');
         if (btnLocateItem) {
-          btnLocateItem.addEventListener('click', async () => {
+          btnLocateItem.addEventListener('click', async (e) => {
+            if (e) e.stopPropagation();
             try {
               const res = await window.api.openFileLocation(session.sessionPath, item.filename);
               if (res.success) {
@@ -2140,11 +2140,13 @@ class RTFTPOperator {
 
     // Open Root Directory in Windows Explorer
     if (this.btnOpenRootExplorer) {
-      this.btnOpenRootExplorer.addEventListener('click', async () => {
+      this.btnOpenRootExplorer.addEventListener('click', async (e) => {
+        if (e) e.stopPropagation();
         try {
-          const res = await window.api.openInExplorer(this.directoryRootPath);
+          const targetDir = this.directoryRootPath || '';
+          const res = await window.api.openInExplorer(targetDir);
           if (res.success) {
-            window.showToast(`Membuka folder induk di Windows Explorer`, 'blue');
+            window.showToast('Membuka folder induk di Windows Explorer', 'blue');
             this.log(`Membuka folder induk di Windows Explorer: ${res.openedPath}`, 'info');
           } else {
             window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
@@ -2613,8 +2615,9 @@ class RTFTPOperator {
       // Wire Open in Explorer Button
       const explorerBtn = card.querySelector('.btn-dir-explorer');
       if (explorerBtn) {
-        explorerBtn.addEventListener('click', async () => {
-          const p = explorerBtn.getAttribute('data-path');
+        explorerBtn.addEventListener('click', async (e) => {
+          if (e) e.stopPropagation();
+          const p = explorerBtn.getAttribute('data-path') || s.path;
           try {
             const res = await window.api.openInExplorer(p);
             if (res.success) {

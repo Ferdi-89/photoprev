@@ -513,7 +513,12 @@ app.post('/api/operator/queue/open-file', async (req, res) => {
 app.post('/api/operator/queue/open-folder', async (req, res) => {
   try {
     const { sessionPath, target } = req.body || {};
-    const baseSession = sessionPath ? path.resolve(sessionPath) : config.activeSessionPath;
+    let baseSession = sessionPath ? path.resolve(sessionPath) : config.activeSessionPath;
+    if (!baseSession || !fs.existsSync(baseSession)) {
+      baseSession = (config.activeSessionPath && fs.existsSync(config.activeSessionPath))
+        ? config.activeSessionPath
+        : getRootDirectory(config);
+    }
 
     let targetDir = baseSession;
     if (target === 'print' || target === '_SIAP_CETAK') {
@@ -995,7 +1000,12 @@ app.post('/api/operator/directory/create', async (req, res) => {
 // 23. Operator Directory: Open Folder in Host Windows Explorer
 app.post('/api/operator/directory/open-explorer', async (req, res) => {
   try {
-    const folderPath = req.body.folderPath || config.activeSessionPath;
+    let folderPath = req.body && req.body.folderPath;
+    if (!folderPath || !fs.existsSync(folderPath)) {
+      folderPath = (config.activeSessionPath && fs.existsSync(config.activeSessionPath))
+        ? config.activeSessionPath
+        : getRootDirectory(config);
+    }
     const result = await openInWindowsExplorer(folderPath);
     res.json(result);
   } catch (err) {
