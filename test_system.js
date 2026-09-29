@@ -183,6 +183,49 @@ async function runAsyncTests() {
 
   console.log('[OK] Session Directory workflow & operator checkout validation OK');
 
+  // 10. Print Manager multi-tier queue discovery & fallback check
+  const printManager = require('./lib/printManager');
+  const tempTestSessionDir = path.resolve(__dirname, 'storage/test_queue_session');
+  const tempSiapDir = path.join(tempTestSessionDir, '_SIAP_CETAK');
+  if (!fs.existsSync(tempSiapDir)) {
+    fs.mkdirSync(tempSiapDir, { recursive: true });
+  }
+
+  // Create mock order manifest in _SIAP_CETAK
+  const mockManifest = {
+    exportedAt: new Date().toISOString(),
+    items: [
+      { filename: 'TEST_01.jpg', size: '4R', qty: 2, notes: 'glossy' },
+      { filename: 'TEST_02.jpg', size: '8R', qty: 1, notes: 'matte' }
+    ]
+  };
+  fs.writeFileSync(path.join(tempSiapDir, 'order_manifest.json'), JSON.stringify(mockManifest), 'utf8');
+
+  const fallbackSelections = printManager.getSelections(tempTestSessionDir);
+  assert(Array.isArray(fallbackSelections) && fallbackSelections.length === 2, 'Should discover 2 items from order_manifest fallback');
+  assert.strictEqual(fallbackSelections[0].filename, 'TEST_01.jpg', 'First item filename must match');
+  assert.strictEqual(fallbackSelections[0].sizes[0].qty, 2, 'First item qty must match');
+
+  // Test getAllSessionQueues including this directory
+  const queueConfig = {
+    activeSessionPath: tempTestSessionDir,
+    clientStations: [],
+    completedSessions: []
+  };
+  const sessionQueues = printManager.getAllSessionQueues(queueConfig);
+  const foundQueue = sessionQueues.find(q => path.resolve(q.sessionPath).toLowerCase() === tempTestSessionDir.toLowerCase());
+  assert(foundQueue, 'Session with _SIAP_CETAK must be discovered in queue');
+  assert.strictEqual(foundQueue.totalItems, 2, 'Total items must be 2');
+  assert.strictEqual(foundQueue.totalCopies, 3, 'Total copies must be 3 (2 + 1)');
+  assert.strictEqual(foundQueue.hasExportedPrint, true, 'hasExportedPrint must be true');
+
+  // Cleanup temp test session
+  try {
+    fs.rmSync(tempTestSessionDir, { recursive: true, force: true });
+  } catch (e) {}
+
+  console.log('[OK] Print Manager multi-tier queue discovery & fallback validation OK');
+
   console.log('\nAll self-checks passed successfully!');
 }
 

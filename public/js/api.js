@@ -43,20 +43,38 @@ class RTFTPApi {
     return await res.json();
   }
 
-  async setSelection(filename, selected, sizes = null, notes = '', sessionPath = null) {
+  async setSelection(filename, selected, sizes = null, notes = '', sessionPath = null, stationId = null) {
+    const sPath = sessionPath
+      || (window.galleryApp && window.galleryApp.currentSessionPath)
+      || (window.gallery && window.gallery.currentSessionPath)
+      || new URLSearchParams(window.location.search).get('session');
+    const stId = stationId
+      || (window.galleryApp && window.galleryApp.stationId)
+      || (window.gallery && window.gallery.stationId)
+      || new URLSearchParams(window.location.search).get('station');
+
     const res = await fetch('/api/selections', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename, selected, sizes, notes, sessionPath })
+      body: JSON.stringify({ filename, selected, sizes, notes, sessionPath: sPath, stationId: stId })
     });
     return await res.json();
   }
 
-  async clearSelections(sessionPath = null) {
+  async clearSelections(sessionPath = null, stationId = null) {
+    const sPath = sessionPath
+      || (window.galleryApp && window.galleryApp.currentSessionPath)
+      || (window.gallery && window.gallery.currentSessionPath)
+      || new URLSearchParams(window.location.search).get('session');
+    const stId = stationId
+      || (window.galleryApp && window.galleryApp.stationId)
+      || (window.gallery && window.gallery.stationId)
+      || new URLSearchParams(window.location.search).get('station');
+
     const res = await fetch('/api/selections/clear', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionPath })
+      body: JSON.stringify({ sessionPath: sPath, stationId: stId })
     });
     return await res.json();
   }

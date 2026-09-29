@@ -62,6 +62,13 @@ class RTFTPSelection {
       || null;
   }
 
+  getStationId() {
+    return (window.galleryApp && window.galleryApp.stationId)
+      || (window.gallery && window.gallery.stationId)
+      || new URLSearchParams(window.location.search).get('station')
+      || null;
+  }
+
   async confirmClearAll() {
     if (this.totalItems === 0) return;
     const confirmed = await window.showConfirm(
@@ -71,7 +78,7 @@ class RTFTPSelection {
       true
     );
     if (confirmed) {
-      await window.api.clearSelections(this.getSessionPath());
+      await window.api.clearSelections(this.getSessionPath(), this.getStationId());
       this.selections.clear();
       this.updateUI();
       this.closeModal();
@@ -108,9 +115,10 @@ class RTFTPSelection {
     }
     const isCurrentlySelected = this.isSelected(filename);
     const sessionPath = this.getSessionPath();
+    const stationId = this.getStationId();
     if (isCurrentlySelected) {
       this.selections.delete(filename);
-      await window.api.setSelection(filename, false, null, '', sessionPath);
+      await window.api.setSelection(filename, false, null, '', sessionPath, stationId);
     } else {
       const defaultData = {
         filename,
@@ -118,7 +126,7 @@ class RTFTPSelection {
         notes: ''
       };
       this.selections.set(filename, defaultData);
-      await window.api.setSelection(filename, true, defaultData.sizes, defaultData.notes, sessionPath);
+      await window.api.setSelection(filename, true, defaultData.sizes, defaultData.notes, sessionPath, stationId);
     }
     this.updateUI();
 
@@ -312,7 +320,7 @@ class RTFTPSelection {
       const saveItemChanges = async (newSize, newQty) => {
         item.sizes = [{ size: newSize, qty: newQty }];
         this.selections.set(filename, item);
-        await window.api.setSelection(filename, true, item.sizes, item.notes, this.getSessionPath());
+        await window.api.setSelection(filename, true, item.sizes, item.notes, this.getSessionPath(), this.getStationId());
         this.updateUI();
         this.updateModalSummary();
       };
@@ -367,7 +375,7 @@ class RTFTPSelection {
       submitBtn.disabled = true;
       submitBtn.innerHTML = 'Memproses...';
 
-      const res = await window.api.exportPrint(this.getSessionPath());
+      const res = await window.api.exportPrint(this.getSessionPath(), false, this.getStationId());
       if (res.success) {
         window.showToast(`Pesanan siap! ${res.report.totalCopies} lembar foto siap dicetak`, 'success');
         this.closeModal();

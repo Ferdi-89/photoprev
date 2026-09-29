@@ -48,7 +48,15 @@ const wss = new WebSocketServer({ server });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Initialize configuration
 const config = loadConfig();
@@ -190,14 +198,34 @@ function safeFilename(rawFilename) {
 
 function resolveSessionForRequest(req) {
   // 1. Explicit session path in query or body
-  const explicit = (req.query && req.query.session) || (req.body && req.body.sessionPath);
+  let explicit = (req.query && req.query.session) || (req.body && req.body.sessionPath);
+
+  // Check Referer header if not in query/body
+  if (!explicit && req.headers && req.headers.referer) {
+    try {
+      const refererUrl = new URL(req.headers.referer, 'http://localhost');
+      const refSession = refererUrl.searchParams.get('session');
+      if (refSession) explicit = refSession;
+    } catch (e) {}
+  }
+
   if (explicit && String(explicit).trim() !== '') {
     const resolved = path.resolve(String(explicit).trim());
     if (fs.existsSync(resolved)) return resolved;
   }
 
   // 2. Station ID in query or body (e.g. ?station=station-1)
-  const stationId = (req.query && req.query.station) || (req.body && req.body.stationId);
+  let stationId = (req.query && req.query.station) || (req.body && req.body.stationId);
+
+  // Check Referer header if not in query/body
+  if (!stationId && req.headers && req.headers.referer) {
+    try {
+      const refererUrl = new URL(req.headers.referer, 'http://localhost');
+      const refStation = refererUrl.searchParams.get('station');
+      if (refStation) stationId = refStation;
+    } catch (e) {}
+  }
+
   if (stationId) {
     const st = getStationById(config, String(stationId).trim());
     if (st && st.assignedSessionPath) {
@@ -227,15 +255,24 @@ function findPhotoInAnySession(filename, preferredSessionDir) {
     if (fs.existsSync(preferredPath)) {
       return { fullPath: preferredPath, sessionDir: preferredSessionDir };
     }
+    const siapPath = path.join(preferredSessionDir, '_SIAP_CETAK', filename);
+    if (fs.existsSync(siapPath)) {
+      return { fullPath: siapPath, sessionDir: preferredSessionDir };
+    }
   }
 
   // 2. Check all client station assigned sessions
   if (Array.isArray(config.clientStations)) {
     for (const st of config.clientStations) {
       if (st.assignedSessionPath && fs.existsSync(st.assignedSessionPath)) {
-        const p = path.join(path.resolve(st.assignedSessionPath), filename);
+        const sDir = path.resolve(st.assignedSessionPath);
+        const p = path.join(sDir, filename);
         if (fs.existsSync(p)) {
-          return { fullPath: p, sessionDir: path.resolve(st.assignedSessionPath) };
+          return { fullPath: p, sessionDir: sDir };
+        }
+        const pSiap = path.join(sDir, '_SIAP_CETAK', filename);
+        if (fs.existsSync(pSiap)) {
+          return { fullPath: pSiap, sessionDir: sDir };
         }
       }
     }
@@ -249,14 +286,23 @@ function findPhotoInAnySession(filename, preferredSessionDir) {
       if (fs.existsSync(p)) {
         return { fullPath: p, sessionDir: folder };
       }
+      const pSiap = path.join(folder, '_SIAP_CETAK', filename);
+      if (fs.existsSync(pSiap)) {
+        return { fullPath: pSiap, sessionDir: folder };
+      }
     }
   } catch (e) {}
 
   // 4. Check global activeSessionPath
   if (config.activeSessionPath && fs.existsSync(config.activeSessionPath)) {
-    const p = path.join(path.resolve(config.activeSessionPath), filename);
+    const aDir = path.resolve(config.activeSessionPath);
+    const p = path.join(aDir, filename);
     if (fs.existsSync(p)) {
-      return { fullPath: p, sessionDir: path.resolve(config.activeSessionPath) };
+      return { fullPath: p, sessionDir: aDir };
+    }
+    const pSiap = path.join(aDir, '_SIAP_CETAK', filename);
+    if (fs.existsSync(pSiap)) {
+      return { fullPath: pSiap, sessionDir: aDir };
     }
   }
 

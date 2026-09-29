@@ -272,6 +272,10 @@ class RTFTPOperator {
         this.closeMobileDrawer();
       }
 
+      if (targetViewId === 'view-queue') {
+        this.refreshData();
+      }
+
       if (updateHash) {
         for (const [hash, vId] of Object.entries(viewMap)) {
           if (vId === targetViewId) {
@@ -878,8 +882,8 @@ class RTFTPOperator {
       this.btnExportAllPrint.disabled = (grandTotalItems === 0);
     }
 
-    // Filter sessions with pending items
-    const sessionsWithItems = this.sessions.filter(s => s.totalItems > 0);
+    // Filter sessions with pending items or exported print copies
+    const sessionsWithItems = this.sessions.filter(s => (s.totalItems > 0) || s.hasExportedPrint);
 
     if (sessionsWithItems.length === 0) {
       if (this.queueSessionsContainer) this.queueSessionsContainer.innerHTML = '';
