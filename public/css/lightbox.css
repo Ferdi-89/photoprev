@@ -25,7 +25,7 @@
 /* Lightbox Header Bar - Porcelain Crisp Floating Bar */
 .lightbox-header {
   padding: 10px 24px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-glass-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-subtle);
@@ -159,7 +159,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .zoom-tools .btn:hover {
-    background: #ffffff;
+    background: var(--bg-card);
     color: var(--text-main);
     box-shadow: var(--shadow-sm);
   }
@@ -182,7 +182,7 @@
 
 /* Close Button */
 #lightbox-close-btn {
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
@@ -262,7 +262,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .nav-arrow:hover {
-    background: #ffffff;
+    background: var(--bg-card);
     color: var(--accent-blue);
     border-color: var(--accent-blue);
     transform: translateY(-50%) scale(1.08);
@@ -280,7 +280,7 @@
 /* Lightbox Bottom Action Footer - Porcelain Dock */
 .lightbox-footer {
   padding: 12px 24px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-glass-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border-subtle);
@@ -408,4 +408,32 @@
   .zoom-tools .btn {
     transition: none;
   }
+}
+
+/* ==========================================================================
+   Lightbox Darkroom Mode Overrides
+   ========================================================================== */
+
+[data-theme="dark"] .lightbox-modal {
+  background: rgba(8, 9, 12, 0.94);
+}
+
+[data-theme="dark"] .lightbox-header,
+[data-theme="dark"] .lightbox-footer {
+  background: rgba(23, 25, 31, 0.92);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .nav-arrow {
+  background: rgba(27, 30, 38, 0.92);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .nav-arrow:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.8);
 }

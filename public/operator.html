@@ -7,10 +7,27 @@
   <title>RTFTP - Operator Control Panel</title>
   <meta name="description" content="Dashboard kontrol operator studio untuk mengatur folder sesi photoshoot, memantau antrean foto siap cetak, dan melihat log aktivitas server real-time.">
 
+  <!-- Anti-FOUT Synchronous Theme Initialization (Zero White Flash) -->
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('rtftp_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = (saved === 'dark' || saved === 'light') ? saved : (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'dark' ? '#0f1115' : '#e7e5e4');
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="css/studio.css">
   <link rel="stylesheet" href="css/operator.css">
   <link rel="stylesheet" href="css/lightbox.css">
+
+  <!-- Unified Theme Engine Script -->
+  <script src="js/theme.js" defer></script>
 </head>
 <body>
   <div class="studio-background"></div>
@@ -141,6 +158,14 @@
             </svg>
             Refresh Data
           </button>
+          <button id="btn-mobile-theme" class="btn btn-theme-toggle" data-action="toggle-theme" title="Beralih Mode Tampilan" aria-label="Beralih mode tampilan">
+            <span class="theme-icon-wrap" style="display: flex; align-items: center; justify-content: center;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+            <span class="theme-label">Mode Gelap</span>
+          </button>
         </div>
       </div>
     </div>
@@ -251,6 +276,14 @@
               </svg>
             </div>
             <span class="action-btn-label">Refresh Data</span>
+          </button>
+          <button id="btn-theme-toggle-sidebar" class="btn btn-theme-toggle sidebar-theme-btn" data-action="toggle-theme" title="Beralih Mode Tampilan" aria-label="Beralih mode tampilan">
+            <div class="btn-icon-wrapper theme-icon-wrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </div>
+            <span class="action-btn-label theme-label">Mode Gelap</span>
           </button>
         </div>
       </div>

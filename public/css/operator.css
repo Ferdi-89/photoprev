@@ -1057,7 +1057,7 @@ th {
 
 .session-queue-header {
   padding: 16px 20px;
-  background: #ffffff;
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -1273,7 +1273,7 @@ th {
   gap: 5px;
   font-size: 0.76rem;
   font-weight: 600;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   padding: 4px 10px;
@@ -1323,7 +1323,7 @@ th {
   gap: 5px;
   font-size: 0.76rem;
   font-weight: 600;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   padding: 4px 10px;
@@ -1498,7 +1498,7 @@ th {
 }
 
 .btn-native-explorer {
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   font-weight: 600;
@@ -1539,7 +1539,7 @@ th {
 /* Shortcuts & Drives Bar */
 .folder-picker-shortcuts-bar {
   padding: 10px 20px;
-  background: #ffffff;
+  background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -1636,7 +1636,7 @@ th {
   font-weight: 600;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--text-main);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1721,7 +1721,7 @@ th {
   font-size: 0.8rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--text-main);
   outline: none;
   width: 150px;
@@ -1762,7 +1762,7 @@ th {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 10px;
   align-content: flex-start;
-  background: #ffffff;
+  background: var(--bg-card);
 }
 
 .folder-loading-state,
@@ -1863,7 +1863,7 @@ th {
   padding: 4px 6px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--border-subtle);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--text-secondary);
   font-size: 0.72rem;
   font-weight: 600;
@@ -2026,7 +2026,7 @@ th {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-sm);
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   display: flex;
@@ -2167,7 +2167,7 @@ th {
 }
 
 .station-session-select {
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   padding: 4px 8px;
@@ -2232,7 +2232,7 @@ th {
   font-size: 0.78rem;
   font-weight: 600;
   padding: 5px 10px;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   color: var(--text-main);
@@ -2254,7 +2254,7 @@ th {
   font-size: 0.78rem;
   font-weight: 600;
   padding: 5px 10px;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   color: var(--text-main);
@@ -2275,7 +2275,7 @@ th {
   font-size: 0.78rem;
   font-weight: 600;
   padding: 5px 10px;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   color: var(--text-main);
@@ -2295,7 +2295,7 @@ th {
   font-size: 0.76rem;
   font-weight: 600;
   padding: 5px 10px;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   color: var(--accent-red);
@@ -2499,7 +2499,7 @@ th {
   height: 100%;
   border-radius: 4px;
   overflow: hidden;
-  background: #f3f4f6;
+  background: var(--bg-card-mat);
   position: relative;
 }
 
@@ -2582,7 +2582,7 @@ th {
   font-size: 0.78rem;
   font-weight: 600;
   padding: 6px 10px;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   color: var(--text-main);
@@ -2609,7 +2609,7 @@ th {
   font-size: 0.78rem;
   font-weight: 600;
   padding: 6px 10px;
-  background: #ffffff;
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   color: var(--text-main);
@@ -2739,7 +2739,7 @@ th {
   font-weight: 600;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--text-main);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -3018,7 +3018,7 @@ th {
   font-weight: 600;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
-  background: #ffffff;
+  background: var(--bg-card);
   color: var(--text-main);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -3035,6 +3035,92 @@ th {
   .operator-timer-dashboard-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* ==========================================================================
+   Operator Darkroom / Dark Mode Enhancements
+   ========================================================================== */
+
+/* Theme Toggle Button in Sidebar & Toolbar */
+.sidebar-theme-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.16s var(--ease-out);
+}
+
+.sidebar-theme-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-medium);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .sidebar-theme-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .sidebar-theme-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* Sidebar elevation & hover in dark mode */
+[data-theme="dark"] .operator-sidebar:hover,
+[data-theme="dark"] .operator-sidebar.is-expanded {
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="dark"] .sidebar-pin-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .operator-sidebar:hover .nav-item:hover,
+[data-theme="dark"] .operator-sidebar.is-pinned .nav-item:hover,
+[data-theme="dark"] .operator-sidebar.is-expanded .nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .folder-picker-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+/* Input, select, textarea styling in Dark Mode */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--bg-secondary);
+  border-color: var(--border-subtle);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  border-color: var(--accent-blue);
+  background: var(--bg-card);
+}
+
+/* Modal dark refinements */
+[data-theme="dark"] .modal-card {
+  box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile drawer dark adjustments */
+[data-theme="dark"] .mobile-drawer {
+  background: var(--bg-secondary);
+  border-right-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .mobile-top-bar {
+  background: var(--bg-glass);
+  border-bottom-color: var(--border-subtle);
 }
 
 

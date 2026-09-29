@@ -7,11 +7,28 @@
   <title>RTFTP - Live Studio Photo Preview & Selection</title>
   <meta name="description" content="Layar preview foto real-time untuk studio foto. Lihat hasil photoshoot, bandingkan foto side-by-side, dan pilih foto terbaik untuk dicetak langsung.">
 
+  <!-- Anti-FOUT Synchronous Theme Initialization (Zero White Flash) -->
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('rtftp_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = (saved === 'dark' || saved === 'light') ? saved : (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'dark' ? '#0f1115' : '#e7e5e4');
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="css/studio.css">
   <link rel="stylesheet" href="css/gallery.css">
   <link rel="stylesheet" href="css/lightbox.css">
   <link rel="stylesheet" href="css/compare.css">
+
+  <!-- Unified Theme Engine Script -->
+  <script src="js/theme.js" defer></script>
 </head>
 <body>
   <a href="#gallery-grid" class="skip-link">Lewati ke galeri foto</a>
@@ -61,6 +78,15 @@
         <button class="size-btn" data-cols="5" id="grid-btn-5" title="5 Kolom" aria-label="Tampilan grid 5 kolom">5</button>
         <button class="size-btn" data-cols="6" id="grid-btn-6" title="6 Kolom (Kecil)" aria-label="Tampilan grid 6 kolom">6</button>
       </div>
+
+      <!-- Quick Dark / Light Theme Toggle -->
+      <button class="btn btn-sm btn-theme-toggle" id="btn-theme-toggle-gallery" data-action="toggle-theme" title="Beralih Mode Tampilan" aria-label="Beralih mode tampilan" style="padding: 5px 9px;">
+        <span class="theme-icon-wrap" style="display: flex; align-items: center; justify-content: center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </span>
+      </button>
     </div>
   </nav>
 
