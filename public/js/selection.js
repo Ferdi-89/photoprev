@@ -56,7 +56,10 @@ class RTFTPSelection {
   }
 
   getSessionPath() {
-    return (window.galleryApp && window.galleryApp.currentSessionPath) || null;
+    return (window.galleryApp && window.galleryApp.currentSessionPath)
+      || (window.gallery && window.gallery.currentSessionPath)
+      || new URLSearchParams(window.location.search).get('session')
+      || null;
   }
 
   async confirmClearAll() {
@@ -268,7 +271,12 @@ class RTFTPSelection {
       ).join('');
 
       const sPath = this.getSessionPath();
-      const sQuery = sPath ? `?session=${encodeURIComponent(sPath)}` : '';
+      const stId = (window.galleryApp && window.galleryApp.stationId)
+        || (window.gallery && window.gallery.stationId)
+        || new URLSearchParams(window.location.search).get('station');
+      const sQuery = sPath
+        ? `?session=${encodeURIComponent(sPath)}`
+        : (stId ? `?station=${encodeURIComponent(stId)}` : '');
 
       row.innerHTML = `
         <img src="/api/photo/${encodeURIComponent(filename)}/original${sQuery}" alt="Foto #${orderIndex}" style="width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: var(--bg-primary); flex-shrink: 0;"/>

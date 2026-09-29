@@ -32,6 +32,7 @@ class RTFTPLightbox {
     this.touchStartX = 0;
     this.touchStartY = 0;
     this.touchStartTime = 0;
+    this.sessionContext = null;
 
     this.initEvents();
   }
@@ -220,8 +221,9 @@ class RTFTPLightbox {
     return 'Studio';
   }
 
-  open(photos, index) {
+  open(photos, index, sessionContext = null) {
     if (!this.modal) return;
+    this.sessionContext = sessionContext || null;
     this.photos = photos || [];
     this.currentIndex = Math.max(0, Math.min(index || 0, this.photos.length - 1));
     this.modal.classList.add('active');
@@ -282,7 +284,32 @@ class RTFTPLightbox {
       }
     };
 
-    const sessionQuery = photo.sessionPath ? `?session=${encodeURIComponent(photo.sessionPath)}` : '';
+    // Multi-layer fallback to find active session or station context
+    const activeSession = photo.sessionPath
+      || this.sessionContext
+      || (window.galleryApp && window.galleryApp.currentSessionPath)
+      || (window.gallery && window.gallery.currentSessionPath)
+      || new URLSearchParams(window.location.search).get('session');
+
+    const activeStation = (window.galleryApp && window.galleryApp.stationId)
+      || (window.gallery && window.gallery.stationId)
+      || new URLSearchParams(window.location.search).get('station');
+
+    let sessionQuery = '';
+    if (activeSession) {
+      sessionQuery = `?session=${encodeURIComponent(activeSession)}`;
+    } else if (activeStation) {
+      sessionQuery = `?station=${encodeURIComponent(activeStation)}`;
+    }
+
+    this.img.onerror = () => {
+      console.warn(`[Lightbox] Gagal memuat resolusi original ${photo.filename}. Mengalihkan ke preview...`);
+      const previewUrl = `/api/photo/${encodeURIComponent(photo.filename)}/preview${sessionQuery}`;
+      if (this.img.src !== previewUrl && !this.img.src.includes('/preview')) {
+        this.img.src = previewUrl;
+      }
+    };
+
     this.img.src = `/api/photo/${encodeURIComponent(photo.filename)}/original${sessionQuery}`;
     this.img.alt = `Foto studio ${photo.filename}`;
     this.resetZoom();

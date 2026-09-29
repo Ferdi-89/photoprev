@@ -124,8 +124,16 @@ class RTFTPCompare {
       item.className = `compare-item ${isSelected ? 'is-selected' : ''}`;
       item.id = `compare-item-${filename.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
-      const sPath = (photo && photo.sessionPath) || (window.galleryApp && window.galleryApp.currentSessionPath) || '';
-      const sQuery = sPath ? `?session=${encodeURIComponent(sPath)}` : '';
+      const sPath = (photo && photo.sessionPath)
+        || (window.galleryApp && window.galleryApp.currentSessionPath)
+        || (window.gallery && window.gallery.currentSessionPath)
+        || new URLSearchParams(window.location.search).get('session');
+      const stId = (window.galleryApp && window.galleryApp.stationId)
+        || (window.gallery && window.gallery.stationId)
+        || new URLSearchParams(window.location.search).get('station');
+      const sQuery = sPath
+        ? `?session=${encodeURIComponent(sPath)}`
+        : (stId ? `?station=${encodeURIComponent(stId)}` : '');
 
       item.innerHTML = `
         <div class="compare-item-header">

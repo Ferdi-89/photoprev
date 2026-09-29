@@ -105,6 +105,7 @@ async function reloadSessionPhotos(folderPath) {
     return {
       id: filename,
       filename,
+      sessionPath: resolved,
       size: meta.size,
       mtime: meta.mtime,
       width: meta.width,
@@ -216,6 +217,52 @@ function safeSessionDir(reqSession) {
   return resolved;
 }
 
+// Find a photo file across the requested session, active station sessions, or storage session folders
+function findPhotoInAnySession(filename, preferredSessionDir) {
+  if (!filename) return null;
+
+  // 1. Check preferred session folder first
+  if (preferredSessionDir && fs.existsSync(preferredSessionDir)) {
+    const preferredPath = path.join(preferredSessionDir, filename);
+    if (fs.existsSync(preferredPath)) {
+      return { fullPath: preferredPath, sessionDir: preferredSessionDir };
+    }
+  }
+
+  // 2. Check all client station assigned sessions
+  if (Array.isArray(config.clientStations)) {
+    for (const st of config.clientStations) {
+      if (st.assignedSessionPath && fs.existsSync(st.assignedSessionPath)) {
+        const p = path.join(path.resolve(st.assignedSessionPath), filename);
+        if (fs.existsSync(p)) {
+          return { fullPath: p, sessionDir: path.resolve(st.assignedSessionPath) };
+        }
+      }
+    }
+  }
+
+  // 3. Check all active monitored session folders
+  try {
+    const activeFolders = getAllActiveSessionFolders();
+    for (const folder of activeFolders) {
+      const p = path.join(folder, filename);
+      if (fs.existsSync(p)) {
+        return { fullPath: p, sessionDir: folder };
+      }
+    }
+  } catch (e) {}
+
+  // 4. Check global activeSessionPath
+  if (config.activeSessionPath && fs.existsSync(config.activeSessionPath)) {
+    const p = path.join(path.resolve(config.activeSessionPath), filename);
+    if (fs.existsSync(p)) {
+      return { fullPath: p, sessionDir: path.resolve(config.activeSessionPath) };
+    }
+  }
+
+  return null;
+}
+
 // Helper: Read all photos in session (instant in-memory if active session, otherwise reads disk)
 async function getSessionPhotos(folderPath) {
   const resolved = path.resolve(folderPath);
@@ -304,7 +351,11 @@ app.get('/api/photos', async (req, res) => {
   try {
     const targetPath = resolveSessionForRequest(req);
     const photos = await getSessionPhotos(targetPath);
-    res.json({ success: true, sessionPath: targetPath, photos });
+    const photosWithSession = photos.map(p => ({
+      ...p,
+      sessionPath: p.sessionPath || targetPath
+    }));
+    res.json({ success: true, sessionPath: targetPath, photos: photosWithSession });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -331,11 +382,11 @@ app.get('/api/photo/:filename/thumb', async (req, res) => {
   try {
     const filename = safeFilename(req.params.filename);
     const sessionDir = resolveSessionForRequest(req);
-    const fullPath = path.join(sessionDir, filename);
-    if (!fs.existsSync(fullPath)) {
+    const found = findPhotoInAnySession(filename, sessionDir);
+    if (!found) {
       return res.status(404).send('Foto tidak ditemukan');
     }
-    const cachedThumb = await getOrGenerateImage(fullPath, 'thumb');
+    const cachedThumb = await getOrGenerateImage(found.fullPath, 'thumb');
     res.sendFile(cachedThumb, {
       maxAge: '7d',
       lastModified: true,
@@ -351,11 +402,11 @@ app.get('/api/photo/:filename/preview', async (req, res) => {
   try {
     const filename = safeFilename(req.params.filename);
     const sessionDir = resolveSessionForRequest(req);
-    const fullPath = path.join(sessionDir, filename);
-    if (!fs.existsSync(fullPath)) {
+    const found = findPhotoInAnySession(filename, sessionDir);
+    if (!found) {
       return res.status(404).send('Foto tidak ditemukan');
     }
-    const cachedPreview = await getOrGenerateImage(fullPath, 'preview');
+    const cachedPreview = await getOrGenerateImage(found.fullPath, 'preview');
     res.sendFile(cachedPreview, {
       maxAge: '7d',
       lastModified: true,
@@ -370,11 +421,11 @@ app.get('/api/photo/:filename/preview', async (req, res) => {
 app.get('/api/photo/:filename/original', (req, res) => {
   const filename = safeFilename(req.params.filename);
   const sessionDir = resolveSessionForRequest(req);
-  const fullPath = path.join(sessionDir, filename);
-  if (!fs.existsSync(fullPath)) {
+  const found = findPhotoInAnySession(filename, sessionDir);
+  if (!found) {
     return res.status(404).send('Foto tidak ditemukan');
   }
-  res.sendFile(fullPath, {
+  res.sendFile(found.fullPath, {
     maxAge: '1d',
     lastModified: true
   });

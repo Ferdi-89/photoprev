@@ -17,7 +17,18 @@ class RTFTPGallery {
     this.sessionNameEl = document.getElementById('session-name-display');
     this.countAllBadge = document.getElementById('count-all');
 
+    window.gallery = this;
+    window.galleryApp = this;
+
     this.init();
+  }
+
+  setPhotos(photos) {
+    this.photos = (photos || []).map(p => ({
+      ...p,
+      sessionPath: p.sessionPath || this.currentSessionPath
+    }));
+    window.compareManager.setPhotos(this.photos);
   }
 
   async init() {
@@ -110,8 +121,7 @@ class RTFTPGallery {
         }
       }
       if (data.photos) {
-        this.photos = data.photos;
-        window.compareManager.setPhotos(this.photos);
+        this.setPhotos(data.photos);
       }
       if (data.selections) {
         window.selectionManager.initFromData(data.selections);
@@ -124,8 +134,12 @@ class RTFTPGallery {
         return;
       }
       if (data.photo) {
-        this.photos = this.photos.filter(p => p.filename !== data.photo.filename);
-        this.photos.unshift(data.photo);
+        const newPhoto = {
+          ...data.photo,
+          sessionPath: data.photo.sessionPath || data.sessionPath || this.currentSessionPath
+        };
+        this.photos = this.photos.filter(p => p.filename !== newPhoto.filename);
+        this.photos.unshift(newPhoto);
         window.compareManager.setPhotos(this.photos);
         this.render();
         window.showToast('Foto baru ditambahkan ke galeri', 'blue');
@@ -161,13 +175,11 @@ class RTFTPGallery {
         this.currentSessionPath = data.sessionPath;
         if (this.sessionNameEl) this.sessionNameEl.textContent = data.sessionName || 'Sesi Studio';
         if (data.photos) {
-          this.photos = data.photos;
-          window.compareManager.setPhotos(this.photos);
+          this.setPhotos(data.photos);
         } else {
           const photoRes = await window.api.getPhotos(this.stationId, this.currentSessionPath);
           if (photoRes.success) {
-            this.photos = photoRes.photos;
-            window.compareManager.setPhotos(this.photos);
+            this.setPhotos(photoRes.photos);
           }
         }
         if (data.selections) {
@@ -198,8 +210,7 @@ class RTFTPGallery {
         this.sessionNameEl.textContent = data.sessionName;
       }
       if (data.photos) {
-        this.photos = data.photos;
-        window.compareManager.setPhotos(this.photos);
+        this.setPhotos(data.photos);
       }
       window.compareManager.clear();
       window.selectionManager.initFromData([]);
@@ -268,8 +279,7 @@ class RTFTPGallery {
 
       const photoRes = await window.api.getPhotos(this.stationId, this.currentSessionPath);
       if (photoRes.success) {
-        this.photos = photoRes.photos;
-        window.compareManager.setPhotos(this.photos);
+        this.setPhotos(photoRes.photos);
       }
 
       const selRes = await window.api.getSelections(this.stationId, this.currentSessionPath);
@@ -382,7 +392,7 @@ class RTFTPGallery {
       if (zoomBtn) {
         zoomBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          window.lightbox.open(filtered, index);
+          window.lightbox.open(filtered, index, this.currentSessionPath);
         });
       }
 
