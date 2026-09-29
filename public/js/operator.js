@@ -708,8 +708,13 @@ class RTFTPOperator {
       if (data.reports) {
         const total = data.reports.reduce((acc, r) => acc + (r.totalCopies || 0), 0);
         this.log(`Semua sesi diekspor: total ${total} lembar cetak disiapkan`, 'success');
+        window.showToast(`Pesanan cetak massal berhasil disiapkan (${total} lembar)`, 'success', 5000);
       } else if (data.report) {
-        this.log(`Pesanan cetak diproses: ${data.report.totalCopies} lembar ke _SIAP_CETAK`, 'success');
+        this.log(`Pesanan cetak dikonfirmasi: ${data.report.totalCopies} lembar untuk ${data.report.sessionName}`, 'success');
+        window.showToast(`Pesanan siap cetak masuk dari: ${data.report.sessionName} (${data.report.totalCopies} lembar)`, 'success', 6000);
+      }
+      if (data.sessions) {
+        this.renderSessionQueues(data.sessions, this.activeSessionPath);
       }
       this.refreshData();
     });
@@ -887,17 +892,38 @@ class RTFTPOperator {
     this.queueSessionsContainer.innerHTML = '';
 
     sessionsWithItems.forEach(session => {
-      const isActive = session.isActive || (activeSessionPath && session.sessionPath.toLowerCase() === activeSessionPath.toLowerCase());
+      const hasStations = Array.isArray(session.assignedStations) && session.assignedStations.length > 0;
+      const stationNames = hasStations ? session.assignedStations.join(', ') : '';
+      const isDefaultActive = !!(activeSessionPath && session.sessionPath.toLowerCase() === activeSessionPath.toLowerCase());
+      const isActive = session.isActive || isDefaultActive || hasStations;
       const card = document.createElement('div');
       card.className = `session-queue-card ${isActive ? 'is-active-session' : ''}`;
 
       const iconClass = isActive ? 'session-icon-active' : 'session-icon-stored';
-      const statusClass = isActive ? 'session-status-active' : 'session-status-stored';
-      const statusLabel = isActive ? 'Sesi Aktif' : 'Tersimpan';
+      let statusClass = 'session-status-stored';
+      let statusLabel = 'Tersimpan';
+
+      if (hasStations) {
+        statusClass = 'session-status-active';
+        statusLabel = `Aktif di ${stationNames}`;
+      } else if (isActive) {
+        statusClass = 'session-status-active';
+        statusLabel = 'Sesi Aktif';
+      }
 
       const updateTimeText = session.latestSelectedAt
         ? `Update: ${new Date(session.latestSelectedAt).toLocaleTimeString('id-ID')}`
         : 'Update Baru';
+
+      const orderStatusBadge = session.hasExportedPrint
+        ? `<span class="session-pill" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35); color: var(--accent-green); font-weight: 700;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Pesanan Siap Cetak (Dikonfirmasi)
+          </span>`
+        : `<span class="session-pill" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #d97706; font-weight: 600;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Sedang Dipilih Pelanggan
+          </span>`;
 
       card.innerHTML = `
         <div class="session-queue-header">
@@ -921,6 +947,7 @@ class RTFTPOperator {
               </div>
               <div class="session-path-sub">${session.sessionPath}</div>
               <div class="session-meta-pills">
+                ${orderStatusBadge}
                 <span class="session-pill session-pill-blue">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                   ${session.totalItems} Foto Unik
@@ -961,7 +988,7 @@ class RTFTPOperator {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
               Salin ke _SIAP_CETAK
             </button>
-            ${!isActive ? `
+            ${(!isActive && !hasStations) ? `
               <button class="btn btn-sm btn-secondary btn-activate-session" data-path="${session.sessionPath}" title="Aktifkan sesi ini untuk layar klien">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                 Aktifkan Sesi

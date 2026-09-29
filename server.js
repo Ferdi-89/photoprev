@@ -417,8 +417,8 @@ app.get('/api/photo/:filename/preview', async (req, res) => {
   }
 });
 
-// 6. Original Photo Download / Stream
-app.get('/api/photo/:filename/original', (req, res) => {
+// 6. Original / Raw Photo Download / Stream
+app.get(['/api/photo/:filename/original', '/api/photo/:filename/raw'], (req, res) => {
   const filename = safeFilename(req.params.filename);
   const sessionDir = resolveSessionForRequest(req);
   const found = findPhotoInAnySession(filename, sessionDir);
@@ -499,7 +499,8 @@ app.post('/api/selections/clear', (req, res) => {
 // 10. Export to Print Folder (_SIAP_CETAK)
 app.post('/api/print/export', async (req, res) => {
   try {
-    const { sessionPath, exportAll } = req.body || {};
+    const { exportAll } = req.body || {};
+    const sessionPath = resolveSessionForRequest(req);
 
     if (exportAll) {
       const allSessions = printManager.getAllSessionQueues(config);
@@ -510,16 +511,24 @@ app.post('/api/print/export', async (req, res) => {
           reports.push(rep);
         }
       }
-      broadcast({ type: 'PRINT_EXPORTED', reports });
-      return res.json({ success: true, reports });
+      const updatedSessions = printManager.getAllSessionQueues(config);
+      broadcast({ type: 'PRINT_EXPORTED', reports, sessions: updatedSessions });
+      return res.json({ success: true, reports, sessions: updatedSessions });
+    }
+
+    if (!sessionPath) {
+      return res.status(400).json({ success: false, error: 'Path sesi tidak ditemukan' });
     }
 
     const report = await printManager.exportToPrintFolder(sessionPath);
+    const updatedSessions = printManager.getAllSessionQueues(config);
     broadcast({
       type: 'PRINT_EXPORTED',
-      report
+      sessionPath,
+      report,
+      sessions: updatedSessions
     });
-    res.json({ success: true, report });
+    res.json({ success: true, report, sessions: updatedSessions });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
@@ -807,7 +816,7 @@ app.get('/api/print/render', (req, res) => {
           <span>Lembar ${idx + 1} dari ${pages.length} &bull; ${esc(p.filename)}</span>
           <span>Ukuran: ${esc(p.size)} (Salinan ${p.copyNum}/${p.totalCopies})</span>
         </div>
-        <img src="/api/photo/${encodeURIComponent(p.filename)}/raw?session=${encodeURIComponent(sessionPath)}" alt="${esc(p.filename)}" loading="eager">
+        <img src="/api/photo/${encodeURIComponent(p.filename)}/original?session=${encodeURIComponent(sessionPath)}" alt="${esc(p.filename)}" loading="eager">
       </div>
     `).join('')}
   </div>
