@@ -457,29 +457,17 @@ app.post('/api/print/export', async (req, res) => {
         if (s.totalItems > 0) {
           const rep = await printManager.exportToPrintFolder(s.sessionPath);
           reports.push(rep);
-          try {
-            sessionDirectoryManager.completeSession(config, s.sessionPath);
-          } catch (e) {}
         }
       }
       broadcast({ type: 'PRINT_EXPORTED', reports });
-      const dirData = sessionDirectoryManager.listSessions(config);
-      broadcast({ type: 'SESSION_DIRECTORIES_UPDATED', ...dirData });
       return res.json({ success: true, reports });
     }
 
     const report = await printManager.exportToPrintFolder(sessionPath);
-    try {
-      if (sessionPath) {
-        sessionDirectoryManager.completeSession(config, sessionPath);
-      }
-    } catch (e) {}
     broadcast({
       type: 'PRINT_EXPORTED',
       report
     });
-    const dirData = sessionDirectoryManager.listSessions(config);
-    broadcast({ type: 'SESSION_DIRECTORIES_UPDATED', ...dirData });
     res.json({ success: true, report });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -1013,33 +1001,78 @@ app.post('/api/operator/directory/open-explorer', async (req, res) => {
   }
 });
 
-// 23B. Operator Directory: Mark Session as Completed (Checkout / Print Done)
-app.post('/api/operator/directory/complete', (req, res) => {
+// 23B. Operator Directory: Mark Session as Completed (Checkout / Print Done confirmed by Operator)
+app.post(['/api/operator/session/confirm-complete', '/api/operator/directory/complete'], (req, res) => {
   try {
-    const { sessionPath } = req.body;
-    const result = completeSession(config, sessionPath);
+    const { sessionPath, releaseStation = true, stationId } = req.body || {};
+    if (!sessionPath) {
+      return res.status(400).json({ success: false, error: 'Path sesi tidak boleh kosong' });
+    }
+
+    const resolved = path.resolve(sessionPath);
+    const result = completeSession(config, resolved);
+
+    const releasedStations = [];
+    if (releaseStation) {
+      const stations = getStations(config);
+      const targetStations = stations.filter(st => {
+        if (stationId) return st.id === stationId;
+        return st.assignedSessionPath && path.resolve(st.assignedSessionPath).toLowerCase() === resolved.toLowerCase();
+      });
+
+      for (const st of targetStations) {
+        // Notify client tablets / touchscreens connected to this station
+        broadcast({
+          type: 'SESSION_COMPLETED',
+          stationId: st.id,
+          sessionPath: resolved,
+          sessionName: path.basename(resolved),
+          message: 'Sesi photoshoot telah selesai dikonfirmasi oleh operator studio. Terima kasih!'
+        });
+
+        assignSessionToStation(config, st.id, null, broadcast);
+        releasedStations.push(st.name || st.id);
+      }
+    }
+
     setupActiveWatcher();
+    const dirData = listSessions(config);
     broadcast({
       type: 'SESSION_DIRECTORIES_UPDATED',
-      ...listSessions(config)
+      ...dirData
     });
-    res.json(result);
+    broadcast({
+      type: 'STATIONS_UPDATED',
+      stations: getStations(config)
+    });
+
+    res.json({
+      success: true,
+      ...result,
+      releasedStations,
+      ...dirData
+    });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
 });
 
 // 23C. Operator Directory: Reopen Completed Session Back to Active
-app.post('/api/operator/directory/reopen', (req, res) => {
+app.post(['/api/operator/session/reopen', '/api/operator/directory/reopen'], (req, res) => {
   try {
-    const { sessionPath } = req.body;
-    const result = reopenSession(config, sessionPath);
+    const { sessionPath } = req.body || {};
+    if (!sessionPath) {
+      return res.status(400).json({ success: false, error: 'Path sesi tidak boleh kosong' });
+    }
+    const resolved = path.resolve(sessionPath);
+    const result = reopenSession(config, resolved);
     setupActiveWatcher();
+    const dirData = listSessions(config);
     broadcast({
       type: 'SESSION_DIRECTORIES_UPDATED',
-      ...listSessions(config)
+      ...dirData
     });
-    res.json(result);
+    res.json({ success: true, ...result, ...dirData });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }

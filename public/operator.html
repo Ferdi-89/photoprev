@@ -414,10 +414,13 @@
                 Semua Sesi (<span id="count-filter-all">0</span>)
               </button>
               <button type="button" class="btn btn-sm session-filter-btn" data-filter="active" style="font-size: 0.78rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm);">
-                Sesi Aktif (<span id="count-filter-active">0</span>)
+                Aktif di Stasiun (<span id="count-filter-active">0</span>)
+              </button>
+              <button type="button" class="btn btn-sm session-filter-btn" data-filter="available" style="font-size: 0.78rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm);">
+                Tersedia (<span id="count-filter-available">0</span>)
               </button>
               <button type="button" class="btn btn-sm session-filter-btn" data-filter="completed" style="font-size: 0.78rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm);">
-                Selesai Cetak (<span id="count-filter-completed">0</span>)
+                Selesai (<span id="count-filter-completed">0</span>)
               </button>
             </div>
 
@@ -1103,6 +1106,79 @@
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
             <span>Terapkan ke Stasiun</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi Selesai Sesi oleh Operator (Operator Checkout Modal) -->
+  <div id="modal-checkout-session" class="folder-picker-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-session-modal-title" style="display: none;">
+    <div class="folder-picker-backdrop" id="checkout-session-backdrop"></div>
+    <div class="folder-picker-card" style="max-width: 520px; height: auto; max-height: 90vh;">
+      <div class="folder-picker-header">
+        <div class="folder-picker-title-area">
+          <div class="folder-picker-icon" style="background: rgba(34, 197, 94, 0.12); color: var(--accent-green); border-color: rgba(34, 197, 94, 0.25);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h3 class="folder-picker-title" id="checkout-session-modal-title">Konfirmasi Selesai Sesi</h3>
+            <p class="folder-picker-subtitle">Validasi dan selesaikan sesi photoshoot pelanggan.</p>
+          </div>
+        </div>
+        <button id="checkout-session-close-btn" class="folder-picker-close-btn" type="button" aria-label="Tutup Dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form id="form-checkout-session" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+        <input type="hidden" id="checkout-modal-session-path" value=""/>
+        <input type="hidden" id="checkout-modal-station-id" value=""/>
+
+        <div style="background: var(--bg-primary); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Nama Sesi Photoshoot:</span>
+            <strong id="checkout-modal-session-name" style="font-size: 0.95rem; color: var(--text-main);">-</strong>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Stasiun PC Terhubung:</span>
+            <span id="checkout-modal-stations-badge" style="font-size: 0.8rem; font-weight: 700; color: var(--accent-green); background: rgba(34, 197, 94, 0.12); padding: 2px 8px; border-radius: 4px;">-</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Total Foto Sesi:</span>
+            <span id="checkout-modal-photo-count" style="font-size: 0.84rem; font-weight: 600; color: var(--text-main);">0 Foto</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Status Pilihan Cetak:</span>
+            <span id="checkout-modal-queue-status" style="font-size: 0.84rem; font-weight: 700; color: var(--accent-amber);">-</span>
+          </div>
+        </div>
+
+        <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.18); border-radius: var(--radius-sm); padding: 12px 14px;">
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="checkout-modal-release-station" checked style="margin-top: 3px; width: 16px; height: 16px; cursor: pointer;"/>
+            <div>
+              <strong style="font-size: 0.85rem; color: var(--text-main); display: block;">Lepaskan Stasiun PC Klien</strong>
+              <span style="font-size: 0.76rem; color: var(--text-muted); display: block; line-height: 1.4; margin-top: 2px;">
+                Secara otomatis mengosongkan stasiun PC klien dan menampilkan layar sambutan siap pakai untuk sesi pelanggan berikutnya.
+              </span>
+            </div>
+          </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+          <button type="button" id="btn-cancel-checkout-session" class="btn btn-secondary">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-checkout-session" style="background: var(--accent-green); border-color: var(--accent-green); color: #fff;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Konfirmasi Selesai</span>
           </button>
         </div>
       </form>

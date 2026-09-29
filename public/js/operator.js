@@ -84,6 +84,7 @@ class RTFTPOperator {
     this.sessionFilter = 'all';
     this.countFilterAll = document.getElementById('count-filter-all');
     this.countFilterActive = document.getElementById('count-filter-active');
+    this.countFilterAvailable = document.getElementById('count-filter-available');
     this.countFilterCompleted = document.getElementById('count-filter-completed');
     this.directorySessions = [];
     this.directoryRootPath = '';
@@ -97,6 +98,20 @@ class RTFTPOperator {
     this.assignModalSessionPathText = document.getElementById('assign-modal-session-path-text');
     this.assignModalSessionPath = document.getElementById('assign-modal-session-path');
     this.assignModalStationSelect = document.getElementById('assign-modal-station-select');
+
+    // Operator Checkout Modal Elements (Selesaikan Sesi & Release Station)
+    this.modalCheckoutSession = document.getElementById('modal-checkout-session');
+    this.formCheckoutSession = document.getElementById('form-checkout-session');
+    this.checkoutModalSessionPath = document.getElementById('checkout-modal-session-path');
+    this.checkoutModalStationId = document.getElementById('checkout-modal-station-id');
+    this.checkoutModalSessionName = document.getElementById('checkout-modal-session-name');
+    this.checkoutModalStationsBadge = document.getElementById('checkout-modal-stations-badge');
+    this.checkoutModalPhotoCount = document.getElementById('checkout-modal-photo-count');
+    this.checkoutModalQueueStatus = document.getElementById('checkout-modal-queue-status');
+    this.checkoutModalReleaseStation = document.getElementById('checkout-modal-release-station');
+    this.checkoutSessionCloseBtn = document.getElementById('checkout-session-close-btn');
+    this.btnCancelCheckoutSession = document.getElementById('btn-cancel-checkout-session');
+    this.checkoutSessionBackdrop = document.getElementById('checkout-session-backdrop');
 
     // Session Timer & Customer Pacing Elements
     this.toggleTimerEnabled = document.getElementById('toggle-timer-enabled');
@@ -922,6 +937,12 @@ class RTFTPOperator {
             </div>
           </div>
           <div class="session-header-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button class="btn btn-sm btn-complete-queue-session" data-path="${session.sessionPath}" data-name="${session.sessionName}" title="Konfirmasi penyelesaian sesi dan lepaskan stasiun PC klien" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35); color: var(--accent-green); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Konfirmasi Selesai</span>
+            </button>
             <button class="btn btn-sm btn-print-session" data-path="${session.sessionPath}" title="Buka jendela cetak langsung untuk semua foto sesi ini (${session.totalCopies} lembar)" style="background: var(--color-blue-bg); border: 1px solid var(--color-blue-border); color: var(--accent-blue); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="6 9 6 2 18 2 18 9"></polyline>
@@ -973,6 +994,13 @@ class RTFTPOperator {
       `;
 
       // Wire Header Action Buttons
+      const btnCompleteQueue = card.querySelector('.btn-complete-queue-session');
+      if (btnCompleteQueue) {
+        btnCompleteQueue.addEventListener('click', () => {
+          this.openCheckoutModal(session);
+        });
+      }
+
       const btnPrintSession = card.querySelector('.btn-print-session');
       if (btnPrintSession) {
         btnPrintSession.addEventListener('click', () => {
@@ -2262,6 +2290,119 @@ class RTFTPOperator {
         }
       });
     }
+
+    // Operator Checkout Session Modal Events
+    const closeCheckoutModal = () => {
+      if (this.modalCheckoutSession) {
+        this.modalCheckoutSession.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    };
+
+    if (this.checkoutSessionCloseBtn) this.checkoutSessionCloseBtn.addEventListener('click', closeCheckoutModal);
+    if (this.btnCancelCheckoutSession) this.btnCancelCheckoutSession.addEventListener('click', closeCheckoutModal);
+    if (this.checkoutSessionBackdrop) this.checkoutSessionBackdrop.addEventListener('click', closeCheckoutModal);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modalCheckoutSession && this.modalCheckoutSession.style.display === 'flex') {
+        closeCheckoutModal();
+      }
+    });
+
+    if (this.formCheckoutSession) {
+      this.formCheckoutSession.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const sessionPath = this.checkoutModalSessionPath ? this.checkoutModalSessionPath.value : '';
+        const stationId = this.checkoutModalStationId ? this.checkoutModalStationId.value : '';
+        const releaseStation = this.checkoutModalReleaseStation ? this.checkoutModalReleaseStation.checked : true;
+        const submitBtn = document.getElementById('btn-submit-checkout-session');
+        const origText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span>Menyelesaikan Sesi...</span>';
+        }
+
+        try {
+          const res = await window.api.confirmCompleteSession(sessionPath, releaseStation, stationId || null);
+          if (res.success) {
+            const name = this.checkoutModalSessionName ? this.checkoutModalSessionName.textContent : 'Sesi';
+            this.log(`Sesi telah diselesaikan oleh operator: ${name}`, 'success');
+            window.showToast(`Sesi "${name}" berhasil diselesaikan dan di-checkout!`, 'success');
+            closeCheckoutModal();
+            await this.refreshDirectorySessions();
+            await this.refreshStations();
+            await this.refreshData();
+          } else {
+            window.showToast('Gagal menyelesaikan sesi: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origText;
+          }
+        }
+      });
+    }
+  }
+
+  openCheckoutModal(session) {
+    if (!this.modalCheckoutSession || !session) return;
+    const sessionName = session.name || session.sessionName || (session.path ? session.path.split(/[\\/]/).pop() : 'Sesi Studio');
+    const sessionPath = session.path || session.sessionPath || '';
+
+    // Determine assigned stations
+    let stationNames = '';
+    let firstStationId = '';
+    if (session.assignedStations && session.assignedStations.length > 0) {
+      stationNames = session.assignedStations.map(st => st.name || st).join(', ');
+      firstStationId = session.assignedStations[0].id || '';
+    } else if (this.stations && this.stations.length > 0) {
+      const match = this.stations.filter(st => st.assignedSessionPath && sessionPath && st.assignedSessionPath.toLowerCase() === sessionPath.toLowerCase());
+      if (match.length > 0) {
+        stationNames = match.map(m => m.name).join(', ');
+        firstStationId = match[0].id;
+      }
+    }
+
+    const photoCount = session.photoCount !== undefined ? session.photoCount : (session.totalPhotos || 0);
+
+    // Check print queue items for this session
+    let queueStatusText = 'Belum ada antrean cetak';
+    if (this.lastPrintData && Array.isArray(this.lastPrintData.sessions)) {
+      const qMatch = this.lastPrintData.sessions.find(q => q.sessionPath && sessionPath && q.sessionPath.toLowerCase() === sessionPath.toLowerCase());
+      if (qMatch && qMatch.totalItems > 0) {
+        queueStatusText = `${qMatch.totalItems} Foto (${qMatch.totalCopies} lembar cetak)`;
+      }
+    } else if (session.totalItems !== undefined && session.totalItems > 0) {
+      queueStatusText = `${session.totalItems} Foto (${session.totalCopies || session.totalItems} lembar cetak)`;
+    }
+
+    if (this.checkoutModalSessionName) this.checkoutModalSessionName.textContent = sessionName;
+    if (this.checkoutModalSessionPath) this.checkoutModalSessionPath.value = sessionPath;
+    if (this.checkoutModalStationId) this.checkoutModalStationId.value = firstStationId;
+    if (this.checkoutModalPhotoCount) this.checkoutModalPhotoCount.textContent = `${photoCount} Foto Tersimpan`;
+    if (this.checkoutModalQueueStatus) this.checkoutModalQueueStatus.textContent = queueStatusText;
+
+    if (this.checkoutModalStationsBadge) {
+      if (stationNames) {
+        this.checkoutModalStationsBadge.textContent = `Aktif di: ${stationNames}`;
+        this.checkoutModalStationsBadge.style.color = 'var(--accent-green)';
+        this.checkoutModalStationsBadge.style.background = 'rgba(34, 197, 94, 0.12)';
+      } else {
+        this.checkoutModalStationsBadge.textContent = 'Tidak Terhubung ke PC Klien';
+        this.checkoutModalStationsBadge.style.color = 'var(--text-muted)';
+        this.checkoutModalStationsBadge.style.background = 'var(--bg-surface-elevated)';
+      }
+    }
+
+    if (this.checkoutModalReleaseStation) {
+      this.checkoutModalReleaseStation.checked = !!stationNames;
+    }
+
+    this.modalCheckoutSession.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
   }
 
   openAssignStationModal(session) {
@@ -2320,11 +2461,19 @@ class RTFTPOperator {
 
     // Update Filter Tab Count Badges & Navigation Badges
     const totalAll = this.directorySessions.length;
-    const totalActive = data.totalActive !== undefined ? data.totalActive : this.directorySessions.filter(s => !s.isCompleted).length;
-    const totalCompleted = data.totalCompleted !== undefined ? data.totalCompleted : this.directorySessions.filter(s => s.isCompleted).length;
+    const totalActive = data.totalActive !== undefined
+      ? data.totalActive
+      : this.directorySessions.filter(s => s.status === 'active' || (s.assignedStations && s.assignedStations.length > 0 && !s.isCompleted)).length;
+    const totalAvailable = data.totalAvailable !== undefined
+      ? data.totalAvailable
+      : this.directorySessions.filter(s => s.status === 'available' || (!s.isCompleted && (!s.assignedStations || s.assignedStations.length === 0))).length;
+    const totalCompleted = data.totalCompleted !== undefined
+      ? data.totalCompleted
+      : this.directorySessions.filter(s => s.isCompleted).length;
 
     if (this.countFilterAll) this.countFilterAll.textContent = totalAll;
     if (this.countFilterActive) this.countFilterActive.textContent = totalActive;
+    if (this.countFilterAvailable) this.countFilterAvailable.textContent = totalAvailable;
     if (this.countFilterCompleted) this.countFilterCompleted.textContent = totalCompleted;
 
     if (this.navSessionsBadge) {
@@ -2347,7 +2496,7 @@ class RTFTPOperator {
       this.statActiveSessions.textContent = totalActive;
     }
     if (this.statActiveSessionsPill) {
-      this.statActiveSessionsPill.textContent = `${totalActive} Aktif (${totalCompleted} Selesai)`;
+      this.statActiveSessionsPill.textContent = `${totalActive} Aktif di Stasiun (${totalAvailable} Tersedia)`;
     }
     if (this.statTotalStationsKpi) {
       this.statTotalStationsKpi.textContent = (this.stations || []).length;
@@ -2356,7 +2505,7 @@ class RTFTPOperator {
       this.statDirTotalSessions.textContent = totalAll;
     }
 
-    const activeSession = this.directorySessions.find(s => s.isCurrentActive || (!s.isCompleted && s.isActive));
+    const activeSession = this.directorySessions.find(s => s.status === 'active' || (s.assignedStations && s.assignedStations.length > 0 && !s.isCompleted));
     if (this.statDirActiveName) {
       if (activeSession) {
         this.statDirActiveName.textContent = activeSession.name;
@@ -2393,10 +2542,12 @@ class RTFTPOperator {
       this.createSessionRootDisplay.textContent = this.directoryRootPath || '-';
     }
 
-    // Filter Sessions by Active Filter Tab (all / active / completed)
+    // Filter Sessions by Active Filter Tab (all / active / available / completed)
     let displaySessions = this.directorySessions;
     if (this.sessionFilter === 'active') {
-      displaySessions = displaySessions.filter(s => !s.isCompleted);
+      displaySessions = displaySessions.filter(s => s.status === 'active' || (s.assignedStations && s.assignedStations.length > 0 && !s.isCompleted));
+    } else if (this.sessionFilter === 'available') {
+      displaySessions = displaySessions.filter(s => s.status === 'available' || (!s.isCompleted && (!s.assignedStations || s.assignedStations.length === 0)));
     } else if (this.sessionFilter === 'completed') {
       displaySessions = displaySessions.filter(s => s.isCompleted);
     }
@@ -2418,11 +2569,14 @@ class RTFTPOperator {
           if (titleEl) titleEl.textContent = `Tidak Ditemukan Sesi "${query}"`;
           if (pEl) pEl.textContent = 'Silakan coba kata kunci pencarian lain atau buat folder sesi baru.';
         } else if (this.sessionFilter === 'active') {
-          if (titleEl) titleEl.textContent = 'Tidak Ada Sesi Aktif Saat Ini';
-          if (pEl) pEl.textContent = 'Semua sesi photoshoot telah diselesaikan, atau klik "+ Buat Sesi Baru" untuk memulai sesi baru.';
+          if (titleEl) titleEl.textContent = 'Tidak Ada Sesi yang Sedang Terhubung ke PC Klien';
+          if (pEl) pEl.textContent = 'Hubungkan folder sesi yang tersedia ke PC klien melalui tombol "Hubungkan ke PC Klien" di tab Tersedia.';
+        } else if (this.sessionFilter === 'available') {
+          if (titleEl) titleEl.textContent = 'Tidak Ada Sesi Tersedia';
+          if (pEl) pEl.textContent = 'Semua sesi photoshoot sedang aktif di PC klien atau telah selesai. Klik "+ Buat Sesi Baru" untuk sesi berikutnya.';
         } else if (this.sessionFilter === 'completed') {
           if (titleEl) titleEl.textContent = 'Belum Ada Sesi yang Selesai';
-          if (pEl) pEl.textContent = 'Sesi yang telah menyelesaikan pemilihan foto dan cetak akan muncul di sini.';
+          if (pEl) pEl.textContent = 'Sesi yang telah dikonfirmasi selesai oleh operator akan muncul di sini.';
         } else {
           if (titleEl) titleEl.textContent = 'Belum Ada Folder Sesi Ditemukan';
           if (pEl) pEl.textContent = 'Tidak ada folder photoshoot di dalam direktori induk saat ini. Klik tombol "+ Buat Sesi Baru" di atas untuk membuat sesi foto pertama Anda.';
@@ -2477,16 +2631,20 @@ class RTFTPOperator {
 
       let statusBadgeHtml = '';
       if (s.isCompleted) {
-        statusBadgeHtml = `<span class="badge-station badge-station-offline" style="background: rgba(148, 163, 184, 0.12); color: var(--text-muted); border: 1px solid var(--border-subtle); font-weight: 700;">SELESAI CETAK</span>`;
+        statusBadgeHtml = `<span class="badge-station badge-station-offline" style="background: rgba(148, 163, 184, 0.12); color: var(--text-muted); border: 1px solid var(--border-subtle); font-weight: 700;">SELESAI</span>`;
       } else if (s.assignedStations && s.assignedStations.length > 0) {
         statusBadgeHtml = `<span class="badge-session-active"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-green);"></span> AKTIF (${s.assignedStations.join(', ')})</span>`;
       } else if (s.isCurrentActive) {
-        statusBadgeHtml = `<span class="badge-session-active"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-green);"></span> SESI UTAMA</span>`;
+        statusBadgeHtml = `<span class="badge-session-active"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-green);"></span> AKTIF (PC Klien)</span>`;
       } else {
-        statusBadgeHtml = `<span class="badge-session-active" style="background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.25); color: var(--accent-blue);"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-blue);"></span> AKTIF (STANDBY)</span>`;
+        statusBadgeHtml = `<span class="badge-session-active" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.25); color: var(--accent-gold);"><span class="live-dot" style="width: 6px; height: 6px; background-color: var(--accent-gold);"></span> TERSEDIA</span>`;
       }
 
-      const iconStroke = s.isCompleted ? 'var(--text-muted)' : (s.isCurrentActive ? 'var(--accent-gold)' : 'var(--accent-blue)');
+      const iconStroke = s.isCompleted
+        ? 'var(--text-muted)'
+        : (s.assignedStations && s.assignedStations.length > 0) || s.isCurrentActive
+          ? 'var(--accent-green)'
+          : 'var(--accent-gold)';
 
       card.innerHTML = `
         <div class="session-dir-header">
@@ -2557,14 +2715,14 @@ class RTFTPOperator {
               <span>Galeri</span>
             </button>
             ${!s.isCompleted ? `
-              <button class="btn-dir-assign-station" data-path="${s.path}" data-name="${s.name}" title="Arahkan sesi folder ini ke salah satu stasiun PC klien">
+              <button class="btn-dir-assign-station" data-path="${s.path}" data-name="${s.name}" title="Hubungkan sesi folder ini ke salah satu stasiun PC klien">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                   <circle cx="8.5" cy="7" r="4"></circle>
                   <line x1="20" y1="8" x2="20" y2="14"></line>
                   <line x1="23" y1="11" x2="17" y2="11"></line>
                 </svg>
-                <span>Arahkan ke Stasiun...</span>
+                <span>${(s.assignedStations && s.assignedStations.length > 0) ? 'Ganti Stasiun' : 'Hubungkan ke PC Klien'}</span>
               </button>
             ` : ''}
           </div>
@@ -2579,20 +2737,12 @@ class RTFTPOperator {
                 <span>Buka Kembali</span>
               </button>
             ` : `
-              <button class="btn btn-sm btn-complete-session" data-path="${s.path}" data-name="${s.name}" title="Selesaikan sesi setelah pelanggan selesai memilih foto dan mencetak" style="font-size: 0.78rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <button class="btn btn-sm btn-checkout-session" data-path="${s.path}" data-name="${s.name}" title="Konfirmasi penyelesaian sesi oleh operator (checkout pelanggan)" style="font-size: 0.78rem; font-weight: 600; padding: 6px 14px; border-radius: var(--radius-sm); background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: var(--accent-green); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                <span>Selesaikan Sesi</span>
+                <span>Konfirmasi Selesai</span>
               </button>
-              ${!s.isCurrentActive ? `
-                <button class="btn-dir-activate btn-make-active" data-path="${s.path}" data-name="${s.name}" title="Jadikan folder ini sebagai sesi utama">Jadikan Sesi Utama</button>
-              ` : `
-                <button class="btn-dir-activate is-current" disabled title="Sesi ini adalah sesi utama">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>Sesi Utama</span>
-                </button>
-              `}
             `}
           </div>
         </div>
@@ -2656,31 +2806,19 @@ class RTFTPOperator {
         });
       }
 
-      // Wire Complete Session Button
+      // Wire Checkout Session Button (Operator Confirmation Modal)
+      const checkoutBtn = card.querySelector('.btn-checkout-session');
+      if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', () => {
+          this.openCheckoutModal(s);
+        });
+      }
+
+      // Wire Complete Session Button (Direct completion fallback if present)
       const completeBtn = card.querySelector('.btn-complete-session');
       if (completeBtn) {
-        completeBtn.addEventListener('click', async () => {
-          const p = completeBtn.getAttribute('data-path');
-          const name = completeBtn.getAttribute('data-name');
-          completeBtn.disabled = true;
-          completeBtn.textContent = 'Menyelesaikan...';
-          try {
-            const res = await window.api.completeSession(p);
-            if (res.success) {
-              this.log(`Sesi diselesaikan: ${name}`, 'info');
-              window.showToast(`Sesi "${name}" ditandai selesai cetak!`, 'success');
-              await this.refreshDirectorySessions();
-              await this.refreshStations();
-            } else {
-              window.showToast('Gagal menyelesaikan sesi: ' + res.error, 'danger');
-              completeBtn.disabled = false;
-              completeBtn.textContent = 'Selesaikan Sesi';
-            }
-          } catch (err) {
-            window.showToast('Error: ' + err.message, 'danger');
-            completeBtn.disabled = false;
-            completeBtn.textContent = 'Selesaikan Sesi';
-          }
+        completeBtn.addEventListener('click', () => {
+          this.openCheckoutModal(s);
         });
       }
 
@@ -2708,35 +2846,6 @@ class RTFTPOperator {
             window.showToast('Error: ' + err.message, 'danger');
             reopenBtn.disabled = false;
             reopenBtn.textContent = 'Buka Kembali';
-          }
-        });
-      }
-
-      // Wire Make Active Button
-      const activateBtn = card.querySelector('.btn-make-active');
-      if (activateBtn) {
-        activateBtn.addEventListener('click', async () => {
-          const p = activateBtn.getAttribute('data-path');
-          const name = activateBtn.getAttribute('data-name');
-          activateBtn.disabled = true;
-          activateBtn.textContent = 'Mengaktifkan...';
-
-          try {
-            const res = await window.api.setSessionFolder(p);
-            if (res.success) {
-              this.log(`Sesi utama dialihkan ke: ${name}`, 'success');
-              window.showToast(`Sesi photoshoot "${name}" dijadikan sesi utama!`, 'success');
-              await this.refreshData();
-              await this.refreshDirectorySessions();
-            } else {
-              window.showToast('Gagal mengaktifkan sesi: ' + res.error, 'danger');
-              activateBtn.disabled = false;
-              activateBtn.textContent = 'Jadikan Sesi Utama';
-            }
-          } catch (err) {
-            window.showToast('Error: ' + err.message, 'danger');
-            activateBtn.disabled = false;
-            activateBtn.textContent = 'Jadikan Sesi Utama';
           }
         });
       }

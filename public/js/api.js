@@ -194,17 +194,21 @@ class RTFTPApi {
     return await res.json();
   }
 
-  async completeSession(sessionPath) {
-    const res = await fetch('/api/operator/directory/complete', {
+  async completeSession(sessionPath, releaseStation = true, stationId = null) {
+    const res = await fetch('/api/operator/session/confirm-complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionPath })
+      body: JSON.stringify({ sessionPath, releaseStation, stationId })
     });
     return await res.json();
   }
 
+  async confirmCompleteSession(sessionPath, releaseStation = true, stationId = null) {
+    return await this.completeSession(sessionPath, releaseStation, stationId);
+  }
+
   async reopenSession(sessionPath) {
-    const res = await fetch('/api/operator/directory/reopen', {
+    const res = await fetch('/api/operator/session/reopen', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionPath })

@@ -234,6 +234,20 @@ class RTFTPGallery {
       setTimeout(() => window.location.reload(), 500);
     });
 
+    window.api.on('SESSION_COMPLETED', (data) => {
+      const matchesStation = this.stationId && data.stationId === this.stationId;
+      const matchesSession = data.sessionPath && this.currentSessionPath && data.sessionPath.toLowerCase() === this.currentSessionPath.toLowerCase();
+
+      if (matchesStation || matchesSession) {
+        window.selectionManager.initFromData([]);
+        window.compareManager.clear();
+        this.photos = [];
+        this.activeFilter = 'all';
+        this.render();
+        window.showToast(data.message || 'Sesi photoshoot telah selesai. Terima kasih telah berfoto bersama kami!', 'success', 7000);
+      }
+    });
+
     window.api.on('STATION_DEACTIVATED', (data) => {
       window.showToast(data.message || 'Stasiun ini telah dinonaktifkan oleh operator.', 'danger', 8000);
     });

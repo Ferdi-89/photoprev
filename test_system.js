@@ -8,7 +8,7 @@ const ifaces = getLanInterfaces(3000);
 assert(Array.isArray(ifaces), 'Interfaces must be an array');
 assert(ifaces.length > 0, 'Should detect at least one LAN interface');
 assert(ifaces.some(i => i.url.startsWith('http://')), 'URL format must be valid');
-console.log('✓ Network interface discovery OK:', ifaces.map(i => `${i.name} -> ${i.url}`).join(', '));
+console.log('[OK] Network interface discovery OK:', ifaces.map(i => `${i.name} -> ${i.url}`).join(', '));
 
 // 2. Path traversal sanitization check
 function safeFilename(rawFilename) {
@@ -18,27 +18,27 @@ function safeFilename(rawFilename) {
 assert.strictEqual(safeFilename('../../windows/system32/cmd.exe'), 'cmd.exe');
 assert.strictEqual(safeFilename('..\\..\\boot.ini'), 'boot.ini');
 assert.strictEqual(safeFilename('photo_01.jpg'), 'photo_01.jpg');
-console.log('✓ Path traversal defense OK');
+console.log('[OK] Path traversal defense OK');
 
 // 3. Image file extension validation
 assert.strictEqual(isImageFile('test.jpg'), true);
 assert.strictEqual(isImageFile('test.PNG'), true);
 assert.strictEqual(isImageFile('test.exe'), false);
 assert.strictEqual(isImageFile('test.js'), false);
-console.log('✓ Image extension validator OK');
+console.log('[OK] Image extension validator OK');
 
 // 4. Config storage fallback check
 const { loadConfig, DEFAULT_STORAGE } = require('./lib/config');
 const cfg = loadConfig();
 assert(cfg.activeSessionPath && typeof cfg.activeSessionPath === 'string', 'Config should have activeSessionPath');
-console.log('✓ Config storage & fallback validation OK');
+console.log('[OK] Config storage & fallback validation OK');
 
 // 5. Cross-platform drive detection check
 const { getSystemDrives } = require('./lib/folderBrowser');
 const drives = getSystemDrives();
 assert(Array.isArray(drives) && drives.length > 0, 'Drives should return non-empty array');
 assert(drives[0].path && drives[0].name, 'Drive items should have name and path');
-console.log('✓ Cross-platform drive discovery OK');
+console.log('[OK] Cross-platform drive discovery OK');
 
 // 6. Session Timer & Customer Pacing Engine check
 const sessionTimerManager = require('./lib/sessionTimerManager');
@@ -79,7 +79,7 @@ assert.strictEqual(sessionTimerManager.getState().remainingSeconds, 15 * 60, 'Re
 sessionTimerManager.reset();
 assert.strictEqual(sessionTimerManager.getState().isRunning, false, 'Timer should not be running after reset');
 sessionTimerManager.stop();
-console.log('✓ Session timer engine & broadcast compatibility validation OK');
+console.log('[OK] Session timer engine & broadcast compatibility validation OK');
 
 // 7. Thumbnail deduplication and concurrent processing check
 async function runAsyncTests() {
@@ -93,7 +93,7 @@ async function runAsyncTests() {
     ]);
     assert.strictEqual(thumb1, thumb2, 'Concurrent thumbnail requests must resolve to identical path');
     assert(fs.existsSync(thumb1), 'Generated thumbnail file must exist');
-    console.log('✓ Thumbnail concurrent deduplication & atomic caching OK');
+    console.log('[OK] Thumbnail concurrent deduplication & atomic caching OK');
   }
 
   // 8. Station session assignment and resolution validation
@@ -133,7 +133,55 @@ async function runAsyncTests() {
   // Cleanup: Remove dummy test station so config.json remains clean
   stationManager.removeStation(dummyConfig, stationId);
 
-  console.log('✓ Multi-session workstation mapping & fallback resolution OK');
+  console.log('[OK] Multi-session workstation mapping & fallback resolution OK');
+
+  // 9. Session Directory Manager workflow (active at station, available, completed confirmed by operator)
+  const sessionDirManager = require('./lib/sessionDirectoryManager');
+  const demoRoot = path.resolve(__dirname, 'storage');
+  const testSessionDir = path.resolve(demoRoot, 'demo_session');
+
+  const testConfig = {
+    sessionRootDir: demoRoot,
+    activeSessionPath: testSessionDir,
+    completedSessions: [],
+    clientStations: [
+      { id: 'st-unit-1', name: 'PC Klien 1', assignedSessionPath: testSessionDir }
+    ]
+  };
+
+  const listBefore = sessionDirManager.listSessions(testConfig);
+  assert(listBefore.success, 'listSessions should succeed');
+  assert(typeof listBefore.totalActive === 'number', 'totalActive must be a number');
+  assert(typeof listBefore.totalAvailable === 'number', 'totalAvailable must be a number');
+  assert(typeof listBefore.totalCompleted === 'number', 'totalCompleted must be a number');
+
+  // The assigned session should be active
+  const targetSession = listBefore.sessions.find(s => path.resolve(s.path).toLowerCase() === testSessionDir.toLowerCase());
+  if (targetSession) {
+    assert.strictEqual(targetSession.status, 'active', 'Station-assigned session must have active status');
+    assert.strictEqual(targetSession.isActive, true, 'isActive should be true');
+    assert.strictEqual(targetSession.isCompleted, false, 'isCompleted should be false initially');
+  }
+
+  // Operator confirms session completed
+  sessionDirManager.completeSession(testConfig, testSessionDir);
+  const listAfterComplete = sessionDirManager.listSessions(testConfig);
+  const targetCompleted = listAfterComplete.sessions.find(s => path.resolve(s.path).toLowerCase() === testSessionDir.toLowerCase());
+  if (targetCompleted) {
+    assert.strictEqual(targetCompleted.status, 'completed', 'Completed session must have status completed');
+    assert.strictEqual(targetCompleted.isCompleted, true, 'isCompleted must be true');
+  }
+
+  // Operator reopens session
+  sessionDirManager.reopenSession(testConfig, testSessionDir);
+  const listAfterReopen = sessionDirManager.listSessions(testConfig);
+  const targetReopened = listAfterReopen.sessions.find(s => path.resolve(s.path).toLowerCase() === testSessionDir.toLowerCase());
+  if (targetReopened) {
+    assert.strictEqual(targetReopened.isCompleted, false, 'isCompleted must be false after reopen');
+    assert.strictEqual(targetReopened.status, 'active', 'Session assigned to station should be active again');
+  }
+
+  console.log('[OK] Session Directory workflow & operator checkout validation OK');
 
   console.log('\nAll self-checks passed successfully!');
 }
