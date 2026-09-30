@@ -1,10 +1,10 @@
-# 🚀 Panduan Deployment RTFTP (PhotoPrev) untuk Beta Tester
+# Panduan Deployment RTFTP (PhotoPrev) untuk Beta Tester
 
 Dokumen ini adalah panduan deployment resmi untuk **RTFTP (PhotoPrev)** agar dapat dicobakan oleh klien dan beta tester, baik secara online (cloud / tunnel) maupun di jaringan lokal studio (LAN/Wi-Fi).
 
 ---
 
-## 📌 Ringkasan Arsitektur & Kesiapan Sistem
+## Ringkasan Arsitektur & Kesiapan Sistem
 
 - **Runtime:** Node.js (v18 / v20 LTS)
 - **Engine Gambar:** Sharp (`libvips`) dengan pre-caching 1200px (HD) & 2560px (2K/4K)
@@ -14,33 +14,33 @@ Dokumen ini adalah panduan deployment resmi untuk **RTFTP (PhotoPrev)** agar dap
 
 ---
 
-## 🌐 Opsi 1: Share Instan ke Beta Tester Online (Paling Cepat / Zero-Config)
+## Opsi 1: Share Instan ke Beta Tester Online (Paling Cepat / Zero-Config)
 
 Gunakan cara ini jika Anda ingin beta tester di luar studio langsung mencoba sistem dari HP/Tablet/Laptop mereka tanpa perlu menyewa server cloud.
 
 ### Langkah di Windows PC Operator:
 1. Pastikan server aktif (bisa dengan double-click `start-server.bat` atau `run.vbs`).
 2. Double-click file:
-   ```cmd
-   share-beta-online.bat
-   ```
-   *Atau jalankan perintah terminal:*
-   ```bash
-   npm run tunnel
-   ```
+ ```cmd
+ share-beta-online.bat
+ ```
+ *Atau jalankan perintah terminal:*
+ ```bash
+ npm run tunnel
+ ```
 3. Anda akan mendapatkan URL HTTPS publik, misalnya:
-   ```text
-   your url is: https://bright-photo-test.loca.lt
-   ```
+ ```text
+ your url is: https://bright-photo-test.loca.lt
+ ```
 4. **Kirim link tersebut ke Beta Tester:**
-   - **Layar Klien:** `https://bright-photo-test.loca.lt`
-   - **Layar Operator:** `https://bright-photo-test.loca.lt/operator.html`
+ - **Layar Klien:** `https://bright-photo-test.loca.lt`
+ - **Layar Operator:** `https://bright-photo-test.loca.lt/operator.html`
 
-> 💡 **Catatan untuk Beta Tester:** Saat pertama kali membuka link localtunnel, klik tombol **"Click to Continue"** (atau masukkan IP publik host) untuk masuk ke aplikasi.
+> **Catatan untuk Beta Tester:** Saat pertama kali membuka link localtunnel, klik tombol **"Click to Continue"** (atau masukkan IP publik host) untuk masuk ke aplikasi.
 
 ---
 
-## ☁️ Opsi 2: Deploy Cloud Menggunakan Docker (Rekomendasi Staging/Production)
+## ️ Opsi 2: Deploy Cloud Menggunakan Docker (Rekomendasi Staging/Production)
 
 Proyek ini sudah dilengkapi `Dockerfile` dan `docker-compose.yml` berbasis `node:20-bookworm-slim` yang sudah teruji untuk modul native `sharp`.
 
@@ -64,18 +64,18 @@ docker build -t photoprev:beta .
 
 # Run container dengan volume penyimpanan foto
 docker run -d \
-  --name photoprev-app \
-  -p 3000:3000 \
-  -v photoprev_data:/app/storage \
-  --restart unless-stopped \
-  photoprev:beta
+ --name photoprev-app \
+ -p 3000:3000 \
+ -v photoprev_data:/app/storage \
+ --restart unless-stopped \
+ photoprev:beta
 ```
 
 Aplikasi dapat langsung diakses di `http://<IP-SERVER>:3000`.
 
 ---
 
-## 🚀 Opsi 3: Deploy 1-Klik ke Cloud PaaS (Render.com / Railway)
+## Opsi 3: Deploy 1-Klik ke Cloud PaaS (Render.com / Railway)
 
 Proyek ini sudah memiliki manifest `render.yaml` untuk deployment otomatis.
 
@@ -89,7 +89,7 @@ Proyek ini sudah memiliki manifest `render.yaml` untuk deployment otomatis.
 
 ---
 
-## 🖥️ Opsi 4: Deploy di Linux VPS (Ubuntu/Debian dengan PM2 & Nginx)
+## ️ Opsi 4: Deploy di Linux VPS (Ubuntu/Debian dengan PM2 & Nginx)
 
 Untuk deployment VPS mandiri (DigitalOcean, Linode, AWS EC2, Biznet Gio, IDCloudHost):
 
@@ -118,19 +118,19 @@ pm2 startup
 Buat file `/etc/nginx/sites-available/photoprev`:
 ```nginx
 server {
-    listen 80;
-    server_name studio.namadomain.com;
+ listen 80;
+ server_name studio.namadomain.com;
 
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+ location / {
+ proxy_pass http://127.0.0.1:3000;
+ proxy_http_version 1.1;
+ proxy_set_header Upgrade $http_upgrade;
+ proxy_set_header Connection "upgrade";
+ proxy_set_header Host $host;
+ proxy_set_header X-Real-IP $remote_addr;
+ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+ proxy_set_header X-Forwarded-Proto $scheme;
+ }
 }
 ```
 Aktifkan dan restart Nginx:
@@ -142,19 +142,19 @@ sudo systemctl restart nginx
 
 ---
 
-## 🏢 Opsi 5: Deploy di Jaringan Studio Lokal (LAN / Wi-Fi)
+## Opsi 5: Deploy di Jaringan Studio Lokal (LAN / Wi-Fi)
 
 Jika beta testing dilakukan langsung di studio menggunakan tablet/iPad klien dan PC operator:
 
 1. Sambungkan PC Operator dan Tablet Klien ke **Wi-Fi studio yang sama**.
 2. Jalankan server:
-   ```cmd
-   start-server.bat
-   ```
+ ```cmd
+ start-server.bat
+ ```
 3. Terminal akan menampilkan IP lokal yang terdeteksi secara otomatis:
-   ```text
-   >>> Buka di Tablet Klien: http://192.168.1.15:3000 <<<
-   ```
+ ```text
+ >>> Buka di Tablet Klien: http://192.168.1.15:3000 <<<
+ ```
 4. Buka alamat tersebut di browser Chrome/Safari pada tablet.
 5. Untuk kiosk/touchscreen mode di tablet, gunakan fitur browser *"Add to Home Screen"* (PWA-ready).
 
@@ -172,17 +172,17 @@ GET /api/health
 **Respon JSON:**
 ```json
 {
-  "status": "ok",
-  "version": "1.0.0",
-  "uptime": 1240,
-  "timestamp": 1727339120000,
-  "environment": "production"
+ "status": "ok",
+ "version": "1.0.0",
+ "uptime": 1240,
+ "timestamp": 1727339120000,
+ "environment": "production"
 }
 ```
 
 ---
 
-## 📋 Skenario Uji untuk Beta Tester (User Acceptance Test)
+## Skenario Uji untuk Beta Tester (User Acceptance Test)
 
 Minta beta tester untuk menguji alur kerja berikut:
 

@@ -1,4 +1,4 @@
-# 📸 PhotoPrev (RTFTP) - Real-Time Studio Photo Preview & Selection System
+# PhotoPrev (RTFTP) - Real-Time Studio Photo Preview & Selection System
 
 Sistem server preview foto real-time berbasis jaringan lokal (LAN) untuk studio foto. Didesain untuk menghubungkan **PC Operator** (fotografer/editor) dengan **Layar Preview Klien** (PC client, iPad/tablet, atau smart TV).
 
@@ -6,7 +6,7 @@ Foto yang di-export oleh operator dari Lightroom / Photoshop langsung meluncur m
 
 ---
 
-## 🌟 Fitur Utama
+## Fitur Utama
 
 ### 1. Layar Preview Klien (`http://localhost:3000`)
 * **Real-time Live Feed:** Foto baru langsung tampil begitu selesai diekspor di PC operator.
@@ -23,7 +23,7 @@ Foto yang di-export oleh operator dari Lightroom / Photoshop langsung meluncur m
 
 ---
 
-## 🚀 Cara Menjalankan
+## Cara Menjalankan
 
 ### Cara 1: Menggunakan Script Windows (Paling Mudah)
 Cukup klik dua kali file:
@@ -42,51 +42,51 @@ Server akan aktif di:
 
 ---
 
-## 📱 Akses dari Tablet / iPad / PC Lain di Studio (LAN / Wi-Fi)
+## Akses dari Tablet / iPad / PC Lain di Studio (LAN / Wi-Fi)
 
 Agar tablet atau PC preview klien di studio bisa membuka aplikasi:
 1. Pastikan kedua perangkat terhubung ke Wi-Fi / Router studio yang sama.
 2. Cek IP lokal PC Operator (jalankan `ipconfig` di CMD, misal: `192.168.1.15`).
 3. Di browser tablet/klien, buka:
-   ```
-   http://192.168.1.15:3000
-   ```
+ ```
+ http://192.168.1.15:3000
+ ```
 
 ---
 
-## 🌐 Deployment & Akses Beta Tester
+## Deployment & Akses Beta Tester
 
 Sistem ini mendukung berbagai opsi deployment untuk uji coba beta tester:
 
 1. **Share Online Instan (Tanpa Cloud/Hosting):**
-   Cukup jalankan `share-beta-online.bat` atau `npm run tunnel` untuk mendapatkan URL HTTPS publik yang bisa langsung dibuka oleh beta tester di mana saja.
+ Cukup jalankan `share-beta-online.bat` atau `npm run tunnel` untuk mendapatkan URL HTTPS publik yang bisa langsung dibuka oleh beta tester di mana saja.
 2. **Container Docker:**
-   Gunakan `docker compose up -d --build` untuk deployment container siap produksi.
+ Gunakan `docker compose up -d --build` untuk deployment container siap produksi.
 3. **Cloud PaaS (Render / Railway):**
-   Sudah dilengkapi file `render.yaml` untuk deploy 1-klik di cloud.
+ Sudah dilengkapi file `render.yaml` untuk deploy 1-klik di cloud.
 4. **Panduan Lengkap:**
-   Lihat dokumentasi lengkap di [`DEPLOYMENT.md`](./DEPLOYMENT.md).
+ Lihat dokumentasi lengkap di [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 ---
 
-## 📂 Struktur Folder
+## Struktur Folder
 ```text
 RTFTP/
-├── server.js              # Server utama Express & WebSocket
+├── server.js # Server utama Express & WebSocket
 ├── lib/
-│   ├── config.js          # Pengaturan sesi & folder
-│   ├── watcher.js         # Pemantau folder otomatis (Chokidar)
-│   ├── thumbnail.js       # Generator thumbnail cepat (Sharp)
-│   ├── printManager.js    # Manajemen pilihan cetak & auto-copy
-│   └── demoData.js        # Generator foto demo portrait
-├── public/                # Antarmuka Web Klien & Operator
-│   ├── index.html         # Layar Preview Klien
-│   ├── operator.html      # Dashboard Operator
-│   ├── css/               # Style Dark Mode, Grid, Lightbox, Compare
-│   └── js/                # Logika WebSocket, Zoom, Seleksi, dll.
+│ ├── config.js # Pengaturan sesi & folder
+│ ├── watcher.js # Pemantau folder otomatis (Chokidar)
+│ ├── thumbnail.js # Generator thumbnail cepat (Sharp)
+│ ├── printManager.js # Manajemen pilihan cetak & auto-copy
+│ └── demoData.js # Generator foto demo portrait
+├── public/ # Antarmuka Web Klien & Operator
+│ ├── index.html # Layar Preview Klien
+│ ├── operator.html # Dashboard Operator
+│ ├── css/ # Style Dark Mode, Grid, Lightbox, Compare
+│ └── js/ # Logika WebSocket, Zoom, Seleksi, dll.
 ├── storage/
-│   ├── demo_session/      # Folder sesi default
-│   └── cache/             # Penyimpanan cache thumbnail
-├── start-server.bat       # Launcher Windows 1-klik
+│ ├── demo_session/ # Folder sesi default
+│ └── cache/ # Penyimpanan cache thumbnail
+├── start-server.bat # Launcher Windows 1-klik
 └── package.json
 ```

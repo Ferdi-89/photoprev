@@ -1,5 +1,5 @@
 # ===================================================
-# 📸 PhotoPrev (RTFTP) - Production Dockerfile
+# PhotoPrev (RTFTP) - Production Dockerfile
 # Optimized for high-performance image processing (Sharp)
 # ===================================================
 
@@ -7,7 +7,7 @@ FROM node:20-bookworm-slim
 
 # Install curl for container healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ VOLUME ["/app/storage"]
 
 # Healthcheck probe for container orchestrators
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+ CMD curl -f http://localhost:3000/health || exit 1
 
 # Start server
 CMD ["node", "server.js"]
