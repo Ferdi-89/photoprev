@@ -226,6 +226,33 @@ async function runAsyncTests() {
 
   console.log('[OK] Print Manager multi-tier queue discovery & fallback validation OK');
 
+  // 11. Windows Explorer & File Location Reveal Engine check
+  const { openInWindowsExplorer, openFileInWindowsExplorer } = require('./lib/sessionDirectoryManager');
+  const demoFolder = path.resolve(__dirname, 'storage/demo_session');
+  if (fs.existsSync(demoFolder)) {
+    const folderRes = await openInWindowsExplorer(demoFolder);
+    assert.strictEqual(folderRes.success, true, 'openInWindowsExplorer should succeed on existing folder');
+    assert(folderRes.openedPath, 'openInWindowsExplorer should return openedPath');
+
+    const demoImgPath = path.join(demoFolder, 'STUDIO_001_16x9_MasterSet.jpg');
+    if (fs.existsSync(demoImgPath)) {
+      const fileRes = await openFileInWindowsExplorer(demoImgPath);
+      assert.strictEqual(fileRes.success, true, 'openFileInWindowsExplorer should succeed on existing photo file');
+      assert(fileRes.openedPath, 'openFileInWindowsExplorer should return openedPath');
+    }
+  }
+
+  // Reject on non-existent path
+  let caughtError = false;
+  try {
+    await openInWindowsExplorer(path.join(__dirname, 'non_existent_folder_xyz'));
+  } catch (e) {
+    caughtError = true;
+  }
+  assert.strictEqual(caughtError, true, 'openInWindowsExplorer must reject non-existent paths');
+
+  console.log('[OK] Windows Explorer folder opening & file reveal validation OK');
+
   console.log('\nAll self-checks passed successfully!');
 }
 

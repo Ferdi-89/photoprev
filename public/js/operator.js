@@ -584,6 +584,79 @@ class RTFTPOperator {
         this.log('Data sesi diperbarui via menu mobile', 'info');
       });
     }
+
+    // Unbreakable Global Delegated Click Listener for Explorer & Location Reveal Buttons
+    document.addEventListener('click', async (e) => {
+      // 1. Session Directory Card "Buka di Explorer"
+      const dirBtn = e.target.closest('.btn-dir-explorer');
+      if (dirBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const p = dirBtn.getAttribute('data-path') || '';
+        try {
+          const res = await window.api.openInExplorer(p);
+          if (res.success) {
+            window.showToast('Membuka folder di Windows Explorer', 'blue');
+            this.log(`Folder dibuka di Windows Explorer: ${res.openedPath}`, 'info');
+          } else {
+            window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+        return;
+      }
+
+      // 2. Ready-to-Print Queue Session Card "Buka di Explorer"
+      const queueExpBtn = e.target.closest('.btn-explorer-session');
+      if (queueExpBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const p = queueExpBtn.getAttribute('data-path') || '';
+        try {
+          const res = await window.api.openInExplorer(p);
+          if (res.success) {
+            window.showToast('Membuka folder sesi di Windows Explorer', 'blue');
+            this.log(`Folder sesi dibuka di Windows Explorer: ${res.openedPath}`, 'info');
+          } else {
+            window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+        return;
+      }
+
+      // 3. Ready-to-Print Queue Table Row "Lokasi"
+      const locateBtn = e.target.closest('.btn-locate-item');
+      if (locateBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const tr = locateBtn.closest('tr');
+        const sessionCard = locateBtn.closest('.session-queue-card');
+        const sessionPath = locateBtn.getAttribute('data-path')
+          || (sessionCard ? sessionCard.querySelector('.btn-explorer-session')?.getAttribute('data-path') : '')
+          || '';
+        const filename = locateBtn.getAttribute('data-filename')
+          || (tr ? tr.querySelector('.queue-filename-text')?.textContent.trim() : '')
+          || '';
+
+        if (filename) {
+          try {
+            const res = await window.api.openFileLocation(sessionPath, filename);
+            if (res.success) {
+              window.showToast(`Membuka file di Explorer: ${filename}`, 'blue');
+              this.log(`Menyorot file di Explorer: ${res.openedPath}`, 'info');
+            } else {
+              window.showToast('Gagal membuka lokasi file: ' + res.error, 'danger');
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+          }
+        }
+        return;
+      }
+    });
   }
 
   bindWebSocketEvents() {
@@ -1196,7 +1269,7 @@ class RTFTPOperator {
                 </svg>
                 <span>Cetak</span>
               </button>
-              <button type="button" class="btn btn-sm btn-secondary btn-locate-item" title="Buka dan sorot file ini di Windows Explorer" style="padding: 5px 9px; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+              <button type="button" class="btn btn-sm btn-secondary btn-locate-item" data-filename="${item.exportedFilename || item.filename}" data-path="${session.sessionPath}" title="Buka dan sorot file ini di Windows Explorer" style="padding: 5px 9px; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
@@ -1228,7 +1301,8 @@ class RTFTPOperator {
           btnLocateItem.addEventListener('click', async (e) => {
             if (e) e.stopPropagation();
             try {
-              const res = await window.api.openFileLocation(session.sessionPath, item.filename);
+              const targetName = btnLocateItem.getAttribute('data-filename') || item.exportedFilename || item.filename;
+              const res = await window.api.openFileLocation(session.sessionPath, targetName);
               if (res.success) {
                 window.showToast(`Membuka file di Explorer: ${item.filename}`, 'blue');
                 this.log(`Menyorot file di Explorer: ${res.openedPath}`, 'info');
@@ -1469,22 +1543,25 @@ class RTFTPOperator {
         `;
 
         try {
-          const startDir = this.selectedFolderPath || this.currentBrowsePath || this.sessionPathInput.value;
+          const startDir = this.selectedFolderPath || this.currentBrowsePath || (this.sessionPathInput ? this.sessionPathInput.value : '') || this.directoryRootPath || '';
           const res = await window.api.openNativePicker(startDir);
-          if (res.success && !res.canceled && res.selectedPath) {
+          const chosenPath = res.selectedPath || res.path;
+          if (res.success && !res.canceled && !res.cancelled && chosenPath) {
             closeModal();
 
             if (typeof this.folderPickerCallback === 'function') {
               const cb = this.folderPickerCallback;
               this.folderPickerCallback = null;
-              await cb(res.selectedPath);
+              await cb(chosenPath);
               return;
             }
 
-            this.sessionPathInput.value = res.selectedPath;
-            const applyRes = await window.api.setSessionFolder(res.selectedPath);
+            if (this.sessionPathInput) {
+              this.sessionPathInput.value = chosenPath;
+            }
+            const applyRes = await window.api.setSessionFolder(chosenPath);
             if (applyRes.success) {
-              this.log(`Folder dipilih via Windows Explorer: ${res.selectedPath}`, 'success');
+              this.log(`Folder dipilih via Windows Explorer: ${chosenPath}`, 'success');
               window.showToast('Folder sesi aktif berhasil diperbarui', 'success');
               await this.refreshData();
             }
@@ -2198,22 +2275,30 @@ class RTFTPOperator {
     }
 
     // Open Root Directory in Windows Explorer
-    if (this.btnOpenRootExplorer) {
-      this.btnOpenRootExplorer.addEventListener('click', async (e) => {
-        if (e) e.stopPropagation();
-        try {
-          const targetDir = this.directoryRootPath || '';
-          const res = await window.api.openInExplorer(targetDir);
-          if (res.success) {
-            window.showToast('Membuka folder induk di Windows Explorer', 'blue');
-            this.log(`Membuka folder induk di Windows Explorer: ${res.openedPath}`, 'info');
-          } else {
-            window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
-          }
-        } catch (err) {
-          window.showToast('Error: ' + err.message, 'danger');
+    const handleOpenRootExplorer = async (e) => {
+      if (e) e.stopPropagation();
+      try {
+        const targetDir = this.directoryRootPath
+          || (this.dirCurrentRootPath ? this.dirCurrentRootPath.textContent.trim() : '')
+          || '';
+        const res = await window.api.openInExplorer(targetDir);
+        if (res.success) {
+          window.showToast('Membuka folder induk di Windows Explorer', 'blue');
+          this.log(`Membuka folder induk di Windows Explorer: ${res.openedPath}`, 'info');
+        } else {
+          window.showToast('Gagal membuka Explorer: ' + res.error, 'danger');
         }
-      });
+      } catch (err) {
+        window.showToast('Error: ' + err.message, 'danger');
+      }
+    };
+
+    if (this.btnOpenRootExplorer) {
+      this.btnOpenRootExplorer.addEventListener('click', handleOpenRootExplorer);
+    }
+    const btnOpenRootExplorerInline = document.getElementById('btn-open-root-explorer-inline');
+    if (btnOpenRootExplorerInline) {
+      btnOpenRootExplorerInline.addEventListener('click', handleOpenRootExplorer);
     }
 
     // Change Root Directory via Interactive Folder Browser

@@ -589,11 +589,50 @@ app.post('/api/operator/queue/open-file', async (req, res) => {
     }
 
     const safeFilename = path.basename(filename);
-    const targetSession = sessionPath ? path.resolve(sessionPath) : config.activeSessionPath;
-    const targetFilePath = path.join(targetSession, safeFilename);
+    const targetSession = sessionPath ? path.resolve(sessionPath) : (config.activeSessionPath ? path.resolve(config.activeSessionPath) : '');
+    let targetFilePath = targetSession ? path.join(targetSession, safeFilename) : null;
 
-    if (!fs.existsSync(targetFilePath)) {
-      return res.status(404).json({ success: false, error: 'File foto tidak ditemukan di folder sesi' });
+    // 1. Direct match in session root
+    if (!targetFilePath || !fs.existsSync(targetFilePath)) {
+      // 2. Exact match in _SIAP_CETAK
+      const siapExact = targetSession ? path.join(targetSession, '_SIAP_CETAK', safeFilename) : null;
+      if (siapExact && fs.existsSync(siapExact)) {
+        targetFilePath = siapExact;
+      } else {
+        // 3. Scan _SIAP_CETAK for exported variant (e.g. filename__4R_x1.jpg)
+        const namePart = path.parse(safeFilename).name;
+        const extPart = path.parse(safeFilename).ext.toLowerCase();
+        const siapDir = targetSession ? path.join(targetSession, '_SIAP_CETAK') : null;
+        let foundInSiap = null;
+
+        if (siapDir && fs.existsSync(siapDir)) {
+          try {
+            const files = fs.readdirSync(siapDir);
+            foundInSiap = files.find(f => {
+              if (f.toLowerCase() === safeFilename.toLowerCase()) return true;
+              if (f.startsWith(namePart + '__') && f.toLowerCase().endsWith(extPart)) return true;
+              return false;
+            });
+          } catch (e) {}
+        }
+
+        if (foundInSiap) {
+          targetFilePath = path.join(siapDir, foundInSiap);
+        } else {
+          // 4. Scan any other session folder
+          const foundAny = findPhotoInAnySession(safeFilename, targetSession);
+          if (foundAny && fs.existsSync(foundAny.fullPath)) {
+            targetFilePath = foundAny.fullPath;
+          } else {
+            // 5. Fallback: if specific file not found, open the session folder itself
+            if (targetSession && fs.existsSync(targetSession)) {
+              const folderResult = await openInWindowsExplorer(targetSession);
+              return res.json({ success: true, openedPath: targetSession, fallbackToFolder: true });
+            }
+            return res.status(404).json({ success: false, error: 'File foto tidak ditemukan di folder sesi' });
+          }
+        }
+      }
     }
 
     const result = await openFileInWindowsExplorer(targetFilePath);
@@ -1096,9 +1135,11 @@ app.post('/api/operator/directory/open-explorer', async (req, res) => {
   try {
     let folderPath = req.body && req.body.folderPath;
     if (!folderPath || !fs.existsSync(folderPath)) {
-      folderPath = (config.activeSessionPath && fs.existsSync(config.activeSessionPath))
-        ? config.activeSessionPath
-        : getRootDirectory(config);
+      folderPath = (config.sessionRootPath && fs.existsSync(config.sessionRootPath))
+        ? path.resolve(config.sessionRootPath)
+        : ((config.activeSessionPath && fs.existsSync(config.activeSessionPath))
+            ? path.resolve(config.activeSessionPath)
+            : getRootDirectory(config));
     }
     const result = await openInWindowsExplorer(folderPath);
     res.json(result);
