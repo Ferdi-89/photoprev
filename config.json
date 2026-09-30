@@ -49,7 +49,7 @@
       "note": "Layar Sentuh Booth Utama",
       "assignedSessionPath": null,
       "assignedSessionName": null,
-      "createdAt": 1790771862397
+      "createdAt": 1790693658391
     },
     {
       "id": "station-2",
@@ -58,7 +58,7 @@
       "note": "Layar Sentuh Booth 2",
       "assignedSessionPath": null,
       "assignedSessionName": null,
-      "createdAt": 1790771862397
+      "createdAt": 1790693658391
     }
   ],
   "sessionRootPath": "C:\\Data\\Sesi_20260927"
