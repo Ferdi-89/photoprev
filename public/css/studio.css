@@ -1180,3 +1180,257 @@ h1, h2, h3, h4 {
   font-size: 0.9rem;
 }
 
+
+
+/* ==========================================================================
+   Photostrip Builder & Confirmation Modal Styles
+   ========================================================================== */
+.modal-card.photostrip-modal-card {
+  max-width: 860px;
+  width: 95vw;
+  max-height: 90vh;
+}
+
+.photostrip-modal-body {
+  overflow-y: auto;
+  max-height: calc(90vh - 140px);
+  padding: 16px 20px;
+}
+
+.photostrip-builder-grid {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .photostrip-builder-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.photostrip-preview-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-secondary);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.photostrip-preview-frame {
+  position: relative;
+  width: 100%;
+  max-width: 250px;
+  min-height: 380px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.photostrip-preview-img {
+  width: 100%;
+  height: auto;
+  max-height: 480px;
+  object-fit: contain;
+  display: block;
+}
+
+.photostrip-preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.photostrip-preview-loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  z-index: 5;
+}
+
+.photostrip-preview-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  background: var(--bg-card);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.photostrip-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.photostrip-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.photostrip-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.photostrip-filter-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-strip-filter {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-strip-filter.active,
+.btn-strip-filter:hover {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #ffffff;
+}
+
+.photostrip-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.photostrip-slot-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s ease;
+}
+
+.photostrip-slot-row:hover {
+  border-color: var(--accent-blue);
+}
+
+.photostrip-slot-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  background: var(--color-blue-bg);
+  color: var(--accent-blue);
+  border: 1px solid var(--color-blue-border);
+  flex-shrink: 0;
+}
+
+.photostrip-slot-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+}
+
+.photostrip-slot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.photostrip-slot-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photostrip-slot-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-slot-move {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-slot-move:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+.btn-slot-move:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btn-slot-delete {
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-xs);
+  color: var(--accent-red);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-slot-delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--accent-red);
+}

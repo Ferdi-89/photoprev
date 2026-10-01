@@ -88,7 +88,7 @@ class RTFTPApi {
     return await res.json();
   }
 
-  async exportPrint(sessionPath = null, exportAll = false, stationId = null) {
+  async exportPrint(sessionPath = null, exportAll = false, stationId = null, extraOptions = {}) {
     const sPath = sessionPath
       || (window.galleryApp && window.galleryApp.currentSessionPath)
       || (window.gallery && window.gallery.currentSessionPath)
@@ -98,10 +98,68 @@ class RTFTPApi {
       || (window.gallery && window.gallery.stationId)
       || new URLSearchParams(window.location.search).get('station');
 
+    const payload = {
+      sessionPath: sPath,
+      stationId: stId,
+      exportAll,
+      ...extraOptions
+    };
+
     const res = await fetch('/api/print/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionPath: sPath, stationId: stId, exportAll })
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  }
+
+  // Photostrip API Methods
+  async getPhotostripTemplates() {
+    const res = await fetch('/api/photostrip/templates');
+    return await res.json();
+  }
+
+  async uploadPhotostripTemplate(payload) {
+    const res = await fetch('/api/photostrip/templates/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  }
+
+  async savePhotostripConfig(configData) {
+    const res = await fetch('/api/photostrip/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(configData)
+    });
+    return await res.json();
+  }
+
+  async getPhotostripPreview(options) {
+    const res = await fetch('/api/photostrip/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options)
+    });
+    return await res.json();
+  }
+
+  async setSelectionsBatch(selections, sessionPath = null, stationId = null) {
+    const sPath = sessionPath
+      || (window.galleryApp && window.galleryApp.currentSessionPath)
+      || (window.gallery && window.gallery.currentSessionPath)
+      || new URLSearchParams(window.location.search).get('session');
+    const stId = stationId
+      || (window.galleryApp && window.galleryApp.stationId)
+      || (window.gallery && window.gallery.stationId)
+      || new URLSearchParams(window.location.search).get('station');
+
+    const res = await fetch('/api/selections/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selections, sessionPath: sPath, stationId: stId })
     });
     return await res.json();
   }

@@ -253,6 +253,50 @@ async function runAsyncTests() {
 
   console.log('[OK] Windows Explorer folder opening & file reveal validation OK');
 
+  // 12. Photostrip Engine 300 DPI composite rendering and Template Manager validation
+  const templateManager = require('./lib/templateManager');
+  templateManager.ensureTemplateDirectories();
+  const allTemplates = templateManager.getAllTemplates();
+  assert(Array.isArray(allTemplates) && allTemplates.length >= 6, 'Must provide at least 6 photostrip templates');
+  const classicTpl = templateManager.getTemplateById('classic-white-3');
+  assert(classicTpl, 'classic-white-3 template must exist');
+  assert.strictEqual(classicTpl.slots, 3, 'classic-white-3 must have 3 slots');
+  assert.strictEqual(classicTpl.outputFormat, 'double_4r', 'Default format must be double_4r');
+
+  const photoStripEngine = require('./lib/photoStripEngine');
+  const demoPhotoPaths = [
+    path.join(demoFolder, 'STUDIO_001_16x9_MasterSet.jpg'),
+    path.join(demoFolder, 'STUDIO_002_16x9_FamilyGroup.jpg'),
+    path.join(demoFolder, 'STUDIO_003_16x9_FashionRunway.jpg')
+  ];
+
+  // Render full 300 DPI double 4R strip
+  const stripResult = await photoStripEngine.renderPhotostrip({
+    photoPaths: demoPhotoPaths,
+    templateId: 'classic-white-3',
+    eventTitle: 'TEST PHOTOSTRIP EVENT',
+    studioFooter: 'RTFTP TEST STUDIO',
+    showDate: true,
+    format: 'double_4r',
+    filter: 'vintage'
+  });
+
+  assert(stripResult && stripResult.buffer, 'Photostrip render must return a buffer');
+  assert.strictEqual(stripResult.width, 1200, 'Rendered strip width must be 1200 px');
+  assert.strictEqual(stripResult.height, 1800, 'Rendered strip height must be 1800 px');
+  assert.strictEqual(stripResult.dpi, 300, 'Rendered strip must be 300 DPI');
+  assert(stripResult.buffer.length > 50000, 'High-resolution composite buffer should be substantial in size');
+
+  // Render fast client preview
+  const previewDataUrl = await photoStripEngine.renderPhotostripPreview({
+    photoPaths: demoPhotoPaths,
+    templateId: 'classic-white-3',
+    filter: 'bw'
+  });
+  assert(typeof previewDataUrl === 'string' && previewDataUrl.startsWith('data:image/jpeg;base64,'), 'Preview must return valid dataUrl');
+
+  console.log('[OK] Photostrip Engine 300 DPI composite rendering & Template Manager validation OK');
+
   console.log('\nAll self-checks passed successfully!');
 }
 

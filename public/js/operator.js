@@ -149,6 +149,7 @@ class RTFTPOperator {
     this.initStationsManager();
     this.initDirectoryManager();
     this.initSessionTimer();
+    this.initPhotostripManager();
 
     // Connect WebSocket for live updates
     window.api.connectWebSocket((isConnected) => {
@@ -229,7 +230,7 @@ class RTFTPOperator {
 
   /**
    * Single-page view router with URL Hash support
-   * Supports: #session (default), #queue, #logs
+   * Supports: #session (default), #queue, #templates, #logs
    */
   initViewRouting() {
     const viewMap = {
@@ -237,6 +238,7 @@ class RTFTPOperator {
       '#session': 'view-sessions',
       '#directories': 'view-sessions',
       '#queue': 'view-queue',
+      '#templates': 'view-templates',
       '#stations': 'view-stations',
       '#logs': 'view-logs'
     };
@@ -244,6 +246,7 @@ class RTFTPOperator {
     const viewTitles = {
       'view-sessions': 'Sesi Studio',
       'view-queue': 'Antrean Siap Cetak',
+      'view-templates': 'Template Strip',
       'view-stations': 'Stasiun & Klien',
       'view-logs': 'Log Aktivitas'
     };
@@ -274,6 +277,8 @@ class RTFTPOperator {
 
       if (targetViewId === 'view-queue') {
         this.refreshData();
+      } else if (targetViewId === 'view-templates') {
+        this.loadPhotostripTemplates();
       }
 
       if (updateHash) {
@@ -656,6 +661,29 @@ class RTFTPOperator {
         }
         return;
       }
+
+      // 4. Photostrip Banner "Buka di Explorer"
+      const stripLocateBtn = e.target.closest('.btn-locate-strip');
+      if (stripLocateBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const sessionPath = stripLocateBtn.getAttribute('data-path') || '';
+        const filename = stripLocateBtn.getAttribute('data-filename') || '';
+        if (filename) {
+          try {
+            const res = await window.api.openFileLocation(sessionPath, filename);
+            if (res.success) {
+              window.showToast(`Membuka file strip di Explorer: ${filename}`, 'blue');
+              this.log(`Menyorot file strip di Explorer: ${res.openedPath}`, 'info');
+            } else {
+              window.showToast('Gagal membuka lokasi file: ' + res.error, 'danger');
+            }
+          } catch (err) {
+            window.showToast('Error: ' + err.message, 'danger');
+          }
+        }
+        return;
+      }
     });
   }
 
@@ -670,6 +698,17 @@ class RTFTPOperator {
       if (data.timer) {
         this.renderTimerState(data.timer);
       }
+      if (data.photostrip) {
+        this.loadPhotostripTemplates();
+      }
+    });
+
+    window.api.on('TEMPLATES_UPDATED', () => {
+      this.loadPhotostripTemplates();
+    });
+
+    window.api.on('PHOTOSTRIP_CONFIG_CHANGED', () => {
+      this.loadPhotostripTemplates();
     });
 
     // Session Timer & Customer Pacing WebSocket Events
@@ -799,6 +838,16 @@ class RTFTPOperator {
     window.api.on('SESSION_DIRECTORIES_UPDATED', (data) => {
       this.renderDirectorySessions(data);
     });
+
+    window.api.on('PHOTOSTRIP_CONFIG_CHANGED', (data) => {
+      this.log('Konfigurasi template photostrip diperbarui', 'info');
+      this.loadPhotostripTemplates();
+    });
+
+    window.api.on('TEMPLATES_UPDATED', (data) => {
+      this.log('Koleksi template photostrip diperbarui', 'info');
+      this.loadPhotostripTemplates();
+    });
   }
 
   updateConnectionStatus(isConnected) {
@@ -863,6 +912,9 @@ class RTFTPOperator {
 
       // Refresh Client Workstations
       await this.refreshStations();
+
+      // Refresh Photostrip Templates & Settings
+      await this.loadPhotostripTemplates();
 
       // Keep overview card stations connectivity up to date
       this.updateActiveSessionOverview(this.activeSessionPath);
@@ -1002,6 +1054,36 @@ class RTFTPOperator {
             Sedang Dipilih Pelanggan
           </span>`;
 
+      const hasPhotostrip = session.photostrip && session.photostrip.exportedFile;
+      const photostripBannerHtml = hasPhotostrip ? `
+        <div class="session-photostrip-banner" style="background: rgba(99, 102, 241, 0.08); border-top: 1px solid rgba(99, 102, 241, 0.25); border-bottom: 1px solid rgba(99, 102, 241, 0.25); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="photostrip-thumb-preview" data-filename="${session.photostrip.exportedFile}" data-path="${session.sessionPath}" style="width: 44px; height: 62px; background: #0b0f19; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Klik untuk lihat detail strip foto">
+              <img src="/api/photo/${encodeURIComponent(session.photostrip.exportedFile)}/thumb?session=${encodeURIComponent(session.sessionPath)}" style="width: 100%; height: 100%; object-fit: contain;" alt="Strip Preview" />
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.92rem; color: var(--accent-blue); display: flex; align-items: center; gap: 6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                Hasil Foto Strip Photobooth Siap Cetak (300 DPI)
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                File: <span style="font-family: 'JetBrains Mono', monospace; color: var(--text-primary); font-weight: 600;">${session.photostrip.exportedFile}</span> &bull; Template: <span style="font-weight: 600; color: var(--accent-gold);">${session.photostrip.templateId || 'Standar'}</span> &bull; Format: <span style="font-weight: 600;">${session.photostrip.format === 'single_strip' ? '1 Strip (2x6")' : '2 Strip 4R (1200x1800)'}</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="btn btn-sm btn-gold btn-print-strip" data-filename="${session.photostrip.exportedFile}" data-path="${session.sessionPath}" title="Cetak File Foto Strip Ini Langsung" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              <span>Cetak Strip</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-secondary btn-locate-strip" data-filename="${session.photostrip.exportedFile}" data-path="${session.sessionPath}" title="Buka dan sorot file strip di Windows Explorer" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              <span>Buka di Explorer</span>
+            </button>
+          </div>
+        </div>
+      ` : '';
+
       card.innerHTML = `
         <div class="session-queue-header">
           <div class="session-header-left">
@@ -1077,6 +1159,8 @@ class RTFTPOperator {
             </button>
           </div>
         </div>
+
+        ${photostripBannerHtml}
 
         <div style="overflow-x: auto;">
           <table>
@@ -1197,6 +1281,47 @@ class RTFTPOperator {
             await this.refreshData();
           }
         });
+      }
+
+      // Wire Photostrip Strip Actions
+      if (hasPhotostrip) {
+        const btnPrintStrip = card.querySelector('.btn-print-strip');
+        if (btnPrintStrip) {
+          btnPrintStrip.addEventListener('click', () => {
+            window.api.openDirectPrintWindow(session.sessionPath, session.photostrip.exportedFile, [{ size: '4R Strip', qty: 1 }]);
+            this.log(`Membuka jendela cetak untuk foto strip: ${session.photostrip.exportedFile}`, 'info');
+          });
+        }
+
+        const btnLocateStrip = card.querySelector('.btn-locate-strip');
+        if (btnLocateStrip) {
+          btnLocateStrip.addEventListener('click', async (e) => {
+            if (e) e.stopPropagation();
+            try {
+              const res = await window.api.openFileLocation(session.sessionPath, session.photostrip.exportedFile);
+              if (res.success) {
+                window.showToast(`Membuka file strip di Explorer: ${session.photostrip.exportedFile}`, 'blue');
+                this.log(`Menyorot file strip di Explorer: ${res.openedPath}`, 'info');
+              } else {
+                window.showToast('Gagal membuka file strip di Explorer: ' + res.error, 'danger');
+              }
+            } catch (err) {
+              window.showToast('Error: ' + err.message, 'danger');
+            }
+          });
+        }
+
+        const thumbStrip = card.querySelector('.photostrip-thumb-preview');
+        if (thumbStrip && window.lightbox) {
+          thumbStrip.addEventListener('click', () => {
+            window.lightbox.open([{
+              filename: session.photostrip.exportedFile,
+              sessionPath: session.sessionPath,
+              sizes: [{ size: '4R Strip', qty: 1 }],
+              isSelected: true
+            }], 0);
+          });
+        }
       }
 
       // Populate Session Table Rows
@@ -3263,6 +3388,356 @@ class RTFTPOperator {
     if (this.operatorTimerInfoText) {
       const modeText = timer.lockOnExpiry ? 'Mode: Kunci Layar Klien' : 'Mode: Ramah Pelanggan';
       this.operatorTimerInfoText.textContent = `Durasi: ${timer.durationMinutes} menit | Peringatan: ${timer.warningThresholdMinutes} menit terakhir | ${modeText}`;
+    }
+  }
+
+  /**
+   * Photostrip Template and Layout Manager
+   */
+  initPhotostripManager() {
+    this.formPhotostripSettings = document.getElementById('form-photostrip-settings');
+    this.inputPsEventTitle = document.getElementById('input-ps-event-title');
+    this.inputPsStudioFooter = document.getElementById('input-ps-studio-footer');
+    this.selectPsOutputFormat = document.getElementById('select-ps-output-format');
+    this.checkPsShowDate = document.getElementById('check-ps-show-date');
+    this.templatesCardsGrid = document.getElementById('templates-cards-grid');
+    this.templatesCountBadge = document.getElementById('templates-count-badge');
+    this.btnOpenTemplatesFolder = document.getElementById('btn-open-templates-folder');
+    this.btnOpenUploadTemplate = document.getElementById('btn-open-upload-template');
+    this.modalUploadTemplate = document.getElementById('modal-upload-template');
+    this.uploadTemplateCloseBtn = document.getElementById('upload-template-close-btn');
+    this.btnCancelUploadTemplate = document.getElementById('btn-cancel-upload-template');
+    this.formUploadTemplate = document.getElementById('form-upload-template');
+    this.templateUploadName = document.getElementById('template-upload-name');
+    this.templateUploadSlots = document.getElementById('template-upload-slots');
+    this.templateUploadFormat = document.getElementById('template-upload-format');
+    this.templateDropZone = document.getElementById('template-drop-zone');
+    this.templateDropText = document.getElementById('template-drop-text');
+    this.templateFileInput = document.getElementById('template-file-input');
+    this.btnSubmitUploadTemplate = document.getElementById('btn-submit-upload-template');
+
+    // 1. Open Templates Folder in Explorer
+    if (this.btnOpenTemplatesFolder) {
+      this.btnOpenTemplatesFolder.addEventListener('click', async () => {
+        try {
+          const res = await window.api.openInExplorer('templates');
+          if (res.success) {
+            window.showToast('Folder templates dibuka di Windows Explorer', 'blue');
+          } else {
+            window.showToast('Gagal membuka folder templates: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // 2. Save Event Branding & Layout Settings
+    if (this.formPhotostripSettings) {
+      this.formPhotostripSettings.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const updates = {
+          eventTitle: this.inputPsEventTitle ? this.inputPsEventTitle.value.trim() : '',
+          studioFooter: this.inputPsStudioFooter ? this.inputPsStudioFooter.value.trim() : '',
+          outputFormat: this.selectPsOutputFormat ? this.selectPsOutputFormat.value : 'double_4r',
+          showDate: this.checkPsShowDate ? this.checkPsShowDate.checked : true
+        };
+        try {
+          const res = await window.api.savePhotostripConfig(updates);
+          if (res.success) {
+            window.showToast('Pengaturan branding photostrip berhasil disimpan!', 'success');
+            this.log('Pengaturan branding photostrip diperbarui', 'success');
+          } else {
+            window.showToast('Gagal menyimpan pengaturan: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        }
+      });
+    }
+
+    // 3. Custom Template Upload Modal
+    const openUploadModal = () => {
+      if (this.modalUploadTemplate) {
+        this.modalUploadTemplate.classList.add('active');
+        this.modalUploadTemplate.setAttribute('aria-hidden', 'false');
+      }
+    };
+
+    const closeUploadModal = () => {
+      if (this.modalUploadTemplate) {
+        this.modalUploadTemplate.classList.remove('active');
+        this.modalUploadTemplate.setAttribute('aria-hidden', 'true');
+      }
+    };
+
+    if (this.btnOpenUploadTemplate) {
+      this.btnOpenUploadTemplate.addEventListener('click', openUploadModal);
+    }
+    if (this.uploadTemplateCloseBtn) {
+      this.uploadTemplateCloseBtn.addEventListener('click', closeUploadModal);
+    }
+    if (this.btnCancelUploadTemplate) {
+      this.btnCancelUploadTemplate.addEventListener('click', closeUploadModal);
+    }
+
+    // File Drag & Drop / Input Picker
+    let selectedTemplateBase64 = null;
+
+    const handleTemplateFile = (file) => {
+      if (!file || !file.type.includes('png')) {
+        window.showToast('File harus berformat PNG dengan area foto transparan', 'danger');
+        return;
+      }
+      if (file.size > 25 * 1024 * 1024) {
+        window.showToast('Ukuran file maksimal 25 MB', 'danger');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        selectedTemplateBase64 = e.target.result;
+        if (this.templateDropText) {
+          this.templateDropText.textContent = `File siap: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+
+    if (this.templateDropZone && this.templateFileInput) {
+      this.templateDropZone.addEventListener('click', () => {
+        this.templateFileInput.click();
+      });
+
+      this.templateDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        this.templateDropZone.style.borderColor = 'var(--accent-gold)';
+        this.templateDropZone.style.background = 'rgba(217, 119, 6, 0.08)';
+      });
+
+      this.templateDropZone.addEventListener('dragleave', () => {
+        this.templateDropZone.style.borderColor = 'var(--border-subtle)';
+        this.templateDropZone.style.background = 'var(--bg-primary)';
+      });
+
+      this.templateDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        this.templateDropZone.style.borderColor = 'var(--border-subtle)';
+        this.templateDropZone.style.background = 'var(--bg-primary)';
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleTemplateFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      this.templateFileInput.addEventListener('change', () => {
+        if (this.templateFileInput.files && this.templateFileInput.files[0]) {
+          handleTemplateFile(this.templateFileInput.files[0]);
+        }
+      });
+    }
+
+    // Submit Custom Template Form
+    if (this.formUploadTemplate) {
+      this.formUploadTemplate.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = this.templateUploadName ? this.templateUploadName.value.trim() : '';
+        const slots = this.templateUploadSlots ? parseInt(this.templateUploadSlots.value, 10) : 3;
+        const format = this.templateUploadFormat ? this.templateUploadFormat.value : 'double_4r';
+
+        if (!name) {
+          window.showToast('Nama template harus diisi', 'danger');
+          return;
+        }
+        if (!selectedTemplateBase64) {
+          window.showToast('Silakan pilih file PNG frame transparan terlebih dahulu', 'danger');
+          return;
+        }
+
+        if (this.btnSubmitUploadTemplate) {
+          this.btnSubmitUploadTemplate.disabled = true;
+          this.btnSubmitUploadTemplate.innerHTML = 'Mengunggah Frame...';
+        }
+
+        try {
+          const res = await window.api.uploadPhotostripTemplate({
+            name,
+            slots,
+            format,
+            imageBase64: selectedTemplateBase64
+          });
+
+          if (res.success) {
+            window.showToast(`Template "${res.template.name}" berhasil diunggah dan siap digunakan!`, 'success');
+            this.log(`Template strip kustom diunggah: ${res.template.name}`, 'success');
+            closeUploadModal();
+            this.formUploadTemplate.reset();
+            selectedTemplateBase64 = null;
+            if (this.templateDropText) {
+              this.templateDropText.textContent = 'Pilih File PNG atau Tarik ke Sini';
+            }
+            await this.loadPhotostripTemplates();
+          } else {
+            window.showToast('Gagal mengunggah template: ' + res.error, 'danger');
+          }
+        } catch (err) {
+          window.showToast('Error: ' + err.message, 'danger');
+        } finally {
+          if (this.btnSubmitUploadTemplate) {
+            this.btnSubmitUploadTemplate.disabled = false;
+            this.btnSubmitUploadTemplate.innerHTML = `
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Simpan & Terapkan Template</span>
+            `;
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Load and Render Photostrip Templates & Active Settings
+   */
+  async loadPhotostripTemplates() {
+    try {
+      const res = await window.api.getPhotostripTemplates();
+      if (!res.success) return;
+
+      const { templates, activeTemplateId, config } = res;
+
+      // Sync Branding Form Fields (if not actively edited)
+      if (config) {
+        if (this.inputPsEventTitle && document.activeElement !== this.inputPsEventTitle) {
+          this.inputPsEventTitle.value = config.eventTitle || 'PHOTOBOOTH MEMORIES';
+        }
+        if (this.inputPsStudioFooter && document.activeElement !== this.inputPsStudioFooter) {
+          this.inputPsStudioFooter.value = config.studioFooter || 'RTFTP PHOTO STUDIO';
+        }
+        if (this.selectPsOutputFormat && document.activeElement !== this.selectPsOutputFormat) {
+          this.selectPsOutputFormat.value = config.outputFormat || 'double_4r';
+        }
+        if (this.checkPsShowDate && document.activeElement !== this.checkPsShowDate) {
+          this.checkPsShowDate.checked = config.showDate !== false;
+        }
+      }
+
+      // Render Template Cards
+      if (!this.templatesCardsGrid) return;
+      this.templatesCardsGrid.innerHTML = '';
+
+      if (this.templatesCountBadge) {
+        this.templatesCountBadge.textContent = `${templates.length} Template`;
+      }
+
+      templates.forEach(tpl => {
+        const isActive = tpl.id === activeTemplateId;
+        const card = document.createElement('div');
+        card.className = `card template-card ${isActive ? 'is-active-template' : ''}`;
+        card.style.background = 'var(--bg-card)';
+        card.style.border = isActive ? '2px solid var(--accent-gold)' : '1px solid var(--border-subtle)';
+        card.style.borderRadius = 'var(--radius-md)';
+        card.style.padding = '18px';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.justifyContent = 'space-between';
+        card.style.gap = '14px';
+        card.style.position = 'relative';
+
+        const isDouble = tpl.format === 'double_4r';
+        const formatBadge = isDouble ? 'Double 4R' : 'Single Strip';
+        const originBadge = tpl.isCustom ? 'Kustom PNG' : 'Bawaan Studio';
+        const originBg = tpl.isCustom ? 'var(--color-purple-bg)' : 'var(--color-blue-bg)';
+        const originColor = tpl.isCustom ? 'var(--color-purple-text)' : 'var(--color-blue-text)';
+        const originBorder = tpl.isCustom ? 'var(--color-purple-border)' : 'var(--color-blue-border)';
+
+        // Miniature Frame Preview
+        const slotRects = [];
+        for (let i = 0; i < (tpl.slots || 3); i++) {
+          slotRects.push(`
+            <div style="background: rgba(125, 125, 125, 0.2); border: 1px dashed rgba(255, 255, 255, 0.3); border-radius: 2px; flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
+              Foto ${i + 1}
+            </div>
+          `);
+        }
+
+        const miniFramePreview = `
+          <div style="display: flex; gap: 8px; justify-content: center; padding: 14px; background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <div style="width: 58px; height: 160px; background: ${tpl.background || '#ffffff'}; border-radius: 3px; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;">
+              ${slotRects.join('')}
+              <div style="height: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <div style="width: 80%; height: 3px; background: rgba(0,0,0,0.25); border-radius: 1px; margin-bottom: 2px;"></div>
+                <div style="width: 50%; height: 2px; background: rgba(0,0,0,0.15); border-radius: 1px;"></div>
+              </div>
+            </div>
+            ${isDouble ? `
+              <div style="width: 58px; height: 160px; background: ${tpl.background || '#ffffff'}; border-radius: 3px; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;">
+                ${slotRects.join('')}
+                <div style="height: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                  <div style="width: 80%; height: 3px; background: rgba(0,0,0,0.25); border-radius: 1px; margin-bottom: 2px;"></div>
+                  <div style="width: 50%; height: 2px; background: rgba(0,0,0,0.15); border-radius: 1px;"></div>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        card.innerHTML = `
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+              <div>
+                <h4 style="margin: 0; font-size: 0.96rem; font-weight: 700; color: var(--text-main);">${tpl.name}</h4>
+                <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                  <span class="badge-station" style="background: ${originBg}; color: ${originColor}; border-color: ${originBorder}; font-size: 0.72rem;">${originBadge}</span>
+                  <span class="badge-station badge-station-lan" style="font-size: 0.72rem;">${tpl.slots || 3} Foto</span>
+                  <span class="badge-station" style="background: rgba(255,255,255,0.06); font-size: 0.72rem;">${formatBadge}</span>
+                </div>
+              </div>
+              ${isActive ? `
+                <span class="stat-pill stat-pill-gold" style="font-size: 0.75rem; font-weight: 700;">Aktif</span>
+              ` : ''}
+            </div>
+
+            ${miniFramePreview}
+
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin: 10px 0 0; line-height: 1.4;">
+              ${tpl.description || 'Template foto strip studio resolusi tinggi 300 DPI.'}
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px;">
+            <button type="button" class="btn btn-sm ${isActive ? 'btn-gold' : 'btn-secondary'} btn-activate-template" style="flex: 1; justify-content: center; font-weight: 700;" ${isActive ? 'disabled' : ''}>
+              ${isActive ? `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Sedang Digunakan</span>
+              ` : `
+                <span>Gunakan Sebagai Default</span>
+              `}
+            </button>
+          </div>
+        `;
+
+        const btnActivate = card.querySelector('.btn-activate-template');
+        if (btnActivate && !isActive) {
+          btnActivate.addEventListener('click', async () => {
+            try {
+              const saveRes = await window.api.savePhotostripConfig({ activeTemplateId: tpl.id });
+              if (saveRes.success) {
+                window.showToast(`Template "${tpl.name}" sekarang aktif sebagai pilihan utama!`, 'success');
+                this.log(`Template aktif dialihkan ke: ${tpl.name}`, 'success');
+                await this.loadPhotostripTemplates();
+              } else {
+                window.showToast('Gagal mengaktifkan template: ' + saveRes.error, 'danger');
+              }
+            } catch (err) {
+              window.showToast('Error: ' + err.message, 'danger');
+            }
+          });
+        }
+
+        this.templatesCardsGrid.appendChild(card);
+      });
+    } catch (err) {
+      console.warn('Gagal memuat template photostrip:', err.message);
     }
   }
 }

@@ -9,6 +9,8 @@ const { loadConfig, saveConfig, getConfig } = require('./lib/config');
 const { isImageFile, getImageMetadata, getOrGenerateImage } = require('./lib/thumbnail');
 const { initWatcher, startWatcher, addWatchFolder, unwatchFolder, syncWatchedFolders, getWatchedFolders } = require('./lib/watcher');
 const printManager = require('./lib/printManager');
+const templateManager = require('./lib/templateManager');
+const { renderPhotostrip } = require('./lib/photoStripEngine');
 const { generateSamplePhotos } = require('./lib/demoData');
 const { getLanInterfaces, printNetworkBanner } = require('./lib/network');
 const {
@@ -47,7 +49,9 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use('/templates/custom', express.static(path.join(__dirname, 'templates/custom')));
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
@@ -553,7 +557,7 @@ app.post('/api/print/export', async (req, res) => {
       const reports = [];
       for (const s of allSessions) {
         if (s.totalItems > 0) {
-          const rep = await printManager.exportToPrintFolder(s.sessionPath);
+          const rep = await printManager.exportToPrintFolder(s.sessionPath, null, req.body || {});
           reports.push(rep);
         }
       }
@@ -566,7 +570,7 @@ app.post('/api/print/export', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Path sesi tidak ditemukan' });
     }
 
-    const report = await printManager.exportToPrintFolder(sessionPath);
+    const report = await printManager.exportToPrintFolder(sessionPath, null, req.body || {});
     const updatedSessions = printManager.getAllSessionQueues(config);
     broadcast({
       type: 'PRINT_EXPORTED',
@@ -577,6 +581,168 @@ app.post('/api/print/export', async (req, res) => {
     res.json({ success: true, report, sessions: updatedSessions });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 10A-1. Photostrip Templates & Settings
+app.get('/api/photostrip/templates', (req, res) => {
+  try {
+    const templates = templateManager.getAllTemplates();
+    const activeTemplateId = (config.photostrip && config.photostrip.activeTemplateId) || 'classic-white-3';
+    res.json({
+      success: true,
+      templates,
+      activeTemplateId,
+      config: config.photostrip || {}
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/photostrip/templates/upload', (req, res) => {
+  try {
+    const { name, filename, imageBase64, slots, outputFormat } = req.body || {};
+    if (!imageBase64) {
+      return res.status(400).json({ success: false, error: 'Data gambar PNG template tidak ditemukan' });
+    }
+
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    const safeName = filename || `${name || 'custom_frame'}.png`;
+
+    const saved = templateManager.saveCustomTemplate(safeName, buffer, {
+      name: name || path.basename(safeName, path.extname(safeName)),
+      slots: parseInt(slots, 10) || 3,
+      outputFormat: outputFormat || 'double_4r'
+    });
+
+    const allTemplates = templateManager.getAllTemplates();
+    broadcast({
+      type: 'TEMPLATES_UPDATED',
+      templates: allTemplates,
+      newTemplateId: saved.id
+    });
+
+    res.json({
+      success: true,
+      template: saved,
+      templates: allTemplates
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/photostrip/config', (req, res) => {
+  try {
+    const newPsConfig = {
+      ...(config.photostrip || {}),
+      ...(req.body || {})
+    };
+    config.photostrip = newPsConfig;
+    saveConfig({ photostrip: config.photostrip });
+
+    broadcast({
+      type: 'PHOTOSTRIP_CONFIG_CHANGED',
+      photostrip: config.photostrip
+    });
+
+    res.json({ success: true, photostrip: config.photostrip });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/photostrip/preview', async (req, res) => {
+  try {
+    const {
+      filenames,
+      sessionPath,
+      templateId,
+      eventTitle,
+      studioFooter,
+      dateText,
+      filter,
+      outputFormat
+    } = req.body || {};
+
+    const targetSession = sessionPath ? path.resolve(sessionPath) : resolveSessionForRequest(req);
+    const photoFiles = Array.isArray(filenames) ? filenames : [];
+
+    const photoPaths = [];
+    for (const fn of photoFiles) {
+      const found = findPhotoInAnySession(path.basename(fn), targetSession);
+      if (found && fs.existsSync(found.fullPath)) {
+        photoPaths.push(found.fullPath);
+      }
+    }
+
+    if (photoPaths.length === 0) {
+      return res.status(400).json({ success: false, error: 'Tidak ada foto valid yang dipilih untuk preview strip' });
+    }
+
+    const tId = templateId || (config.photostrip && config.photostrip.activeTemplateId) || 'classic-white-3';
+    const eTitle = eventTitle || (config.photostrip && config.photostrip.eventTitle) || 'PHOTOBOOTH MEMORIES';
+    const sFooter = studioFooter || (config.photostrip && config.photostrip.studioFooter) || 'RTFTP PHOTO STUDIO';
+    const dText = dateText || (config.photostrip && config.photostrip.showDate ? new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '');
+    const outFmt = outputFormat || (config.photostrip && config.photostrip.outputFormat) || 'double_4r';
+
+    const renderRes = await renderPhotostrip(photoPaths, {
+      templateId: tId,
+      eventTitle: eTitle,
+      studioFooter: sFooter,
+      dateText: dText,
+      filter: filter || (config.photostrip && config.photostrip.filter) || 'normal',
+      outputFormat: outFmt,
+      outputPath: null
+    });
+
+    if (!renderRes || !renderRes.buffer) {
+      return res.status(500).json({ success: false, error: 'Gagal membuat preview strip' });
+    }
+
+    const base64 = renderRes.buffer.toString('base64');
+    res.json({
+      success: true,
+      dataUrl: `data:image/jpeg;base64,${base64}`,
+      templateId: tId,
+      slotCount: renderRes.slotCount,
+      width: renderRes.width,
+      height: renderRes.height
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 10A-2. Batch Set Ordered Selections (Photostrip Slot Reordering)
+app.post('/api/selections/batch', (req, res) => {
+  try {
+    const { selections } = req.body || {};
+    const sessionPath = resolveSessionForRequest(req);
+
+    if (!Array.isArray(selections)) {
+      return res.status(400).json({ success: false, error: 'Format selections tidak valid' });
+    }
+
+    const updated = printManager.setSelections(selections, sessionPath);
+    const allSessions = printManager.getAllSessionQueues(config);
+
+    broadcast({
+      type: 'SELECTIONS_UPDATED',
+      sessionPath,
+      selections: updated,
+      sessions: allSessions
+    }, sessionPath);
+
+    res.json({
+      success: true,
+      selections: updated,
+      sessions: allSessions
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -1337,6 +1503,10 @@ wss.on('connection', async (ws, req) => {
           activeSessionPath: targetPath,
           sessionName: path.basename(targetPath),
           printSizes: config.printSizes
+        },
+        photostrip: {
+          config: config.photostrip || {},
+          templates: templateManager.getAllTemplates()
         },
         photos,
         selections,

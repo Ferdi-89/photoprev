@@ -222,6 +222,19 @@
           <span class="nav-badge" id="nav-queue-badge">0</span>
         </button>
 
+        <button class="nav-item" id="tab-nav-templates" data-view="view-templates" role="tab" aria-selected="false" aria-controls="view-templates" title="Template Foto Strip Photobooth">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+          </div>
+          <span class="nav-label">Template Strip</span>
+          <span class="nav-badge" id="nav-templates-badge">6</span>
+        </button>
+
         <button class="nav-item" id="tab-nav-stations" data-view="view-stations" role="tab" aria-selected="false" aria-controls="view-stations" title="Stasiun & Akses Klien">
           <div class="nav-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -677,6 +690,95 @@
           </svg>
           <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main); margin-bottom: 6px;">Belum Ada Foto dalam Antrean Cetak</div>
           <p style="font-size: 0.86rem; max-width: 480px; margin: 0 auto; line-height: 1.5;">Saat klien mengklik tombol "Pilih Cetak" di layar galeri atau lightbox, rincian pesanan akan langsung muncul per folder sesi secara real-time.</p>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 2B: TEMPLATE FOTO STRIP PHOTOBOOTH (Desain & Manajemen Frame)
+           =================================================================== -->
+      <section id="view-templates" class="operator-view" role="tabpanel" aria-labelledby="tab-nav-templates">
+        <div class="view-header">
+          <div class="view-header-title">
+            <h2>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="3" y1="15" x2="21" y2="15"></line>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+              </svg>
+              Template Foto Strip Photobooth
+            </h2>
+            <p>Kelola desain bingkai foto strip studio, atur teks branding acara, pilih template aktif untuk klien, atau unggah frame PNG kustom buatan sendiri.</p>
+          </div>
+          <div class="view-header-actions" style="display: flex; gap: 10px;">
+            <button id="btn-open-templates-folder" class="btn btn-secondary" title="Buka folder template di Windows Explorer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Folder Templates</span>
+            </button>
+            <button id="btn-open-upload-template" class="btn btn-gold">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>+ Upload Frame Kustom (PNG)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Global Event Branding & Layout Settings -->
+        <div class="card" style="padding: 20px; margin-bottom: 24px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+            <div>
+              <h3 style="margin: 0; font-size: 0.98rem; font-weight: 700; color: var(--text-main);">Pengaturan Branding Acara & Format Cetak</h3>
+              <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-muted);">Teks dan format ini otomatis disematkan pada seluruh foto strip yang diekspor.</p>
+            </div>
+            <span class="badge-station badge-station-lan">300 DPI Lab Print</span>
+          </div>
+
+          <form id="form-photostrip-settings" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; align-items: flex-end;">
+            <div>
+              <label for="input-ps-event-title" class="setting-label">Judul Acara / Event Title:</label>
+              <input type="text" id="input-ps-event-title" class="input-text" style="width: 100%; box-sizing: border-box;" value="PHOTOBOOTH MEMORIES" placeholder="Misal: HAPPY WEDDING ANDI & SITI" required/>
+            </div>
+            <div>
+              <label for="input-ps-studio-footer" class="setting-label">Nama Studio / Sub-Header:</label>
+              <input type="text" id="input-ps-studio-footer" class="input-text" style="width: 100%; box-sizing: border-box;" value="RTFTP PHOTO STUDIO" placeholder="Misal: RTFTP PHOTO STUDIO" required/>
+            </div>
+            <div>
+              <label for="select-ps-output-format" class="setting-label">Format Kertas Cetak:</label>
+              <select id="select-ps-output-format" class="input-text" style="width: 100%; box-sizing: border-box; cursor: pointer;">
+                <option value="double_4r" selected>Double Strip 2x6 pada Kertas 4R (1200x1800 px - Rekomendasi)</option>
+                <option value="single_strip">Single Strip 2x6 Inci (600x1800 px)</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 6px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: var(--text-main); cursor: pointer; user-select: none;">
+                <input type="checkbox" id="check-ps-show-date" checked style="width: 16px; height: 16px; cursor: pointer;"/>
+                <span>Tampilkan Tanggal Acara</span>
+              </label>
+              <button type="submit" class="btn btn-gold" style="padding: 9px 18px; font-size: 0.84rem;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Simpan Pengaturan</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Available Templates Cards Grid -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div>
+            <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Koleksi Template Bingkai Strip</h3>
+            <p style="margin: 2px 0 0; font-size: 0.78rem; color: var(--text-muted);">Pilih template yang akan digunakan secara default oleh klien di layar pemilih foto.</p>
+          </div>
+          <span id="templates-count-badge" class="badge-station badge-station-lan">0 Template</span>
+        </div>
+
+        <div id="templates-cards-grid" class="templates-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
+          <!-- Populated dynamically via JS -->
         </div>
       </section>
 
@@ -1281,11 +1383,87 @@
     </div>
   </div>
 
+  <!-- Modal Upload Custom Photostrip Frame PNG -->
+  <div id="modal-upload-template" class="folder-picker-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="upload-template-modal-title">
+    <div class="folder-picker-card" style="max-width: 520px; height: auto; max-height: 90vh;">
+      <div class="folder-picker-header">
+        <div class="folder-picker-title-area">
+          <div class="folder-picker-icon" style="background: var(--color-blue-bg); color: var(--accent-blue); border-color: var(--color-blue-border);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+          </div>
+          <div>
+            <h3 class="folder-picker-title" id="upload-template-modal-title">Upload Desain Frame Kustom (PNG)</h3>
+            <p class="folder-picker-subtitle">Format PNG-24 dengan transparansi untuk kotak foto (300 DPI).</p>
+          </div>
+        </div>
+        <button id="upload-template-close-btn" class="folder-picker-close-btn" type="button" aria-label="Tutup Dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form id="form-upload-template" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <label for="template-upload-name" class="setting-label">Nama Template Desain:</label>
+          <input type="text" id="template-upload-name" class="input-text" style="width: 100%; box-sizing: border-box;" placeholder="Misal: Wedding Pastel Gold" required/>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label for="template-upload-slots" class="setting-label">Jumlah Slot Foto:</label>
+            <select id="template-upload-slots" class="input-text" style="width: 100%; box-sizing: border-box; cursor: pointer;">
+              <option value="3" selected>3 Foto</option>
+              <option value="4">4 Foto</option>
+            </select>
+          </div>
+          <div>
+            <label for="template-upload-format" class="setting-label">Format Kanvas:</label>
+            <select id="template-upload-format" class="input-text" style="width: 100%; box-sizing: border-box; cursor: pointer;">
+              <option value="double_4r" selected>Double 4R (1200x1800)</option>
+              <option value="single_strip">Single Strip (600x1800)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="setting-label">File Desain Bingkai (PNG):</label>
+          <div id="template-drop-zone" style="border: 2px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 24px 16px; text-align: center; background: var(--bg-primary); cursor: pointer; transition: all 0.2s ease;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-gold); margin-bottom: 8px;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <div id="template-drop-text" style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">Pilih File PNG atau Tarik ke Sini</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">PNG-24 transparan, maks 25 MB</div>
+            <input type="file" id="template-file-input" accept="image/png" style="display: none;"/>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+          <button type="button" id="btn-cancel-upload-template" class="btn btn-secondary">Batal</button>
+          <button type="submit" id="btn-submit-upload-template" class="btn btn-gold">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Simpan & Terapkan Template</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="js/vendor/gsap.min.js"></script>
-  <script src="js/toast.js?v=2.3"></script>
-  <script src="js/api.js?v=2.3"></script>
-  <script src="js/lightbox.js?v=2.3"></script>
-  <script src="js/operator.js?v=2.3"></script>
+  <script src="js/toast.js?v=2.4"></script>
+  <script src="js/api.js?v=2.4"></script>
+  <script src="js/lightbox.js?v=2.4"></script>
+  <script src="js/operator.js?v=2.4"></script>
 </body>
 </html>

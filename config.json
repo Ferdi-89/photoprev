@@ -41,6 +41,15 @@
     "messageOnExpiry": "Waktu sesi pemilihan foto telah selesai. Tim studio kami siap membantu menyelesaikan pesanan cetak Anda."
   },
   "completedSessions": [],
+  "photostrip": {
+    "enabled": true,
+    "activeTemplateId": "classic-white-3",
+    "eventTitle": "PHOTOBOOTH MEMORIES",
+    "studioFooter": "RTFTP PHOTO STUDIO",
+    "showDate": true,
+    "filter": "normal",
+    "outputFormat": "double_4r"
+  },
   "clientStations": [
     {
       "id": "station-1",
