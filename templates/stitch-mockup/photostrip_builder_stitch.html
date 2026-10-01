@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUMEN PROOFING LAB — Photo Strip Studio Builder</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Playfair+Display:ital,wght@0,600;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with forms & container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "error": "#ffb4ab",
+            "on-primary-fixed-variant": "#653e00",
+            "surface-container-lowest": "#0a0e17",
+            "outline-variant": "#534434",
+            "primary-fixed-dim": "#ffb95f",
+            "primary-fixed": "#ffddb8",
+            "on-error": "#690005",
+            "error-container": "#93000a",
+            "secondary-fixed": "#ffdcc3",
+            "on-secondary-fixed": "#2f1500",
+            "surface-container": "#1c1f29",
+            "on-primary": "#472a00",
+            "surface-container-high": "#262a34",
+            "on-secondary": "#4d2600",
+            "outline": "#a08e7a",
+            "on-tertiary-container": "#414446",
+            "on-background": "#dfe2ef",
+            "primary": "#ffc174",
+            "secondary": "#ffb77d",
+            "on-primary-fixed": "#2a1700",
+            "on-tertiary": "#2d3133",
+            "tertiary-fixed-dim": "#c4c7c9",
+            "surface": "#0f131c",
+            "on-secondary-fixed-variant": "#6e3900",
+            "inverse-on-surface": "#2c303a",
+            "surface-container-highest": "#31353f",
+            "surface-tint": "#ffb95f",
+            "tertiary-container": "#aeb1b3",
+            "primary-container": "#f59e0b",
+            "surface-dim": "#0f131c",
+            "surface-container-low": "#181b25",
+            "on-tertiary-fixed-variant": "#444749",
+            "on-surface-variant": "#d8c3ad",
+            "inverse-surface": "#dfe2ef",
+            "secondary-fixed-dim": "#ffb77d",
+            "inverse-primary": "#855300",
+            "on-surface": "#dfe2ef",
+            "on-error-container": "#ffdad6",
+            "surface-bright": "#353943",
+            "secondary-container": "#d97707",
+            "surface-variant": "#31353f",
+            "on-tertiary-fixed": "#191c1e",
+            "on-primary-container": "#613b00",
+            "background": "#0f131c",
+            "tertiary-fixed": "#e0e3e5",
+            "tertiary": "#cacdcf",
+            "on-secondary-container": "#432100"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "1.25rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin": "2.5rem",
+            "space-md": "1rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "0.75rem",
+            "space-xl": "2.5rem"
+          },
+          "fontFamily": {
+            "body-lg": ["Inter"],
+            "headline-sm": ["Plus Jakarta Sans"],
+            "title-md": ["Plus Jakarta Sans"],
+            "body-sm": ["Inter"],
+            "display-lg": ["Plus Jakarta Sans"],
+            "headline-lg-mobile": ["Plus Jakarta Sans"],
+            "display-lg-mobile": ["Plus Jakarta Sans"],
+            "label-sm": ["Plus Jakarta Sans"],
+            "label-lg": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "body-md": ["Inter"],
+            "label-md": ["Plus Jakarta Sans"],
+            "mono": ["JetBrains Mono", "monospace"],
+            "serif": ["Playfair Display", "serif"]
+          },
+          "fontSize": {
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "title-md": ["16px", { "lineHeight": "24px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f131c;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #31353f;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #f59e0b;
+    }
+    .strip-canvas-shadow {
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(248, 250, 252, 0.08), 0 0 40px -5px rgba(245, 158, 11, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased overflow-hidden min-h-screen flex flex-col font-body-md select-none">
+<!-- ========================================================================= -->
+<!-- 1. TOP STUDIO HEADER (Anchored from TopNavBar JSON + Studio Customizer Context) -->
+<!-- ========================================================================= -->
+<header class="h-16 flex-none bg-surface-container-low border-b border-outline-variant/30 flex items-center justify-between px-5 z-50 shadow-sm">
+<!-- Left: Brand, Breadcrumbs, Session Badge -->
+<div class="flex items-center gap-5">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high border border-outline-variant/40 flex items-center justify-center text-primary-container shadow-inner">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">camera</span>
+</div>
+<div class="flex flex-col">
+<span class="text-title-md font-title-md tracking-wider font-semibold text-primary uppercase leading-tight">LUMEN PROOFING LAB</span>
+<span class="text-[10px] font-mono tracking-widest text-outline">DYE-SUB CALIBRATED ENGINE</span>
+</div>
+</div>
+<div class="h-6 w-px bg-outline-variant/30 hidden lg:block"></div>
+<!-- Breadcrumbs -->
+<nav class="hidden lg:flex items-center gap-2 text-body-sm font-body-sm text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Dashboard</a>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Photobooth Sessions</a>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<span class="text-on-surface font-semibold">Wedding Session Andi &amp; Siti</span>
+</nav>
+<!-- Live Booth Status Pill -->
+<div class="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container border border-outline-variant/30">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+</span>
+<span class="text-label-sm font-label-sm text-on-surface tracking-wider">ONLINE BOOTH #03</span>
+</div>
+</div>
+<!-- Center: Navigation Links from JSON Anchor -->
+<nav class="hidden md:flex items-center gap-6 h-full pt-1">
+<button class="text-on-surface-variant hover:text-on-surface pb-1 text-label-md font-label-md transition-colors">
+        Gallery Proofs
+      </button>
+<button class="text-primary font-semibold border-b-2 border-primary pb-1 text-label-md font-label-md">
+        Strip Layouts
+      </button>
+<button class="text-on-surface-variant hover:text-on-surface pb-1 text-label-md font-label-md transition-colors">
+        Color Grading
+      </button>
+<button class="text-on-surface-variant hover:text-on-surface pb-1 text-label-md font-label-md transition-colors">
+        Print Telemetry
+      </button>
+</nav>
+<!-- Right: Telemetry Chips, Live Timer, Actions & Operator -->
+<div class="flex items-center gap-3">
+<!-- Print Telemetry Chips -->
+<div class="hidden 2xl:flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded bg-surface-container-high border border-outline-variant/30 text-[11px] font-mono text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+          300 DPI LAB PRINT READY
+        </span>
+<span class="px-2.5 py-0.5 rounded bg-surface-container border border-outline-variant/20 text-[11px] font-mono text-on-surface-variant">
+          ICC: AdobeRGB 1998
+        </span>
+</div>
+<!-- Live Session Countdown Timer -->
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high border border-primary-container/30 text-primary-container font-mono text-label-md">
+<span class="material-symbols-outlined text-[16px] animate-pulse">timer</span>
+<span class="font-semibold tracking-wider">12:45</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-normal">sisa</span>
+</div>
+<!-- Quick Action Icons from JSON -->
+<div class="flex items-center gap-1">
+<button class="w-9 h-9 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" title="Timer settings">
+<span class="material-symbols-outlined text-[19px]">aspect_ratio</span>
+</button>
+<button class="w-9 h-9 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" title="Kalibrasi Warna &amp; Printer">
+<span class="material-symbols-outlined text-[19px]">tune</span>
+</button>
+<button class="w-9 h-9 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" title="System Settings">
+<span class="material-symbols-outlined text-[19px]">settings</span>
+</button>
+</div>
+<div class="h-6 w-px bg-outline-variant/30"></div>
+<!-- Trailing Action: Save Draft -->
+<button class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-outline-variant/40 hover:bg-surface-container-high text-on-surface text-label-md font-label-md transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[16px]">bookmark_border</span>
+        Save Draft
+      </button>
+<!-- Trailing Action: Dispatch to Print -->
+<button class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-primary-container hover:bg-secondary-container text-on-primary-container text-label-md font-label-md font-bold transition-all shadow-sm active:scale-95">
+<span class="material-symbols-outlined text-[18px]">print</span>
+<span>Dispatch to Print</span>
+</button>
+<!-- Session Operator Profile -->
+<div class="flex items-center pl-1 border-l border-outline-variant/30 ml-1">
+<div class="w-8 h-8 rounded-full ring-1 ring-primary-container/40 overflow-hidden bg-surface-container flex items-center justify-center text-xs font-mono font-bold text-primary">
+          OP
+        </div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE: CANVAS + RIGHT CONTROL SIDEBAR -->
+<!-- ========================================================================= -->
+<div class="flex-1 flex overflow-hidden relative">
+<!-- ========================================================================= -->
+<!-- 2. MAIN INTERACTIVE CANVAS (Center Workspace) -->
+<!-- ========================================================================= -->
+<main class="flex-1 flex flex-col bg-surface-container-lowest relative overflow-hidden">
+<!-- Canvas Sub-Toolbar: Viewport Controls & Grid Guides -->
+<div class="h-12 flex-none bg-surface-container/60 backdrop-blur-md border-b border-outline-variant/20 px-6 flex items-center justify-between z-20">
+<!-- Zoom & View Tools -->
+<div class="flex items-center gap-2 text-label-md font-label-md">
+<div class="flex items-center bg-surface-container-high rounded-lg p-0.5 border border-outline-variant/30">
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container text-xs font-mono transition-colors">75%</button>
+<button class="px-2.5 py-1 rounded bg-surface-container text-primary font-mono text-xs font-semibold shadow-xs">100%</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container text-xs font-mono transition-colors">Fit</button>
+</div>
+<div class="h-4 w-px bg-outline-variant/30 mx-1"></div>
+<!-- Guide overlays toggle -->
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container border border-primary-container/30 text-primary text-xs">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">grid_4x4</span>
+<span>Guide Overlay: Active</span>
+</button>
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 text-on-surface-variant text-xs transition-colors">
+<span class="material-symbols-outlined text-[15px]">straighten</span>
+<span>Bleed Margin (3mm)</span>
+</button>
+</div>
+<!-- Canvas Status & Print Specs Indicator -->
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1.5 text-xs font-mono text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
+            Realtime 4R Dual-Cut Preview
+          </span>
+<div class="h-3.5 w-px bg-outline-variant/30"></div>
+<span class="text-xs font-mono text-outline">Color Space: sRGB Calibrated</span>
+</div>
+</div>
+<!-- Canvas Stage: Interactive Dark Room Layout with 4R Double Photo Strip -->
+<div class="flex-1 overflow-auto flex items-center justify-center p-6 lg:p-10 relative custom-scrollbar bg-[radial-gradient(#1c1f29_1px,transparent_1px)] [background-size:24px_24px]">
+<!-- ========================================================================= -->
+<!-- REALISTIC 4R DOUBLE PHOTO STRIP CONTAINER (102 x 152 mm / 4x6 proportion) -->
+<!-- ========================================================================= -->
+<div class="relative bg-[#0d1017] rounded-xl strip-canvas-shadow border border-outline-variant/40 p-4 md:p-6 w-[560px] md:w-[680px] max-w-full transition-all">
+<!-- 4R Aspect Outer Frame (4x6 Ratio, holds two 2x6 strips side by side) -->
+<div class="relative bg-[#0b0e14] border border-outline-variant/30 rounded-lg p-3.5 grid grid-cols-2 gap-0 overflow-hidden">
+<!-- =============================================================== -->
+<!-- LEFT STRIP (2x6 inch Standard Photobooth Strip) -->
+<!-- =============================================================== -->
+<div class="flex flex-col bg-[#12151f] p-3 rounded-l border-r border-dashed border-outline-variant/60 relative group">
+<!-- Top Subtle Margin Branding -->
+<div class="flex justify-between items-center mb-2 px-1">
+<span class="text-[9px] font-mono tracking-widest text-primary/70">STRIP A • #842-1</span>
+<span class="text-[9px] font-mono text-outline">4R DUAL SPLIT</span>
+</div>
+<!-- 3 Photo Slots (Vertical Stack) -->
+<div class="space-y-2.5 flex-1">
+<!-- Slot 1 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-outline-variant/30 group/slot transition-all hover:border-primary">
+<img class="w-full h-full object-cover" data-alt="A luxurious high-fashion wedding portrait of a stylish Indonesian couple dressed in a sophisticated black suit and an elegant cream high-neck long-sleeve gown, posing against a deep moody charcoal studio backdrop with gentle cinematic rim lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgBWACqesalfR2o-LNq5Y_uCw8QiPMfD71GuNjdh-CtpEnxQQqZnK3d1mH8T8w_E3u4ES4YkH1MhmXsdwBTFJAJH5X_VjHXMyulyQUCCABdsdl88UPHEcjzr5R8uIvVgcJTuVL7dbKtI4DGllekSRMwMep3zzuv3Q-EoJb0XYVJquua23wjf5PsoAzAWuE0GLOTNT74xfw6nQ-5-e_XE0lGE0LlC7EvxNwG1T_477kWXzVbWV4uk2Tj2rQpTWkaGl53DEnGLd_1Zc"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-primary font-bold">01</div>
+</div>
+<!-- Slot 2 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-outline-variant/30 group/slot transition-all hover:border-primary">
+<img class="w-full h-full object-cover" data-alt="A joyful and tender candid moment of an Indonesian bride and groom in traditional modern Javanese attire laughing warmly together, the bride holding an exquisite white orchid and eucalyptus bouquet in a softly lit warm studio setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfO2Fln8w9CnkBLt_XWI6JB0eHSDa-U4hke_s6ZVfnbsvjaR7fwPKHjLPche5iKj0hbTIe9COsEoJLfkvszufRwwILLxxW4DyU1jzCxn3GCnHHlczGH7jJPxDunYkPCKfRDa5E8uBdRP8ik8oo5fNOTjrc1TfiwvJVOTAmrSBWerWsnS-DQnJAusKipSlEUeLS_nSzpyA8a6K2BE41YV3VkAjKhY_630hO-KVze1j9KNRD2h5-TgaEB8b-Lnr9RXO6IZ1ZhWxbIiw"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-primary font-bold">02</div>
+</div>
+<!-- Slot 3 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-outline-variant/30 group/slot transition-all hover:border-primary">
+<img class="w-full h-full object-cover" data-alt="An intimate close-up shot of a newlywed bride and groom holding hands, showcasing intricate diamond wedding rings, delicate white lace bridal gown sleeve, and an elegant floral arrangement of white orchids." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoSi3BKp_oAyPzjwal85AYZl1vkaS2C46TEvNdxrh6HIXtrh6nhm42cJosyNUUcgBjbkT_ENTdfYKiaHklpjGlRGbnLMgFIcZeKBY3ezBsljZuGOpS23AMSeFQmWfsrlTrC9caJMvJuKN8y2ogvf_HNjcVQ14ZS1VcCSkUYkf9Ny1VM9jg5XafpWwMfJpSdz09mmF_5iQZoQlpEUjNgt8UeWapWGzWLhtTAOTFJ1PETSWPDKEAKTEWcOCdIvxsA2tKxW-iviwIuas"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-primary font-bold">03</div>
+</div>
+</div>
+<!-- Bottom Gold Typography Section -->
+<div class="mt-4 pt-3 border-t border-outline-variant/20 text-center flex flex-col items-center">
+<span class="text-[8px] font-mono tracking-[0.3em] text-outline uppercase mb-0.5">THE WEDDING CELEBRATION</span>
+<h4 class="font-serif tracking-[0.2em] text-primary text-[13px] md:text-[14px] font-semibold leading-tight uppercase">
+                  ANDI &amp; SITI
+                </h4>
+<div class="flex items-center gap-1.5 my-1">
+<span class="h-px w-4 bg-primary/40"></span>
+<span class="text-[9px] font-mono text-on-surface tracking-wider">01 OKTOBER 2026</span>
+<span class="h-px w-4 bg-primary/40"></span>
+</div>
+<span class="text-[7.5px] font-mono tracking-widest text-outline-variant/80 uppercase">
+                  RTFTP PHOTO LAB • JAKARTA
+                </span>
+</div>
+</div>
+<!-- =============================================================== -->
+<!-- CENTER VERTICAL CUT LINE INDICATOR -->
+<!-- =============================================================== -->
+<div class="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-between py-6 pointer-events-none z-30">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high/90 border border-outline-variant/40 text-[9px] font-mono text-outline shadow-sm backdrop-blur-sm">
+<span class="material-symbols-outlined text-[12px] text-primary">content_cut</span>
+<span>GARIS POTONG / CUT LINE (2x6")</span>
+</div>
+<div class="w-px h-full border-r border-dashed border-primary/50 my-1"></div>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-high/80 text-[8px] font-mono text-outline">
+<span class="material-symbols-outlined text-[10px]">straighten</span>
+<span>50.8 mm</span>
+</div>
+</div>
+<!-- =============================================================== -->
+<!-- RIGHT STRIP (2x6 inch Mirror Exact Duplicate for Double Print) -->
+<!-- =============================================================== -->
+<div class="flex flex-col bg-[#12151f] p-3 rounded-r relative group">
+<!-- Top Subtle Margin Branding -->
+<div class="flex justify-between items-center mb-2 px-1">
+<span class="text-[9px] font-mono tracking-widest text-primary/70">STRIP B • #842-2</span>
+<span class="text-[9px] font-mono text-outline">DYE-SUB COPY</span>
+</div>
+<!-- 3 Photo Slots (Identical Mirror) -->
+<div class="space-y-2.5 flex-1">
+<!-- Slot 1 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-outline-variant/30 group/slot transition-all hover:border-primary">
+<img class="w-full h-full object-cover" data-alt="A luxurious high-fashion wedding portrait of a stylish Indonesian couple dressed in a sophisticated black suit and an elegant cream high-neck long-sleeve gown, posing against a deep moody charcoal studio backdrop with gentle cinematic rim lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuARNOZzyXU1Lymuw5wPlDSV8rSDQdtFAMonIGNte45Q-zOaXEeiNnz5wCxlS46TxSce6zSVPn1-oRGK7DdyYxbjnwo_cgGdbIt7C1mTvLW89CYdhSUBclydPjhNLro21pfrCaY8kQeYDSVZFHD1y1ZeO5D9WKoGobyVLVOafG59-yT6AgOJvjlSUr6pYkn_vLmjWcs-iJfNqhPBu7kgVaGFm2yytImVOMCfH5fTDTiA0R33vQZSpI3VnamlpqkxRqvL8HCw29sSDeY"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-primary font-bold">01</div>
+</div>
+<!-- Slot 2 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-outline-variant/30 group/slot transition-all hover:border-primary">
+<img class="w-full h-full object-cover" data-alt="A joyful and tender candid moment of an Indonesian bride and groom in traditional modern Javanese attire laughing warmly together, the bride holding an exquisite white orchid and eucalyptus bouquet in a softly lit warm studio setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxeKYxkqop1YXUxWIrcQMvo5-6yCpyBXI-crzA_Nw_WIIz7zwJ3NOLRrbjEAZdXkIvQD1byxHLr3P0fcfnIpUw8To5zCo7istOzwc8GEHVo821Lu5QQg1v0_L-fOALVX23fAUCf6kX036K4wfSZ4aHlD7VEjr8prkABsHUZetKKoWrTO3imR9SmksBE75RXgEijGh8heiyG5dd9UkgoC0oDIZE0ZdVV_N-yk6K2hUKxEkJsaLR2X0gxDGeaYaXH39VTvmYZG9MIKw"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-primary font-bold">02</div>
+</div>
+<!-- Slot 3 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-outline-variant/30 group/slot transition-all hover:border-primary">
+<img class="w-full h-full object-cover" data-alt="An intimate close-up shot of a newlywed bride and groom holding hands, showcasing intricate diamond wedding rings, delicate white lace bridal gown sleeve, and an elegant floral arrangement of white orchids." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAy8jzxXnA87lPzUjLQ4FkODNKht9Bty6M9N4qogGeddgu7sznZft3-UdnevO-JHKt1a5wG_zwZi6yVG2gmMPL_tN_oB--304f-CEvSuTAOHAPMf8di5ikpUFcsLGPflXGUI0TmxpbrQeKws2z5_BqyV_pic-WlwD4FJUEEsGk-iK-1m_N0ZbHdXeR5SQIYp1L6sha5f--Wfb_3oUtgBZOtCEBhgCNkEW0PcAHg60Y61nu8-GcN9iaYCJocI0km6cBBVw-jYmSSJLE"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-primary font-bold">03</div>
+</div>
+</div>
+<!-- Bottom Gold Typography Section -->
+<div class="mt-4 pt-3 border-t border-outline-variant/20 text-center flex flex-col items-center">
+<span class="text-[8px] font-mono tracking-[0.3em] text-outline uppercase mb-0.5">THE WEDDING CELEBRATION</span>
+<h4 class="font-serif tracking-[0.2em] text-primary text-[13px] md:text-[14px] font-semibold leading-tight uppercase">
+                  ANDI &amp; SITI
+                </h4>
+<div class="flex items-center gap-1.5 my-1">
+<span class="h-px w-4 bg-primary/40"></span>
+<span class="text-[9px] font-mono text-on-surface tracking-wider">01 OKTOBER 2026</span>
+<span class="h-px w-4 bg-primary/40"></span>
+</div>
+<span class="text-[7.5px] font-mono tracking-widest text-outline-variant/80 uppercase">
+                  RTFTP PHOTO LAB • JAKARTA
+                </span>
+</div>
+</div>
+</div>
+<!-- Subtle Corner Crop Marks (Standard Lab Print Precision Guides) -->
+<div class="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-primary/60 pointer-events-none"></div>
+<div class="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-primary/60 pointer-events-none"></div>
+<div class="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-primary/60 pointer-events-none"></div>
+<div class="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-primary/60 pointer-events-none"></div>
+</div>
+</div>
+<!-- Canvas Bottom Status Info Bar -->
+<footer class="h-10 flex-none bg-surface-container-low border-t border-outline-variant/20 px-6 flex items-center justify-between text-xs font-mono text-on-surface-variant z-10">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5 text-primary">
+<span class="material-symbols-outlined text-[14px]">photo_size_select_actual</span>
+            Dimensi Cetak: 102 x 152 mm (4R)
+          </span>
+<span class="text-outline-variant/40">•</span>
+<span>1200 x 1800 px @ 300 DPI</span>
+<span class="text-outline-variant/40">•</span>
+<span class="text-emerald-400">Dye-Sublimation High Gloss Ready</span>
+</div>
+<div class="flex items-center gap-3">
+<span>Auto-Save Aktif: 12 dtk lalu</span>
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+</div>
+</footer>
+</main>
+<!-- ========================================================================= -->
+<!-- 3. RIGHT CONTROL PANEL (Sidebar Customizer, fixed 380px) -->
+<!-- ========================================================================= -->
+<aside class="w-[380px] flex-none bg-surface-container border-l border-outline-variant/30 flex flex-col justify-between z-40 shadow-xl overflow-hidden">
+<!-- Sidebar Header -->
+<div class="p-4 border-b border-outline-variant/30 bg-surface-container-low flex-none">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high border border-primary-container/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</div>
+<div>
+<h2 class="text-title-md font-title-md font-bold text-on-surface leading-snug">Pengaturan Cetak &amp; Desain</h2>
+<p class="text-body-sm font-body-sm text-outline">Booth Session #842 • 4R Double Strip</p>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Customizer Navigation Tabs -->
+<div class="grid grid-cols-4 gap-1 p-1 bg-surface-container-lowest rounded-lg border border-outline-variant/20 text-xs font-label-md">
+<button class="py-1.5 rounded text-center font-semibold bg-surface-container-high text-primary border border-primary/20 shadow-xs">
+            Template
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-on-surface transition-colors">
+            Urutan
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-on-surface transition-colors">
+            Filter
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-on-surface transition-colors">
+            Teks
+          </button>
+</div>
+</div>
+<!-- Scrollable Customizer Settings Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar text-body-sm">
+<!-- 1. TEMPLATE COLLECTION & PRESETS -->
+<section class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-primary">dashboard_customize</span>
+              Pilihan Template Strip
+            </label>
+<span class="text-[11px] font-mono text-outline">4 Desain</span>
+</div>
+<!-- Template Cards Carousel -->
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Active: Dark Luxury Black Gold -->
+<div class="cursor-pointer p-2.5 rounded-lg bg-surface-container-high border-2 border-primary-container relative group shadow-sm">
+<div class="aspect-[3/4] rounded bg-[#0b0e14] border border-primary/30 mb-2 p-1.5 flex flex-col justify-between items-center text-center">
+<div class="w-full space-y-1">
+<div class="h-3 bg-surface-container-highest rounded-xs"></div>
+<div class="h-3 bg-surface-container-highest rounded-xs"></div>
+<div class="h-3 bg-surface-container-highest rounded-xs"></div>
+</div>
+<span class="text-[8px] font-serif text-primary">LUXURY GOLD</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-primary">Black &amp; Gold</span>
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Option 2: Classic Minimalist White -->
+<div class="cursor-pointer p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/30 transition-colors group">
+<div class="aspect-[3/4] rounded bg-[#f8fafc] mb-2 p-1.5 flex flex-col justify-between items-center text-center">
+<div class="w-full space-y-1">
+<div class="h-3 bg-slate-300 rounded-xs"></div>
+<div class="h-3 bg-slate-300 rounded-xs"></div>
+<div class="h-3 bg-slate-300 rounded-xs"></div>
+</div>
+<span class="text-[8px] font-mono text-slate-800">MINIMAL WHITE</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs text-on-surface">Modern White</span>
+<span class="text-[10px] font-mono text-outline">Classic</span>
+</div>
+</div>
+</div>
+<!-- Custom Frame Upload Dropzone -->
+<div class="mt-2 p-3 rounded-lg border border-dashed border-primary-container/40 bg-surface-container-lowest/60 hover:bg-surface-container-lowest transition-colors flex flex-col items-center justify-center text-center cursor-pointer group">
+<span class="material-symbols-outlined text-[22px] text-primary-container group-hover:scale-110 transition-transform mb-1">upload_file</span>
+<span class="text-xs font-medium text-on-surface">Unggah Overlay Frame (.PNG transparan)</span>
+<span class="text-[10px] font-mono text-outline mt-0.5">1200 x 1800 px • Max 15MB</span>
+</div>
+</section>
+<!-- 2. PHOTO SLOT REORDER LIST -->
+<section class="space-y-3 pt-4 border-t border-outline-variant/20">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-primary">reorder</span>
+              Urutan Foto (3 Slot)
+            </label>
+<button class="text-[11px] font-mono text-primary hover:underline">Acak Otomatis</button>
+</div>
+<div class="space-y-2">
+<!-- Slot 1 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-surface-container-highest border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A luxurious high-fashion wedding portrait of a stylish Indonesian couple dressed in a sophisticated black suit and an elegant cream high-neck long-sleeve gown, posing against a deep moody charcoal studio backdrop with gentle cinematic rim lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXJxbX-dYYxOboOaumBkMxfm3yBFHyGetIzU_Nhheeyu-kjAt0TDpHYI5XT7WRea2ZlgKCUTM8jAOZunYoLUUnRBbqWXi5ffy07maihqHr5mMC1BZTE26FbjTmbjNzk9A_4t8XhsL6PqHzTqOktdHF8rSoBNhladiUNRLGrJtgmf_GdpuXHFbF5_zgtPqJ1Pv-wrvgRUBGC5m-0N1IwgmuWSHsd0atUgmVNsabAa6sDioKAEDdcSpEy3vg6zMpJGRAG1S0O9Stboc"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-on-surface truncate">Foto 01 — Formal Couple</p>
+<p class="text-[10px] font-mono text-outline truncate">IMG_842_A.RAW • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-outline">
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+<!-- Slot 2 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-surface-container-highest border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A joyful and tender candid moment of an Indonesian bride and groom in traditional modern Javanese attire laughing warmly together, the bride holding an exquisite white orchid and eucalyptus bouquet in a softly lit warm studio setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDF7uoP_8eC638WVsiq1tS_D_XZX-Y0pJGGt-pGUMnIx8Os7JD_PQrEidfU-iprgJSmqysC_cWL-ioM9oehAqI0oWWnUl1dT0tcIkAEZ9tNhmZ4LeVx5VYrCMucy8QTTvpyL0SoXrS96UuEXqqNXLw_QQGAKZ3U8Mi3qsy5IAighpswkGtq2ZRqSpcXPXS_jZmRjkPB8Rs987t3nGRpLqKiZ-KqKxi7FvsuvOg72dRMYJY9Xaw7cOeiXP9Jn8bIhjwKiN-IVivgqZM"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-on-surface truncate">Foto 02 — Candid Smile</p>
+<p class="text-[10px] font-mono text-outline truncate">IMG_842_B.RAW • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-outline">
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+<!-- Slot 3 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-surface-container-highest border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="An intimate close-up shot of a newlywed bride and groom holding hands, showcasing intricate diamond wedding rings, delicate white lace bridal gown sleeve, and an elegant floral arrangement of white orchids." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEqvp9lP9h-4ANjVCNl3E-1RutQukDo3QZ72AYaet7sqoXMGQ4tOPOTidXkE6N_mDdDz8NSRiBY97P42oDfPTo7IhrwJuXGXt1VgBhBGuk4VDwPIFh6Y9KZAOO40vBkwvOO6HKjDK_ESl4oGTUfr4miitMqq-tLXQt2J2Jjew1fD2TdDVa2tfkl82WOhSJXoWsNylTK1a8-ixNSj3LRhpXN1zOjdigzj7BPp73DYWxJrCyd3XJCvS7_9nh2VwKnlHiS-qd4Y77-WI"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-on-surface truncate">Foto 03 — Ring &amp; Bouquet</p>
+<p class="text-[10px] font-mono text-outline truncate">IMG_842_C.RAW • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-outline">
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. COLOR FILTER TOGGLE CHIPS -->
+<section class="space-y-3 pt-4 border-t border-outline-variant/20">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-primary">filter_vintage</span>
+            Preset Grading Warna
+          </label>
+<div class="grid grid-cols-2 gap-2">
+<!-- Active Filter: Natural Color -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-high border border-primary-container text-left shadow-xs">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-600 via-orange-400 to-amber-200 ring-2 ring-primary/40 flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-semibold text-primary truncate">Natural Warm</div>
+<div class="text-[9px] font-mono text-outline">Original Tone</div>
+</div>
+</button>
+<!-- Filter: B&W Monochrome -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/30 text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-zinc-900 via-zinc-500 to-zinc-200 flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-medium text-on-surface truncate">B&amp;W Classic</div>
+<div class="text-[9px] font-mono text-outline">High Contrast</div>
+</div>
+</button>
+<!-- Filter: Vintage Film 400 -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/30 text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-900 via-yellow-700 to-emerald-800 flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-medium text-on-surface truncate">Portra Film 400</div>
+<div class="text-[9px] font-mono text-outline">Analog Grain</div>
+</div>
+</button>
+<!-- Filter: Warm Sepia Gold -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/30 text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-[#3b2005] via-[#784315] to-[#c48d3f] flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-medium text-on-surface truncate">Sepia Royal</div>
+<div class="text-[9px] font-mono text-outline">Antique Tone</div>
+</div>
+</button>
+</div>
+</section>
+<!-- 4. TYPOGRAPHY & FOOTER SETTINGS -->
+<section class="space-y-3 pt-4 border-t border-outline-variant/20">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-primary">title</span>
+            Kostumisasi Teks &amp; Tanggal
+          </label>
+<div class="space-y-2.5">
+<div>
+<span class="text-[11px] font-medium text-outline block mb-1">Judul Event / Nama Pasangan</span>
+<input class="w-full px-3 py-1.5 bg-surface-container-lowest border border-outline-variant/40 rounded-lg text-xs font-serif tracking-wider text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all" type="text" value="ANDI &amp; SITI"/>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div>
+<span class="text-[11px] font-medium text-outline block mb-1">Tanggal Acara</span>
+<input class="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-outline-variant/40 rounded-lg text-xs font-mono text-on-surface focus:border-primary-container outline-none" type="text" value="01 OKTOBER 2026"/>
+</div>
+<div>
+<span class="text-[11px] font-medium text-outline block mb-1">Studio Watermark</span>
+<input class="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-outline-variant/40 rounded-lg text-xs font-mono text-on-surface focus:border-primary-container outline-none" type="text" value="RTFTP STUDIO"/>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar Footer: Printer Telemetry & Primary Dispatch CTA -->
+<div class="p-4 border-t border-outline-variant/30 bg-surface-container-low flex-none space-y-3">
+<!-- Printer Hardware Live Telemetry -->
+<div class="p-2.5 rounded-lg bg-surface-container border border-outline-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+<div>
+<div class="text-xs font-semibold text-on-surface">DNP DS620 Dye-Sub</div>
+<div class="text-[10px] font-mono text-outline">Kertas: 142 Lembar • Ready</div>
+</div>
+</div>
+<button class="text-xs text-primary hover:underline flex items-center gap-0.5" title="Calibrate Printer">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+            Cek
+          </button>
+</div>
+<!-- Primary CTA: Send to Dye-Sub Printer (Anchored from SideNavBar JSON) -->
+<button class="w-full py-3 px-4 rounded-xl bg-primary-container hover:bg-secondary-container text-on-primary-container font-title-md font-bold text-sm tracking-wide transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">print</span>
+<span>Send to Dye-Sub Printer</span>
+</button>
+<!-- Secondary Digital Dispatch Trigger -->
+<button class="w-full py-2 px-3 rounded-lg border border-outline-variant/40 hover:bg-surface-container-high text-on-surface text-xs font-medium transition-colors flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">qr_code_2</span>
+<span>Kirim Salinan Digital (QR &amp; Email)</span>
+</button>
+</div>
+</aside>
+</div>
+</body></html>
+

@@ -50,8 +50,7 @@ const wss = new WebSocketServer({ server });
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use('/templates/custom', express.static(path.join(__dirname, 'templates/custom')));
+app.use('/templates', express.static(path.join(__dirname, 'templates')));
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
