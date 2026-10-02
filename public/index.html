@@ -35,23 +35,28 @@
   <h1 class="sr-only">Galeri Foto Studio</h1>
   <div class="studio-background"></div>
 
-  <!-- Gallery Control Toolbar -->
-  <nav class="gallery-toolbar" aria-label="Kontrol Galeri">
-    <div class="toolbar-group">
-      <div class="filter-segmented-bar" role="tablist">
-        <button class="filter-tab active" data-filter="all" id="tab-all-photos" role="tab" aria-selected="true">
-          Semua Foto <span class="filter-badge" id="count-all">0</span>
-        </button>
-        <button class="filter-tab" data-filter="selected" id="tab-selected-photos" role="tab" aria-selected="false">
-          Pilihan Cetak <span class="filter-badge" id="count-selected">0</span>
-        </button>
-      </div>
-      <button id="toolbar-clear-btn" class="btn btn-sm btn-danger" style="display: none;" title="Batalkan semua pilihan foto untuk memilih ulang" aria-label="Batalkan semua foto yang dipilih">
-        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        Batal Pilih
+  <!-- Gallery Control Toolbar & Client Workflow Navigation -->
+  <nav class="gallery-toolbar" aria-label="Kontrol Studio & Alur Kerja">
+    <!-- Top-Level Workflow Tabs -->
+    <div class="client-workflow-nav" role="tablist" aria-label="Alur Kerja Studio">
+      <button id="tab-nav-gallery" class="workflow-tab active" role="tab" aria-selected="true" aria-controls="view-tab-gallery" title="Langkah 1: Pilih Foto di Galeri">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>1. Galeri Foto</span>
+        <span id="nav-gallery-count" class="workflow-badge">0 / 3</span>
       </button>
-      <button id="open-compare-btn" class="btn btn-sm btn-primary" style="display: none;">
-        Bandingkan (<span id="compare-badge-count">0</span>)
+      <button id="tab-nav-template" class="workflow-tab" role="tab" aria-selected="false" aria-controls="view-tab-template" title="Langkah 2: Desain & Cetak Template Strip">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="3" y1="9" x2="21" y2="9"></line>
+          <line x1="3" y1="15" x2="21" y2="15"></line>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        <span>2. Template Strip</span>
+        <span id="nav-template-status" class="workflow-badge badge-template-status">Siap Cetak</span>
       </button>
     </div>
 
@@ -70,15 +75,6 @@
     </div>
 
     <div class="toolbar-group">
-      <span class="toolbar-label">Grid</span>
-      <div class="grid-sizes" role="group" aria-label="Pengaturan kolom grid foto">
-        <button class="size-btn" data-cols="2" id="grid-btn-2" title="2 Kolom (Besar)" aria-label="Tampilan grid 2 kolom">2</button>
-        <button class="size-btn" data-cols="3" id="grid-btn-3" title="3 Kolom" aria-label="Tampilan grid 3 kolom">3</button>
-        <button class="size-btn active" data-cols="4" id="grid-btn-4" title="4 Kolom (Standar)" aria-label="Tampilan grid 4 kolom standar">4</button>
-        <button class="size-btn" data-cols="5" id="grid-btn-5" title="5 Kolom" aria-label="Tampilan grid 5 kolom">5</button>
-        <button class="size-btn" data-cols="6" id="grid-btn-6" title="6 Kolom (Kecil)" aria-label="Tampilan grid 6 kolom">6</button>
-      </div>
-
       <!-- Quick Dark / Light Theme Toggle -->
       <button class="btn btn-sm btn-theme-toggle" id="btn-theme-toggle-gallery" data-action="toggle-theme" title="Beralih Mode Tampilan" aria-label="Beralih mode tampilan" style="padding: 5px 9px;">
         <span class="theme-icon-wrap" style="display: flex; align-items: center; justify-content: center;">
@@ -101,65 +97,81 @@
     </div>
   </nav>
 
-  <!-- Client Studio Split Layout: Gallery (Left) + Live Photostrip Canvas (Right) -->
-  <div class="client-studio-layout">
-    <!-- Gallery Main Section -->
-    <main class="gallery-container">
-      <div id="gallery-grid" class="gallery-grid cols-4" tabindex="-1">
-        <!-- Cards dynamically rendered here -->
-      </div>
-
-      <!-- Empty Gallery State -->
-      <div id="empty-gallery" class="empty-gallery" style="display: none;">
-        <svg class="empty-art" viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <circle cx="8.5" cy="8.5" r="1.5"></circle>
-          <polyline points="21 15 16 10 5 21"></polyline>
-        </svg>
-        <h2 class="empty-title">Belum Ada Foto dalam Sesi Ini</h2>
-        <p class="empty-subtitle">
-          Foto akan otomatis tampil secara real-time saat kamera mentransfer file ke folder sesi.
-        </p>
-      </div>
-    </main>
-
-    <!-- Backdrop for Mobile Drawer Mode -->
-    <div id="live-strip-backdrop" class="live-strip-backdrop" aria-hidden="true"></div>
-
-    <!-- Persistent Live Single Photostrip Sidebar (Direct Single Strip WYSIWYG) -->
-    <aside id="live-photostrip-sidebar" class="live-photostrip-sidebar" aria-label="Bentuk Foto Strip Realtime">
-      <div class="live-strip-panel-header">
-        <div class="live-strip-title-group">
-          <div class="live-strip-badge-indicator">
-            <span class="live-indicator-dot"></span>
-            <span>LIVE STRIP</span>
+  <!-- Client Main Workflow View Container -->
+  <div class="client-workflow-views">
+    <!-- View 1: Tab Galeri Foto -->
+    <section id="view-tab-gallery" class="client-view-panel active" aria-labelledby="tab-nav-gallery">
+      <!-- Gallery Sub-Toolbar -->
+      <div class="gallery-sub-toolbar">
+        <div class="toolbar-group">
+          <div class="filter-segmented-bar" role="tablist">
+            <button class="filter-tab active" data-filter="all" id="tab-all-photos" role="tab" aria-selected="true">
+              Semua Foto <span class="filter-badge" id="count-all">0</span>
+            </button>
+            <button class="filter-tab" data-filter="selected" id="tab-selected-photos" role="tab" aria-selected="false">
+              Pilihan Cetak <span class="filter-badge" id="count-selected">0</span>
+            </button>
           </div>
-          <h2 class="live-strip-title">Bentuk Foto Strip</h2>
-          <span class="live-strip-subtitle">1 Lembar Strip Siap Cetak (2x6")</span>
-        </div>
-        <button id="btn-close-strip-drawer" class="btn btn-sm btn-icon mobile-only" aria-label="Tutup panel strip">
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-
-      <!-- Settings: Template & Tone Filter -->
-      <div class="live-strip-controls">
-        <div class="live-strip-control-row">
-          <label for="select-strip-template" class="live-strip-label">Pilihan Bingkai:</label>
-          <select id="select-strip-template" class="input-text live-strip-select">
-            <!-- Populated dynamically -->
-          </select>
+          <button id="toolbar-clear-btn" class="btn btn-sm btn-danger" style="display: none;" title="Batalkan semua pilihan foto untuk memilih ulang" aria-label="Batalkan semua foto yang dipilih">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Batal Pilih
+          </button>
+          <button id="open-compare-btn" class="btn btn-sm btn-primary" style="display: none;">
+            Bandingkan (<span id="compare-badge-count">0</span>)
+          </button>
         </div>
 
-        <div class="live-strip-template-tray-wrapper">
-          <div id="live-strip-template-tray" class="live-strip-template-tray">
-            <!-- Populated dynamically with authentic template cards -->
+        <div class="toolbar-group">
+          <span class="toolbar-label">Grid</span>
+          <div class="grid-sizes" role="group" aria-label="Pengaturan kolom grid foto">
+            <button class="size-btn" data-cols="2" id="grid-btn-2" title="2 Kolom (Besar)" aria-label="Tampilan grid 2 kolom">2</button>
+            <button class="size-btn" data-cols="3" id="grid-btn-3" title="3 Kolom" aria-label="Tampilan grid 3 kolom">3</button>
+            <button class="size-btn active" data-cols="4" id="grid-btn-4" title="4 Kolom (Standar)" aria-label="Tampilan grid 4 kolom standar">4</button>
+            <button class="size-btn" data-cols="5" id="grid-btn-5" title="5 Kolom" aria-label="Tampilan grid 5 kolom">5</button>
+            <button class="size-btn" data-cols="6" id="grid-btn-6" title="6 Kolom (Kecil)" aria-label="Tampilan grid 6 kolom">6</button>
           </div>
         </div>
+      </div>
 
-        <div class="live-strip-control-row">
-          <label class="live-strip-label">Nuansa Warna Foto:</label>
-          <div class="photostrip-filter-chips live-filter-chips">
+      <!-- Gallery Main Grid Container -->
+      <main class="gallery-container">
+        <div id="gallery-grid" class="gallery-grid cols-4" tabindex="-1">
+          <!-- Cards dynamically rendered here -->
+        </div>
+
+        <!-- Empty Gallery State -->
+        <div id="empty-gallery" class="empty-gallery" style="display: none;">
+          <svg class="empty-art" viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <h2 class="empty-title">Belum Ada Foto dalam Sesi Ini</h2>
+          <p class="empty-subtitle">
+            Foto akan otomatis tampil secara real-time saat kamera mentransfer file ke folder sesi.
+          </p>
+        </div>
+      </main>
+    </section>
+
+    <!-- View 2: Tab Template Strip Studio -->
+    <section id="view-tab-template" class="client-view-panel" style="display: none;" aria-labelledby="tab-nav-template">
+      <!-- Template Studio Sub-Header -->
+      <div class="template-studio-sub-header">
+        <div class="template-studio-header-left">
+          <button id="btn-back-to-gallery" class="btn btn-sm btn-secondary" title="Kembali ke Galeri Foto">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>Kembali ke Galeri</span>
+          </button>
+          <div class="template-studio-title-wrap">
+            <h2 class="template-studio-main-title">Studio Desain Foto Strip</h2>
+            <span class="template-studio-subtitle">Template telah otomatis terisi foto yang Anda pilih di galeri</span>
+          </div>
+        </div>
+
+        <div class="template-studio-header-right">
+          <span class="toolbar-label">Nuansa Warna:</span>
+          <div class="photostrip-filter-chips template-tab-filter-chips">
             <button type="button" class="btn-strip-filter active" data-filter="normal">Normal</button>
             <button type="button" class="btn-strip-filter" data-filter="bw">B&amp;W</button>
             <button type="button" class="btn-strip-filter" data-filter="vintage">Warm</button>
@@ -168,45 +180,134 @@
         </div>
       </div>
 
-      <!-- Real Photostrip Physical Canvas Viewport -->
-      <div class="live-strip-viewport">
-        <div id="live-single-strip-card" class="live-single-strip-card">
-          <!-- Strip Header Branding -->
-          <div class="strip-card-header">
-            <div id="strip-brand-event" class="strip-brand-event">PHOTOBOOTH MEMORIES</div>
-            <div class="strip-header-divider"></div>
+      <!-- Empty Notice when 0 photos selected -->
+      <div id="template-tab-empty-notice" class="template-tab-empty-notice" style="display: none;">
+        <div class="empty-notice-card">
+          <div class="empty-notice-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
           </div>
-
-          <!-- Dynamic Slots (3 or 4 slots) -->
-          <div id="live-strip-slots-container" class="live-strip-slots-container">
-            <!-- Rendered dynamically -->
-          </div>
-
-          <!-- Strip Footer Branding -->
-          <div class="strip-card-footer">
-            <div id="strip-brand-footer" class="strip-brand-footer">RTFTP PHOTO STUDIO</div>
-            <div id="strip-brand-date" class="strip-brand-date">02 OKT 2026</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Strip Bottom Status & Print Actions -->
-      <div class="live-strip-footer">
-        <div class="live-strip-summary">
-          <span id="live-strip-status-text" class="live-strip-status">0 / 3 Foto Terisi</span>
-          <span id="live-strip-ready-badge" class="badge-ready" style="display: none;">Lengkap</span>
-        </div>
-        <div class="live-strip-actions">
-          <button id="btn-live-clear-all" class="btn btn-sm btn-danger" style="display: none;" title="Batalkan semua pilihan foto">Batal</button>
-          <button id="btn-live-print-submit" class="btn btn-gold btn-print-main" disabled>
-            <span>Pilih 3 Foto dari Galeri</span>
+          <h3 class="empty-notice-title">Belum Ada Foto yang Dipilih</h3>
+          <p class="empty-notice-text">
+            Silakan pilih minimal 1 hingga 3-4 foto di tab <strong>Galeri Foto</strong>. Template akan otomatis memuat dan menyusun foto pilihan Anda di sini.
+          </p>
+          <button id="btn-empty-go-gallery" class="btn btn-gold btn-lg">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Buka Galeri & Pilih Foto</span>
           </button>
         </div>
       </div>
-    </aside>
+
+      <!-- Main Active Workspace Grid -->
+      <div id="template-workspace-grid" class="template-workspace-grid">
+        <!-- Left Hero Column: Active Canvas Preview -->
+        <div class="template-hero-stage">
+          <div class="template-stage-card">
+            <div class="template-stage-card-header">
+              <div class="stage-info">
+                <span class="stage-badge-live">PREVIEW ASLI</span>
+                <h3 id="template-hero-name" class="stage-template-name">Classic White 3-Slot</h3>
+              </div>
+              <span id="template-hero-format" class="stage-format-badge">Double Strip 4R (2 Strip 2x6")</span>
+            </div>
+
+            <div class="template-stage-viewport">
+              <div id="template-tab-active-canvas" class="template-tab-active-canvas">
+                <!-- Dynamic authentic physical photostrip DOM rendered here -->
+              </div>
+            </div>
+
+            <div class="template-stage-hint">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <span>Gunakan tombol Atas / Tengah / Bawah pada panel samping untuk mengatur posisi framing foto.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side Column: Slot Arrangement & Print Quantity Stepper -->
+        <div class="template-controls-stage">
+          <!-- Slot Arrangement Card -->
+          <div class="template-stage-card">
+            <div class="stage-card-title-row">
+              <h4 class="stage-card-title">Urutan & Framing Slot Foto</h4>
+              <span id="template-tab-slot-count-badge" class="badge-slot-count">3/3 Foto Terisi</span>
+            </div>
+            <div id="template-tab-slots-list" class="template-tab-slots-list">
+              <!-- Dynamically populated slot items -->
+            </div>
+          </div>
+
+          <!-- Print Execution & Copies Stepper Card -->
+          <div class="template-stage-card template-print-card">
+            <div class="stage-card-title-row">
+              <h4 class="stage-card-title">Pengaturan Cetak Foto Strip</h4>
+              <span class="badge-ready-print">Siap Cetak</span>
+            </div>
+
+            <!-- Copies Stepper -->
+            <div class="copies-selector-group">
+              <label class="copies-selector-label">Jumlah Lembar Cetak:</label>
+              <div class="copies-stepper-control">
+                <button type="button" id="btn-qty-minus" class="btn-stepper" title="Kurangi 1 Lembar" aria-label="Kurangi lembar">-</button>
+                <div class="copies-value-container">
+                  <span id="print-copies-val" class="copies-value-number">1</span>
+                  <span class="copies-value-unit">Lembar</span>
+                </div>
+                <button type="button" id="btn-qty-plus" class="btn-stepper" title="Tambah 1 Lembar" aria-label="Tambah lembar">+</button>
+              </div>
+              <div id="print-copies-explanation" class="copies-detail-note">
+                1 Lembar Kertas 4R (Menghasilkan 2 Strip Foto 2x6")
+              </div>
+            </div>
+
+            <!-- Print Action CTA Button -->
+            <div class="print-cta-wrapper">
+              <button type="button" id="btn-tab-confirm-print" class="btn btn-gold btn-lg btn-block btn-execute-print">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span id="btn-tab-print-text">Cetak 1 Lembar Foto Strip Sekarang</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Showcase Grid of All Templates Pre-Filled with User's Photos -->
+      <div id="template-showcase-container" class="template-showcase-container">
+        <div class="template-showcase-header">
+          <div class="template-showcase-title-group">
+            <h3 class="template-showcase-title">Pilihan Desain Bingkai Lainnya</h3>
+            <p class="template-showcase-subtitle">Semua bingkai di bawah otomatis memuat foto pilihan Anda. Klik salah satu untuk mengganti tampilan.</p>
+          </div>
+
+          <!-- Filter Categories -->
+          <div class="showcase-category-chips" role="tablist">
+            <button type="button" class="btn-showcase-cat active" data-cat="all">Semua (<span id="cat-count-all">17</span>)</button>
+            <button type="button" class="btn-showcase-cat" data-cat="double">Double Strip 4R</button>
+            <button type="button" class="btn-showcase-cat" data-cat="single">Single Strip 2x6</button>
+            <button type="button" class="btn-showcase-cat" data-cat="grid">Grid 2x2</button>
+            <button type="button" class="btn-showcase-cat" data-cat="custom">Kustom PNG</button>
+          </div>
+        </div>
+
+        <div id="template-tab-showcase-grid" class="template-tab-showcase-grid">
+          <!-- All templates pre-filled with chosen photos rendered dynamically -->
+        </div>
+      </div>
+    </section>
   </div>
 
-  <!-- Floating Bottom Selection Dock -->
+  <!-- Floating Bottom Selection Dock (Active on Gallery Tab) -->
   <aside id="selection-dock" class="selection-dock" aria-label="Keranjang Pilihan Cetak">
     <div class="dock-info">
       <div id="dock-count" class="dock-badge">0</div>
@@ -220,8 +321,12 @@
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         Batal Pilih
       </button>
-      <button id="dock-review-btn" class="btn btn-gold">
-        Susun & Cetak Strip
+      <button id="dock-review-btn" class="btn btn-gold btn-dock-action">
+        <span>Lanjut ke Desain Template</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
       </button>
     </div>
   </aside>

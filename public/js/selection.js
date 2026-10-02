@@ -20,6 +20,9 @@ class RTFTPSelection {
     this.activeFilter = 'normal'; // 'normal' | 'bw' | 'vintage'
     this.previewDebounceTimer = null;
     this.previewRequestId = 0;
+    this.currentTab = 'gallery';
+    this.printCopies = 1;
+    this.showcaseCategory = 'all';
 
     this.dock = document.getElementById('selection-dock');
     this.dockCount = document.getElementById('dock-count');
@@ -57,15 +60,32 @@ class RTFTPSelection {
   }
 
   initEvents() {
+    // Workflow Tabs Navigation
+    const tabGallery = document.getElementById('tab-nav-gallery');
+    if (tabGallery) {
+      tabGallery.addEventListener('click', () => this.switchTab('gallery'));
+    }
+
+    const tabTemplate = document.getElementById('tab-nav-template');
+    if (tabTemplate) {
+      tabTemplate.addEventListener('click', () => this.switchTab('template'));
+    }
+
+    const btnBackToGallery = document.getElementById('btn-back-to-gallery');
+    if (btnBackToGallery) {
+      btnBackToGallery.addEventListener('click', () => this.switchTab('gallery'));
+    }
+
+    const btnEmptyGoGallery = document.getElementById('btn-empty-go-gallery');
+    if (btnEmptyGoGallery) {
+      btnEmptyGoGallery.addEventListener('click', () => this.switchTab('gallery'));
+    }
+
     // Dock Buttons
     const reviewBtn = document.getElementById('dock-review-btn');
     if (reviewBtn) {
       reviewBtn.addEventListener('click', () => {
-        if (window.innerWidth <= 1024) {
-          this.openDrawer();
-        } else {
-          this.openModal();
-        }
+        this.switchTab('template');
       });
     }
 
@@ -73,6 +93,36 @@ class RTFTPSelection {
     if (dockClearBtn) {
       dockClearBtn.addEventListener('click', () => this.confirmClearAll());
     }
+
+    // Copies Stepper
+    const btnQtyMinus = document.getElementById('btn-qty-minus');
+    if (btnQtyMinus) {
+      btnQtyMinus.addEventListener('click', () => this.setPrintCopies(this.printCopies - 1));
+    }
+
+    const btnQtyPlus = document.getElementById('btn-qty-plus');
+    if (btnQtyPlus) {
+      btnQtyPlus.addEventListener('click', () => this.setPrintCopies(this.printCopies + 1));
+    }
+
+    // Confirm Print in Template Studio Tab
+    const tabPrintBtn = document.getElementById('btn-tab-confirm-print');
+    if (tabPrintBtn) {
+      tabPrintBtn.addEventListener('click', async () => {
+        await this.submitOrder();
+      });
+    }
+
+    // Showcase Category Filter Chips
+    document.querySelectorAll('.btn-showcase-cat').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const cat = e.target.getAttribute('data-cat') || 'all';
+        this.showcaseCategory = cat;
+        document.querySelectorAll('.btn-showcase-cat').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        this.renderTemplateShowcase(cat);
+      });
+    });
 
     // Mobile Drawer Close Buttons & Backdrop
     const closeDrawerBtn = document.getElementById('btn-close-strip-drawer');
@@ -184,7 +234,7 @@ class RTFTPSelection {
       });
     }
 
-    // Filter Chips Click (both sidebar and modal)
+    // Filter Chips Click (across toolbar, modal, and studio tab)
     document.querySelectorAll('.btn-strip-filter').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const targetBtn = e.target.closest('.btn-strip-filter');
@@ -195,6 +245,7 @@ class RTFTPSelection {
           b.classList.toggle('active', b.getAttribute('data-filter') === newFilter);
         });
         this.renderLiveStrip();
+        this.renderTemplateTab();
         this.requestPreview();
       });
     });
@@ -475,6 +526,28 @@ class RTFTPSelection {
     // Synchronize live single photostrip canvas directly on page
     this.renderLiveStrip();
 
+    // Update workflow navigation counters
+    const navGalleryCount = document.getElementById('nav-gallery-count');
+    const navTemplateStatus = document.getElementById('nav-template-status');
+
+    if (navGalleryCount) {
+      navGalleryCount.textContent = `${this.totalItems} / ${this.maxSlots}`;
+      this.triggerBadgePop(navGalleryCount);
+    }
+
+    if (navTemplateStatus) {
+      if (this.totalItems >= this.maxSlots) {
+        navTemplateStatus.textContent = 'Siap Cetak';
+        navTemplateStatus.className = 'workflow-badge badge-template-status';
+      } else if (this.totalItems > 0) {
+        navTemplateStatus.textContent = `${this.totalItems} Foto`;
+        navTemplateStatus.className = 'workflow-badge';
+      } else {
+        navTemplateStatus.textContent = '0 Foto';
+        navTemplateStatus.className = 'workflow-badge';
+      }
+    }
+
     // Update floating dock
     if (this.dock) {
       if (this.totalItems > 0) {
@@ -525,6 +598,11 @@ class RTFTPSelection {
     if (toolbarClearBtn) {
       toolbarClearBtn.style.display = this.totalItems > 0 ? 'inline-flex' : 'none';
     }
+
+    // Re-render template tab if currently active
+    if (this.currentTab === 'template') {
+      this.renderTemplateTab();
+    }
   }
 
   async setPhotoPosition(filename, cropOffsetY) {
@@ -547,7 +625,11 @@ class RTFTPSelection {
       img.style.objectPosition = `50% ${item.cropOffsetY}%`;
     });
 
-    // Update active pill button state in both sidebar and modal
+    document.querySelectorAll(`[data-photo-filename="${CSS.escape(filename)}"] .template-slot-thumb`).forEach(img => {
+      img.style.objectPosition = `50% ${item.cropOffsetY}%`;
+    });
+
+    // Update active pill button state across both sidebar, modal, and studio tab
     document.querySelectorAll(`[data-photo-filename="${CSS.escape(filename)}"] .btn-framing-pill`).forEach(btn => {
       const pos = parseInt(btn.getAttribute('data-pos'), 10);
       const isTarget = (pos === 15 && item.cropOffsetY <= 25) ||
@@ -853,6 +935,7 @@ class RTFTPSelection {
 
     this.renderLiveStrip();
     this.renderModalItems();
+    this.renderTemplateTab();
     this.requestPreview();
   }
 
@@ -1153,11 +1236,407 @@ class RTFTPSelection {
     }, 180);
   }
 
+  switchTab(tabName) {
+    this.currentTab = tabName;
+    const tabGallery = document.getElementById('tab-nav-gallery');
+    const tabTemplate = document.getElementById('tab-nav-template');
+    const viewGallery = document.getElementById('view-tab-gallery');
+    const viewTemplate = document.getElementById('view-tab-template');
+
+    if (tabName === 'template') {
+      if (tabGallery) {
+        tabGallery.classList.remove('active');
+        tabGallery.setAttribute('aria-selected', 'false');
+      }
+      if (tabTemplate) {
+        tabTemplate.classList.add('active');
+        tabTemplate.setAttribute('aria-selected', 'true');
+      }
+      if (viewGallery) viewGallery.style.display = 'none';
+      if (viewTemplate) viewTemplate.style.display = 'block';
+
+      this.renderTemplateTab();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      if (tabTemplate) {
+        tabTemplate.classList.remove('active');
+        tabTemplate.setAttribute('aria-selected', 'false');
+      }
+      if (tabGallery) {
+        tabGallery.classList.add('active');
+        tabGallery.setAttribute('aria-selected', 'true');
+      }
+      if (viewTemplate) viewTemplate.style.display = 'none';
+      if (viewGallery) viewGallery.style.display = 'block';
+
+      if (window.galleryApp) {
+        window.galleryApp.render();
+      }
+    }
+  }
+
+  setPrintCopies(qty) {
+    this.printCopies = Math.max(1, Math.min(20, parseInt(qty, 10) || 1));
+    this.updateCopiesUI();
+  }
+
+  updateCopiesUI() {
+    const valEl = document.getElementById('print-copies-val');
+    const descEl = document.getElementById('print-copies-explanation');
+    const btnTextEl = document.getElementById('btn-tab-print-text');
+
+    if (valEl) {
+      valEl.textContent = this.printCopies;
+    }
+
+    const t = this.templates.find(item => item.id === this.activeTemplateId) || {};
+    const isGrid = t.layout === 'grid_2x2';
+    const isSingle = t.outputFormat === 'single_strip';
+
+    let descText = '';
+    if (isGrid) {
+      descText = `${this.printCopies} Lembar Kertas 4R (Mini Poster 2x2 Kolom)`;
+    } else if (isSingle) {
+      descText = `${this.printCopies} Lembar Strip 2x6" (Potong Langsung)`;
+    } else {
+      descText = `${this.printCopies} Lembar Kertas 4R (Menghasilkan ${this.printCopies * 2} Strip Foto 2x6")`;
+    }
+
+    if (descEl) {
+      descEl.textContent = descText;
+    }
+
+    if (btnTextEl) {
+      btnTextEl.textContent = `Cetak ${this.printCopies} Lembar Foto Strip Sekarang`;
+    }
+  }
+
+  buildAuthenticStripHTML(t, items, filter, isMini = false) {
+    if (!t) t = this.templates[0] || {};
+    const isGrid2x2 = t.layout === 'grid_2x2';
+    const isSingle = t.outputFormat === 'single_strip';
+    const isDouble = !isGrid2x2 && !isSingle;
+    const isCustom = t.type === 'custom';
+
+    const bgColor = /^#[0-9a-f]{6}$/i.test(t.bgColor || '') ? t.bgColor : '#ffffff';
+    const textColor = t.textColor || '#18181b';
+    const subTextColor = t.subTextColor || '#71717a';
+    const accentColor = t.accentColor || '#2563eb';
+    const borderColor = t.frameBorderColor || '#e4e4e7';
+    const cuttingColor = t.cuttingColor || (t.theme === 'dark' ? '#3f3f46' : '#cbd5e1');
+
+    const eventTitle = (t.name ? t.name.replace(/\s*\(\d+\s*Foto\)/i, '') : 'PHOTOBOOTH MEMORIES').toUpperCase();
+    const studioFooter = isGrid2x2 ? 'BASKARA STUDIO' : 'RTFTP PHOTO STUDIO';
+    const now = new Date();
+    const dateText = isGrid2x2
+      ? now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')
+      : now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+
+    const slotCount = t.slots || (isGrid2x2 ? 4 : 3);
+    const sPath = this.getSessionPath();
+    const stId = this.getStationId();
+    const sQuery = sPath
+      ? `?session=${encodeURIComponent(sPath)}`
+      : (stId ? `?station=${encodeURIComponent(stId)}` : '');
+
+    const renderSlot = (idx) => {
+      const item = items[idx];
+      if (item) {
+        const pSrc = `/api/photo/${encodeURIComponent(item.filename)}/thumb${sQuery}`;
+        const curY = typeof item.cropOffsetY === 'number' ? item.cropOffsetY : 50;
+        return `
+          <div class="authentic-slot-box slots-${slotCount} ${isMini ? 'mini-slot' : ''}" style="border-color: ${borderColor};" data-photo-filename="${escapeHtml(item.filename)}">
+            <img src="${pSrc}" class="authentic-slot-img filter-${filter}" style="object-position: 50% ${curY}%;" alt="Slot ${idx + 1}" draggable="false"/>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="authentic-slot-box slots-${slotCount} ${isMini ? 'mini-slot' : ''}" style="border-color: ${borderColor}; border-style: dashed; background: rgba(125,125,125,0.08);">
+            <span class="authentic-slot-empty" style="color: ${subTextColor}; opacity: 0.5;">#${idx + 1}</span>
+          </div>
+        `;
+      }
+    };
+
+    if (isGrid2x2) {
+      const baskaraNums = ['-01', '02', '03', '04'];
+      return `
+        <div class="authentic-strip-wrapper authentic-grid-4r ${isMini ? 'mini-preview' : ''}" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+          <div class="authentic-grid-header">
+            <span class="authentic-baskara-bar"></span>
+            <span class="authentic-grid-title" style="color: ${textColor};">${studioFooter}</span>
+          </div>
+          <div class="authentic-grid-slots">
+            ${[0, 1, 2, 3].map(i => {
+              const item = items[i];
+              if (item) {
+                const pSrc = `/api/photo/${encodeURIComponent(item.filename)}/thumb${sQuery}`;
+                const curY = typeof item.cropOffsetY === 'number' ? item.cropOffsetY : 50;
+                return `
+                  <div class="authentic-grid-slot-item" style="border-color: ${borderColor};" data-photo-filename="${escapeHtml(item.filename)}">
+                    <img src="${pSrc}" class="authentic-slot-img filter-${filter}" style="object-position: 50% ${curY}%;" alt="Slot ${i + 1}" draggable="false"/>
+                    ${!isMini ? `
+                    <div class="authentic-grid-slot-meta">
+                      <span class="authentic-grid-slot-num" style="color: ${textColor};">${baskaraNums[i]}</span>
+                      <span class="authentic-grid-slot-date" style="color: ${subTextColor};">${dateText}</span>
+                    </div>` : ''}
+                  </div>
+                `;
+              } else {
+                return `
+                  <div class="authentic-grid-slot-item" style="border-color: ${borderColor}; border-style: dashed; display: flex; align-items: center; justify-content: center; min-height: ${isMini ? '32px' : '80px'};">
+                    <span class="authentic-slot-empty" style="color: ${subTextColor}; opacity: 0.5;">${baskaraNums[i]}</span>
+                  </div>
+                `;
+              }
+            }).join('')}
+          </div>
+          ${isCustom && t.overlayUrl ? `<img src="${t.overlayUrl}" class="authentic-overlay-img" alt="Overlay"/>` : ''}
+        </div>
+      `;
+    }
+
+    if (isSingle) {
+      return `
+        <div class="authentic-strip-wrapper authentic-single-strip ${isMini ? 'mini-preview' : ''}" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+          <div class="authentic-strip-content">
+            <div class="authentic-strip-header">
+              <div class="authentic-strip-event" style="color: ${textColor};">${eventTitle}</div>
+              <div class="authentic-strip-divider" style="background-color: ${accentColor};"></div>
+            </div>
+            <div class="authentic-slots-col">
+              ${Array.from({ length: slotCount }).map((_, i) => renderSlot(i)).join('')}
+            </div>
+            <div class="authentic-strip-footer">
+              <div class="authentic-strip-studio" style="color: ${subTextColor};">${studioFooter}</div>
+              <div class="authentic-strip-date" style="color: ${accentColor};">${dateText}</div>
+            </div>
+          </div>
+          ${isCustom && t.overlayUrl ? `<img src="${t.overlayUrl}" class="authentic-overlay-img" alt="Overlay"/>` : ''}
+        </div>
+      `;
+    }
+
+    // Double 4R
+    const columnHtml = `
+      <div class="authentic-strip-header">
+        <div class="authentic-strip-event" style="color: ${textColor};">${eventTitle}</div>
+        <div class="authentic-strip-divider" style="background-color: ${accentColor};"></div>
+      </div>
+      <div class="authentic-slots-col">
+        ${Array.from({ length: slotCount }).map((_, i) => renderSlot(i)).join('')}
+      </div>
+      <div class="authentic-strip-footer">
+        <div class="authentic-strip-studio" style="color: ${subTextColor};">${studioFooter}</div>
+        <div class="authentic-strip-date" style="color: ${accentColor};">${dateText}</div>
+      </div>
+    `;
+
+    return `
+      <div class="authentic-strip-wrapper authentic-double-4r ${isMini ? 'mini-preview' : ''}" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+        <div class="authentic-strip-half left-half">
+          ${columnHtml}
+        </div>
+        <div class="authentic-cutter-line" style="border-right-color: ${cuttingColor};">
+          <span class="authentic-cutter-glyph" style="color: ${cuttingColor};">&#9986;</span>
+        </div>
+        <div class="authentic-strip-half right-half">
+          ${columnHtml}
+        </div>
+        ${isCustom && t.overlayUrl ? `<img src="${t.overlayUrl}" class="authentic-overlay-img" alt="Overlay"/>` : ''}
+      </div>
+    `;
+  }
+
+  renderTemplateTab() {
+    const emptyNotice = document.getElementById('template-tab-empty-notice');
+    const workspaceGrid = document.getElementById('template-workspace-grid');
+    const showcaseContainer = document.getElementById('template-showcase-container');
+
+    const count = this.totalItems;
+
+    if (count === 0) {
+      if (emptyNotice) emptyNotice.style.display = 'flex';
+      if (workspaceGrid) workspaceGrid.style.display = 'none';
+      if (showcaseContainer) showcaseContainer.style.display = 'none';
+      return;
+    }
+
+    if (emptyNotice) emptyNotice.style.display = 'none';
+    if (workspaceGrid) workspaceGrid.style.display = 'grid';
+    if (showcaseContainer) showcaseContainer.style.display = 'block';
+
+    this.renderTemplateTabActiveCanvas();
+    this.renderTemplateTabSlotsList();
+    this.updateCopiesUI();
+    this.renderTemplateShowcase(this.showcaseCategory);
+  }
+
+  renderTemplateTabActiveCanvas() {
+    const canvas = document.getElementById('template-tab-active-canvas');
+    if (!canvas) return;
+
+    const t = this.templates.find(item => item.id === this.activeTemplateId) || this.templates[0] || {};
+    const items = Array.from(this.selections.values());
+
+    const titleEl = document.getElementById('template-hero-name');
+    const formatEl = document.getElementById('template-hero-format');
+
+    if (titleEl) {
+      titleEl.textContent = t.name || 'Classic Photostrip';
+    }
+
+    if (formatEl) {
+      if (t.layout === 'grid_2x2') {
+        formatEl.textContent = 'Format: 4R Grid Postcard (2x2 Kolom)';
+      } else if (t.outputFormat === 'single_strip') {
+        formatEl.textContent = `Format: Single Strip 2x6" (${t.slots || 3} Foto)`;
+      } else {
+        formatEl.textContent = `Format: Double Strip 4R (2 Strip 2x6") - ${t.slots || 3} Foto`;
+      }
+    }
+
+    canvas.innerHTML = this.buildAuthenticStripHTML(t, items, this.activeFilter, false);
+  }
+
+  renderTemplateTabSlotsList() {
+    const list = document.getElementById('template-tab-slots-list');
+    const badge = document.getElementById('template-tab-slot-count-badge');
+    if (!list) return;
+
+    list.innerHTML = '';
+    const items = Array.from(this.selections.values());
+
+    if (badge) {
+      badge.textContent = `${items.length} / ${this.maxSlots} Foto Terisi`;
+    }
+
+    const sPath = this.getSessionPath();
+    const stId = this.getStationId();
+    const sQuery = sPath
+      ? `?session=${encodeURIComponent(sPath)}`
+      : (stId ? `?station=${encodeURIComponent(stId)}` : '');
+
+    items.forEach((item, index) => {
+      const isFirst = index === 0;
+      const isLast = index === items.length - 1;
+      const curY = typeof item.cropOffsetY === 'number' ? item.cropOffsetY : 50;
+      const pSrc = `/api/photo/${encodeURIComponent(item.filename)}/thumb${sQuery}`;
+
+      const row = document.createElement('div');
+      row.className = 'template-slot-item';
+      row.setAttribute('data-photo-filename', item.filename);
+
+      row.innerHTML = `
+        <span class="template-slot-badge">#${index + 1}</span>
+        <img class="template-slot-thumb filter-${this.activeFilter}" src="${pSrc}" style="object-position: 50% ${curY}%;" alt="Slot ${index + 1}"/>
+        <div class="template-slot-details">
+          <div class="template-slot-filename" title="${escapeHtml(item.filename)}">${escapeHtml(item.filename)}</div>
+          <div class="template-slot-framing-row">
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Posisi:</span>
+            <button type="button" class="btn-framing-pill ${curY <= 25 ? 'active' : ''}" data-pos="15" title="Fokus Atas (Kepala)">Atas</button>
+            <button type="button" class="btn-framing-pill ${curY > 25 && curY < 75 ? 'active' : ''}" data-pos="50" title="Posisi Simetris">Tengah</button>
+            <button type="button" class="btn-framing-pill ${curY >= 75 ? 'active' : ''}" data-pos="85" title="Fokus Bawah (Badan)">Bawah</button>
+          </div>
+        </div>
+        <div class="template-slot-actions">
+          <button type="button" class="btn-slot-icon btn-move-up" title="Pindah ke atas" ${isFirst ? 'disabled' : ''} aria-label="Pindah ke atas">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          </button>
+          <button type="button" class="btn-slot-icon btn-move-down" title="Pindah ke bawah" ${isLast ? 'disabled' : ''} aria-label="Pindah ke bawah">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <button type="button" class="btn-slot-icon btn-slot-remove" title="Keluarkan dari strip" aria-label="Hapus dari strip">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      `;
+
+      row.querySelector('.btn-move-up').addEventListener('click', () => {
+        this.moveSlot(index, index - 1);
+      });
+      row.querySelector('.btn-move-down').addEventListener('click', () => {
+        this.moveSlot(index, index + 1);
+      });
+      row.querySelector('.btn-slot-remove').addEventListener('click', async () => {
+        await this.toggleSelect(item.filename);
+      });
+
+      row.querySelectorAll('.btn-framing-pill').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const pos = parseInt(btn.getAttribute('data-pos'), 10);
+          await this.setPhotoPosition(item.filename, pos);
+        });
+      });
+
+      list.appendChild(row);
+    });
+  }
+
+  renderTemplateShowcase(category = 'all') {
+    const grid = document.getElementById('template-tab-showcase-grid');
+    if (!grid || this.templates.length === 0) return;
+
+    grid.innerHTML = '';
+    const items = Array.from(this.selections.values());
+
+    let filtered = this.templates;
+    if (category === 'double') {
+      filtered = this.templates.filter(t => t.type !== 'custom' && t.outputFormat !== 'single_strip' && t.layout !== 'grid_2x2');
+    } else if (category === 'single') {
+      filtered = this.templates.filter(t => t.type !== 'custom' && t.outputFormat === 'single_strip');
+    } else if (category === 'grid') {
+      filtered = this.templates.filter(t => t.type !== 'custom' && t.layout === 'grid_2x2');
+    } else if (category === 'custom') {
+      filtered = this.templates.filter(t => t.type === 'custom');
+    }
+
+    const countAllEl = document.getElementById('cat-count-all');
+    if (countAllEl) {
+      countAllEl.textContent = this.templates.length;
+    }
+
+    filtered.forEach(t => {
+      const card = document.createElement('div');
+      const isActive = t.id === this.activeTemplateId;
+      card.className = `showcase-template-card ${isActive ? 'active' : ''}`;
+      card.setAttribute('data-template-id', t.id);
+
+      const isGrid = t.layout === 'grid_2x2';
+      const isSingle = t.outputFormat === 'single_strip';
+      const formatTag = isGrid ? 'Grid 4R (4 Foto)' : (isSingle ? `Single 2x6 (${t.slots || 3} Foto)` : `Double 4R (${t.slots || 3} Foto)`);
+
+      const miniHtml = this.buildAuthenticStripHTML(t, items, this.activeFilter, true);
+
+      card.innerHTML = `
+        ${isActive ? '<span class="showcase-card-badge-active">Aktif</span>' : ''}
+        <div class="showcase-card-mini-strip">
+          ${miniHtml}
+        </div>
+        <div class="showcase-card-meta">
+          <span class="showcase-card-name" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</span>
+          <span class="showcase-card-tag">${formatTag}</span>
+        </div>
+      `;
+
+      card.addEventListener('click', () => {
+        if (this.activeTemplateId !== t.id) {
+          this.userSelectedTemplateManually = true;
+          this.activeTemplateId = t.id;
+          this.renderTemplateTab();
+        }
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
   async submitOrder() {
     if (this.totalItems === 0) return;
 
     const modalBtn = document.getElementById('modal-submit-btn');
     const liveBtn = document.getElementById('btn-live-print-submit');
+    const tabPrintBtn = document.getElementById('btn-tab-confirm-print');
 
     try {
       if (modalBtn) {
@@ -1168,6 +1647,10 @@ class RTFTPSelection {
         liveBtn.disabled = true;
         liveBtn.innerHTML = '<span>Memproses Render Strip...</span>';
       }
+      if (tabPrintBtn) {
+        tabPrintBtn.disabled = true;
+        tabPrintBtn.innerHTML = `<span>Memproses Cetak ${this.printCopies} Lembar...</span>`;
+      }
 
       const items = Array.from(this.selections.values());
       const res = await window.api.exportPrint(
@@ -1177,12 +1660,13 @@ class RTFTPSelection {
         {
           templateId: this.activeTemplateId,
           filter: this.activeFilter,
+          copies: this.printCopies,
           photoItems: items
         }
       );
 
       if (res.success) {
-        window.showToast('Foto Strip Photobooth berhasil disusun dan siap dicetak!', 'success');
+        window.showToast(`Foto Strip Photobooth berhasil disusun dan siap dicetak (${this.printCopies} Lembar)!`, 'success', 5000);
         this.closeModal();
         this.closeDrawer();
       } else {
@@ -1195,7 +1679,12 @@ class RTFTPSelection {
         modalBtn.disabled = false;
         modalBtn.textContent = 'Konfirmasi & Siapkan Cetak Strip';
       }
+      if (tabPrintBtn) {
+        tabPrintBtn.disabled = false;
+        this.updateCopiesUI();
+      }
       this.renderLiveStrip();
+      this.renderTemplateTab();
     }
   }
 }
