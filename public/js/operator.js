@@ -3619,6 +3619,130 @@ class RTFTPOperator {
   }
 
   /**
+   * Render Authentic Physical Photostrip Preview (Real DOM Components with Demo Portraits)
+   */
+  renderAuthenticTemplatePreview(tpl, config = {}) {
+    const isGrid2x2 = tpl.layout === 'grid_2x2';
+    const isSingle = tpl.outputFormat === 'single_strip';
+    const isDouble = !isGrid2x2 && !isSingle;
+    const isCustom = tpl.type === 'custom';
+
+    const bgColor = /^#[0-9a-f]{6}$/i.test(tpl.bgColor || '') ? tpl.bgColor : '#ffffff';
+    const textColor = tpl.textColor || '#18181b';
+    const subTextColor = tpl.subTextColor || '#71717a';
+    const accentColor = tpl.accentColor || '#2563eb';
+    const borderColor = tpl.frameBorderColor || '#e4e4e7';
+    const cuttingColor = tpl.cuttingColor || (tpl.theme === 'dark' ? '#3f3f46' : '#cbd5e1');
+
+    const eventTitle = escapeHtml((config && config.eventTitle) || 'PHOTOBOOTH MEMORIES').toUpperCase();
+    const studioFooter = escapeHtml((config && config.studioFooter) || 'RTFTP PHOTO STUDIO').toUpperCase();
+    const showDate = config ? config.showDate !== false : true;
+    const dateText = showDate ? new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : '';
+
+    const demoPhotos = [
+      '/demo_assets/STUDIO_001_16x9_MasterSet.jpg',
+      '/demo_assets/STUDIO_002_16x9_FamilyGroup.jpg',
+      '/demo_assets/STUDIO_003_16x9_FashionRunway.jpg',
+      '/demo_assets/STUDIO_005_16x9_BeautyCinema.jpg'
+    ];
+
+    const slotsCount = tpl.slots || (isGrid2x2 ? 4 : 3);
+
+    const renderSlotsHtml = () => {
+      let html = '';
+      for (let i = 0; i < slotsCount; i++) {
+        const pSrc = demoPhotos[i % demoPhotos.length];
+        html += `
+          <div class="authentic-slot-box slots-${slotsCount}" style="border-color: ${borderColor};">
+            <img src="${pSrc}" class="authentic-slot-img" alt="Foto Demo ${i + 1}" loading="lazy"/>
+          </div>
+        `;
+      }
+      return html;
+    };
+
+    let innerStrip = '';
+
+    if (isGrid2x2) {
+      innerStrip = `
+        <div class="authentic-strip-wrapper authentic-grid-4r" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+          <div class="authentic-grid-header">
+            <span class="authentic-baskara-bar"></span>
+            <span class="authentic-grid-title" style="color: ${textColor};">${studioFooter || 'BASKARA STUDIO'}</span>
+          </div>
+          <div class="authentic-grid-slots">
+            ${[0, 1, 2, 3].map(i => `
+              <div class="authentic-grid-slot-item" style="border-color: ${borderColor};">
+                <img src="${demoPhotos[i % demoPhotos.length]}" class="authentic-slot-img" alt="Demo ${i+1}"/>
+                <div class="authentic-grid-slot-meta">
+                  <span class="authentic-grid-slot-num" style="color: ${textColor};">${['-01', '02', '03', '04'][i]}</span>
+                  <span class="authentic-grid-slot-date" style="color: ${subTextColor};">${dateText || '02.10.2026'}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          ${isCustom && tpl.overlayUrl ? `<img src="${tpl.overlayUrl}" class="authentic-overlay-img" alt="Frame Overlay"/>` : ''}
+        </div>
+      `;
+    } else if (isSingle) {
+      innerStrip = `
+        <div class="authentic-strip-wrapper authentic-single-strip" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+          <div class="authentic-strip-content">
+            <div class="authentic-strip-header">
+              <div class="authentic-strip-event" style="color: ${textColor};">${eventTitle}</div>
+              <div class="authentic-strip-divider" style="background-color: ${accentColor};"></div>
+            </div>
+            <div class="authentic-slots-col">
+              ${renderSlotsHtml()}
+            </div>
+            <div class="authentic-strip-footer">
+              <div class="authentic-strip-studio" style="color: ${subTextColor};">${studioFooter}</div>
+              ${showDate ? `<div class="authentic-strip-date" style="color: ${accentColor};">${dateText}</div>` : ''}
+            </div>
+          </div>
+          ${isCustom && tpl.overlayUrl ? `<img src="${tpl.overlayUrl}" class="authentic-overlay-img" alt="Frame Overlay"/>` : ''}
+        </div>
+      `;
+    } else {
+      // Double 4R
+      const columnHtml = `
+        <div class="authentic-strip-header">
+          <div class="authentic-strip-event" style="color: ${textColor};">${eventTitle}</div>
+          <div class="authentic-strip-divider" style="background-color: ${accentColor};"></div>
+        </div>
+        <div class="authentic-slots-col">
+          ${renderSlotsHtml()}
+        </div>
+        <div class="authentic-strip-footer">
+          <div class="authentic-strip-studio" style="color: ${subTextColor};">${studioFooter}</div>
+          ${showDate ? `<div class="authentic-strip-date" style="color: ${accentColor};">${dateText}</div>` : ''}
+        </div>
+      `;
+
+      innerStrip = `
+        <div class="authentic-strip-wrapper authentic-double-4r" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+          <div class="authentic-strip-half left-half">
+            ${columnHtml}
+          </div>
+          <div class="authentic-cutter-line" style="border-right-color: ${cuttingColor};">
+            <span class="authentic-cutter-glyph" style="color: ${cuttingColor};">&#9986;</span>
+          </div>
+          <div class="authentic-strip-half right-half">
+            ${columnHtml}
+          </div>
+          ${isCustom && tpl.overlayUrl ? `<img src="${tpl.overlayUrl}" class="authentic-overlay-img" alt="Frame Overlay"/>` : ''}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="authentic-strip-container">
+        ${innerStrip}
+      </div>
+    `;
+  }
+
+  /**
    * Load and Render Photostrip Templates & Active Settings
    */
   async loadPhotostripTemplates() {
@@ -3680,45 +3804,16 @@ class RTFTPOperator {
         card.style.gap = '14px';
         card.style.position = 'relative';
 
-        const isDouble = tpl.outputFormat !== 'single_strip';
+        const isGrid2x2 = tpl.layout === 'grid_2x2';
+        const isDouble = tpl.outputFormat !== 'single_strip' && !isGrid2x2;
         const isCustom = tpl.type === 'custom';
-        const formatBadge = isDouble ? 'Double 4R' : 'Single Strip';
+        const formatBadge = isGrid2x2 ? 'Grid 4R Postcard' : (isDouble ? 'Double 4R' : 'Single Strip');
         const originBadge = isCustom ? 'Kustom PNG' : 'Bawaan Studio';
         const originBg = isCustom ? 'var(--color-purple-bg)' : 'var(--color-blue-bg)';
         const originColor = isCustom ? 'var(--color-purple-text)' : 'var(--color-blue-text)';
         const originBorder = isCustom ? 'var(--color-purple-border)' : 'var(--color-blue-border)';
-        const frameBackground = /^#[0-9a-f]{6}$/i.test(tpl.bgColor || '') ? tpl.bgColor : '#ffffff';
 
-        // Miniature Frame Preview
-        const slotRects = [];
-        for (let i = 0; i < (tpl.slots || 3); i++) {
-          slotRects.push(`
-            <div style="background: rgba(125, 125, 125, 0.2); border: 1px dashed rgba(255, 255, 255, 0.3); border-radius: 2px; flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
-              Foto ${i + 1}
-            </div>
-          `);
-        }
-
-        const miniFramePreview = `
-          <div style="display: flex; gap: 8px; justify-content: center; padding: 14px; background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
-            <div style="width: 58px; height: 160px; background: ${frameBackground}; border-radius: 3px; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;">
-              ${slotRects.join('')}
-              <div style="height: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <div style="width: 80%; height: 3px; background: rgba(0,0,0,0.25); border-radius: 1px; margin-bottom: 2px;"></div>
-                <div style="width: 50%; height: 2px; background: rgba(0,0,0,0.15); border-radius: 1px;"></div>
-              </div>
-            </div>
-            ${isDouble ? `
-              <div style="width: 58px; height: 160px; background: ${frameBackground}; border-radius: 3px; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;">
-                ${slotRects.join('')}
-                <div style="height: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                  <div style="width: 80%; height: 3px; background: rgba(0,0,0,0.25); border-radius: 1px; margin-bottom: 2px;"></div>
-                  <div style="width: 50%; height: 2px; background: rgba(0,0,0,0.15); border-radius: 1px;"></div>
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        `;
+        const miniFramePreview = this.renderAuthenticTemplatePreview(tpl, config);
 
         card.innerHTML = `
           <div>

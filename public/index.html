@@ -151,6 +151,12 @@
           </select>
         </div>
 
+        <div class="live-strip-template-tray-wrapper">
+          <div id="live-strip-template-tray" class="live-strip-template-tray">
+            <!-- Populated dynamically with authentic template cards -->
+          </div>
+        </div>
+
         <div class="live-strip-control-row">
           <label class="live-strip-label">Nuansa Warna Foto:</label>
           <div class="photostrip-filter-chips live-filter-chips">
@@ -252,8 +258,11 @@
                 <div class="spinner"></div>
                 <span>Membuat Pratinjau Strip...</span>
               </div>
+              <div id="photostrip-modal-authentic-canvas" class="photostrip-modal-authentic-canvas">
+                <!-- Rendered dynamically as authentic physical DOM strip / sheet -->
+              </div>
               <img id="photostrip-preview-img" class="photostrip-preview-img" src="" alt="Pratinjau Foto Strip" style="display: none;"/>
-              <div id="photostrip-preview-placeholder" class="photostrip-preview-placeholder">
+              <div id="photostrip-preview-placeholder" class="photostrip-preview-placeholder" style="display: none;">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-dim); margin-bottom: 8px;">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                   <circle cx="8.5" cy="8.5" r="1.5"></circle>

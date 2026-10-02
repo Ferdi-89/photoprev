@@ -2,6 +2,16 @@
  * RTFTP Studio - Photostrip Selection & Builder Controller
  */
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 class RTFTPSelection {
   constructor() {
     this.selections = new Map(); // filename -> { filename, slot, order, sizes, notes, selectedAt }
@@ -237,6 +247,81 @@ class RTFTPSelection {
       select.innerHTML = html;
       select.value = this.activeTemplateId;
     });
+
+    // Populate visual authentic template tray
+    const tray = document.getElementById('live-strip-template-tray');
+    if (tray && this.templates.length > 0) {
+      tray.innerHTML = '';
+      this.templates.forEach(t => {
+        const card = document.createElement('div');
+        const isActive = t.id === this.activeTemplateId;
+        card.className = `template-tray-card ${isActive ? 'active' : ''}`;
+        card.setAttribute('data-template-id', t.id);
+        card.title = `${t.name} (${t.slots} Foto)`;
+
+        const isDouble = t.outputFormat !== 'single_strip' && t.layout !== 'grid_2x2';
+        const isGrid = t.layout === 'grid_2x2';
+        const bg = /^#[0-9a-f]{6}$/i.test(t.bgColor || '') ? t.bgColor : '#ffffff';
+        const border = t.frameBorderColor || 'rgba(0,0,0,0.15)';
+
+        let miniPreview = '';
+        if (isGrid) {
+          miniPreview = `
+            <div style="width: 38px; height: 50px; background: ${bg}; border: 1px solid ${border}; border-radius: 2px; padding: 2px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; pointer-events: none;">
+              <div style="background: rgba(125,125,125,0.3); border-radius: 1px;"></div>
+              <div style="background: rgba(125,125,125,0.3); border-radius: 1px;"></div>
+              <div style="background: rgba(125,125,125,0.3); border-radius: 1px;"></div>
+              <div style="background: rgba(125,125,125,0.3); border-radius: 1px;"></div>
+            </div>
+          `;
+        } else if (isDouble) {
+          const slotsHtml = Array.from({ length: t.slots || 3 }).map(() =>
+            `<div style="background: rgba(125,125,125,0.3); border-radius: 1px; flex: 1;"></div>`
+          ).join('');
+          miniPreview = `
+            <div style="width: 38px; height: 50px; background: ${bg}; border: 1px solid ${border}; border-radius: 2px; padding: 2px 1px; display: flex; gap: 1px; box-sizing: border-box; pointer-events: none;">
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 1px;">${slotsHtml}</div>
+              <div style="border-right: 1px dashed ${t.cuttingColor || 'rgba(125,125,125,0.4)'};"></div>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 1px;">${slotsHtml}</div>
+            </div>
+          `;
+        } else {
+          // Single Strip
+          const slotsHtml = Array.from({ length: t.slots || 3 }).map(() =>
+            `<div style="background: rgba(125,125,125,0.3); border-radius: 1px; flex: 1;"></div>`
+          ).join('');
+          miniPreview = `
+            <div style="width: 20px; height: 50px; background: ${bg}; border: 1px solid ${border}; border-radius: 2px; padding: 2px 1px; display: flex; flex-direction: column; gap: 1.5px; box-sizing: border-box; pointer-events: none;">
+              ${slotsHtml}
+            </div>
+          `;
+        }
+
+        const cleanName = (t.name || '').split('(')[0].trim();
+        card.innerHTML = `
+          ${miniPreview}
+          <span class="template-tray-card-name">${cleanName}</span>
+        `;
+
+        card.addEventListener('click', () => {
+          if (this.activeTemplateId !== t.id) {
+            this.userSelectedTemplateManually = true;
+            this.activeTemplateId = t.id;
+            this.maxSlots = t.slots || 3;
+            selects.forEach(s => { s.value = t.id; });
+            tray.querySelectorAll('.template-tray-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            this.enforceSlotLimits();
+            this.renderLiveStrip();
+            this.renderModalAuthenticCanvas();
+            this.updateSelectionSummary();
+            this.requestPreview();
+          }
+        });
+
+        tray.appendChild(card);
+      });
+    }
   }
 
   getSessionPath() {
@@ -458,6 +543,10 @@ class RTFTPSelection {
       img.style.objectPosition = `50% ${item.cropOffsetY}%`;
     });
 
+    document.querySelectorAll(`[data-photo-filename="${CSS.escape(filename)}"] .authentic-slot-img`).forEach(img => {
+      img.style.objectPosition = `50% ${item.cropOffsetY}%`;
+    });
+
     // Update active pill button state in both sidebar and modal
     document.querySelectorAll(`[data-photo-filename="${CSS.escape(filename)}"] .btn-framing-pill`).forEach(btn => {
       const pos = parseInt(btn.getAttribute('data-pos'), 10);
@@ -466,6 +555,8 @@ class RTFTPSelection {
                        (pos === 85 && item.cropOffsetY >= 75);
       btn.classList.toggle('active', isTarget);
     });
+
+    this.renderModalAuthenticCanvas();
 
     const items = Array.from(this.selections.values());
     if (window.api.setSelectionsBatch) {
@@ -499,6 +590,20 @@ class RTFTPSelection {
     card.style.color = t.textColor || '#18181b';
     card.style.borderColor = t.frameBorderColor || '#e4e4e7';
 
+    // Custom transparent PNG overlay
+    let overlayEl = card.querySelector('.live-strip-custom-overlay');
+    if (t.type === 'custom' && t.overlayUrl) {
+      if (!overlayEl) {
+        overlayEl = document.createElement('img');
+        overlayEl.className = 'live-strip-custom-overlay authentic-overlay-img';
+        card.appendChild(overlayEl);
+      }
+      overlayEl.src = t.overlayUrl;
+      overlayEl.style.display = 'block';
+    } else if (overlayEl) {
+      overlayEl.style.display = 'none';
+    }
+
     // Update header event title and footer texts
     if (brandEvent) {
       if (isGrid2x2) {
@@ -528,10 +633,13 @@ class RTFTPSelection {
       ? `?session=${encodeURIComponent(sPath)}`
       : (stId ? `?station=${encodeURIComponent(stId)}` : '');
 
+    const baskaraNums = ['-01', '02', '03', '04'];
+
     for (let i = 0; i < slotCount; i++) {
       const slotEl = document.createElement('div');
       slotEl.className = `live-strip-slot ${slotCount === 4 ? 'slot-count-4' : ''}`;
       slotEl.setAttribute('data-slot-index', i);
+      const slotLabel = isGrid2x2 ? baskaraNums[i] : '#' + (i + 1);
 
       const photoItem = items[i];
 
@@ -545,7 +653,7 @@ class RTFTPSelection {
 
         slotEl.innerHTML = `
           <img src="${photoSrc}" class="slot-photo-img filter-${this.activeFilter}" style="object-position: 50% ${curY}%;" alt="Slot ${i + 1}" draggable="false" />
-          <span class="slot-badge">#${i + 1}</span>
+          <span class="slot-badge">${slotLabel}</span>
           <div class="slot-filled-overlay">
             <div class="slot-framing-toolbar">
               <span class="framing-tag">Pos:</span>
@@ -635,11 +743,11 @@ class RTFTPSelection {
               <polyline points="21 15 16 10 5 21"></polyline>
             </svg>
           </div>
-          <span class="slot-empty-label">Slot #${i + 1}</span>
+          <span class="slot-empty-label">${isGrid2x2 ? 'Slot ' + baskaraNums[i] : 'Slot #' + (i + 1)}</span>
           <span class="slot-empty-hint">Pilih foto dari galeri</span>
         `;
         slotEl.addEventListener('click', () => {
-          window.showToast(`Klik salah satu foto di galeri untuk mengisi Slot #${i + 1}`, 'info', 2500);
+          window.showToast(`Klik salah satu foto di galeri untuk mengisi ${isGrid2x2 ? 'Slot ' + baskaraNums[i] : 'Slot #' + (i + 1)}`, 'info', 2500);
         });
       }
 
@@ -672,6 +780,16 @@ class RTFTPSelection {
         printBtn.innerHTML = `<span>Cetak Foto Strip Sekarang</span>`;
       }
     }
+
+    // Sync template tray active class
+    const tray = document.getElementById('live-strip-template-tray');
+    if (tray) {
+      tray.querySelectorAll('.template-tray-card').forEach(c => {
+        c.classList.toggle('active', c.getAttribute('data-template-id') === this.activeTemplateId);
+      });
+    }
+
+    this.renderModalAuthenticCanvas();
   }
 
   openModal() {
@@ -814,6 +932,155 @@ class RTFTPSelection {
     });
 
     this.updateModalSummary();
+    this.renderModalAuthenticCanvas();
+  }
+
+  /**
+   * Render Authentic Physical Photostrip DOM Component inside Modal Preview Frame
+   */
+  renderModalAuthenticCanvas() {
+    const canvas = document.getElementById('photostrip-modal-authentic-canvas');
+    if (!canvas) return;
+
+    const t = this.templates.find(item => item.id === this.activeTemplateId) || this.templates[0] || {};
+    const items = Array.from(this.selections.values());
+    const isGrid2x2 = t.layout === 'grid_2x2';
+    const isSingle = t.outputFormat === 'single_strip';
+    const isDouble = !isGrid2x2 && !isSingle;
+    const isCustom = t.type === 'custom';
+
+    const bgColor = /^#[0-9a-f]{6}$/i.test(t.bgColor || '') ? t.bgColor : '#ffffff';
+    const textColor = t.textColor || '#18181b';
+    const subTextColor = t.subTextColor || '#71717a';
+    const accentColor = t.accentColor || '#2563eb';
+    const borderColor = t.frameBorderColor || '#e4e4e7';
+    const cuttingColor = t.cuttingColor || (t.theme === 'dark' ? '#3f3f46' : '#cbd5e1');
+
+    const eventTitle = (t.name ? t.name.replace(/\s*\(\d+\s*Foto\)/i, '') : 'PHOTOBOOTH MEMORIES').toUpperCase();
+    const studioFooter = isGrid2x2 ? 'BASKARA STUDIO' : 'RTFTP PHOTO STUDIO';
+    const now = new Date();
+    const dateText = isGrid2x2
+      ? now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')
+      : now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+
+    const slotCount = t.slots || (isGrid2x2 ? 4 : 3);
+    const sPath = this.getSessionPath();
+    const stId = this.getStationId();
+    const sQuery = sPath
+      ? `?session=${encodeURIComponent(sPath)}`
+      : (stId ? `?station=${encodeURIComponent(stId)}` : '');
+
+    const renderSlotItem = (idx) => {
+      const item = items[idx];
+      if (item) {
+        const pSrc = `/api/photo/${encodeURIComponent(item.filename)}/thumb${sQuery}`;
+        const curY = typeof item.cropOffsetY === 'number' ? item.cropOffsetY : 50;
+        return `
+          <div class="authentic-slot-box slots-${slotCount}" style="border-color: ${borderColor};" data-photo-filename="${escapeHtml(item.filename)}">
+            <img src="${pSrc}" class="authentic-slot-img filter-${this.activeFilter}" style="object-position: 50% ${curY}%;" alt="Slot ${idx + 1}" draggable="false"/>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="authentic-slot-box slots-${slotCount}" style="border-color: ${borderColor}; border-style: dashed; background: rgba(125,125,125,0.06);">
+            <span class="authentic-slot-empty" style="color: ${subTextColor}; opacity: 0.5;">Slot ${idx + 1}</span>
+          </div>
+        `;
+      }
+    };
+
+    let innerHtml = '';
+
+    if (isGrid2x2) {
+      const baskaraNums = ['-01', '02', '03', '04'];
+      innerHtml = `
+        <div class="authentic-strip-wrapper authentic-grid-4r" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+          <div class="authentic-grid-header">
+            <span class="authentic-baskara-bar"></span>
+            <span class="authentic-grid-title" style="color: ${textColor};">${studioFooter}</span>
+          </div>
+          <div class="authentic-grid-slots">
+            ${[0, 1, 2, 3].map(i => {
+              const item = items[i];
+              if (item) {
+                const pSrc = `/api/photo/${encodeURIComponent(item.filename)}/thumb${sQuery}`;
+                const curY = typeof item.cropOffsetY === 'number' ? item.cropOffsetY : 50;
+                return `
+                  <div class="authentic-grid-slot-item" style="border-color: ${borderColor};" data-photo-filename="${escapeHtml(item.filename)}">
+                    <img src="${pSrc}" class="authentic-slot-img filter-${this.activeFilter}" style="object-position: 50% ${curY}%;" alt="Slot ${i + 1}" draggable="false"/>
+                    <div class="authentic-grid-slot-meta">
+                      <span class="authentic-grid-slot-num" style="color: ${textColor};">${baskaraNums[i]}</span>
+                      <span class="authentic-grid-slot-date" style="color: ${subTextColor};">${dateText}</span>
+                    </div>
+                  </div>
+                `;
+              } else {
+                return `
+                  <div class="authentic-grid-slot-item" style="border-color: ${borderColor}; border-style: dashed; display: flex; align-items: center; justify-content: center; min-height: 80px;">
+                    <span class="authentic-slot-empty" style="color: ${subTextColor}; opacity: 0.5;">Slot ${baskaraNums[i]}</span>
+                  </div>
+                `;
+              }
+            }).join('')}
+          </div>
+          ${isCustom && t.overlayUrl ? `<img src="${t.overlayUrl}" class="authentic-overlay-img" alt="Frame Overlay"/>` : ''}
+        </div>
+      `;
+    } else if (isSingle) {
+      innerHtml = `
+        <div class="authentic-strip-wrapper authentic-single-strip" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+          <div class="authentic-strip-content">
+            <div class="authentic-strip-header">
+              <div class="authentic-strip-event" style="color: ${textColor};">${eventTitle}</div>
+              <div class="authentic-strip-divider" style="background-color: ${accentColor};"></div>
+            </div>
+            <div class="authentic-slots-col">
+              ${Array.from({ length: slotCount }).map((_, i) => renderSlotItem(i)).join('')}
+            </div>
+            <div class="authentic-strip-footer">
+              <div class="authentic-strip-studio" style="color: ${subTextColor};">${studioFooter}</div>
+              <div class="authentic-strip-date" style="color: ${accentColor};">${dateText}</div>
+            </div>
+          </div>
+          ${isCustom && t.overlayUrl ? `<img src="${t.overlayUrl}" class="authentic-overlay-img" alt="Frame Overlay"/>` : ''}
+        </div>
+      `;
+    } else {
+      // Double 4R
+      const columnHtml = `
+        <div class="authentic-strip-header">
+          <div class="authentic-strip-event" style="color: ${textColor};">${eventTitle}</div>
+          <div class="authentic-strip-divider" style="background-color: ${accentColor};"></div>
+        </div>
+        <div class="authentic-slots-col">
+          ${Array.from({ length: slotCount }).map((_, i) => renderSlotItem(i)).join('')}
+        </div>
+        <div class="authentic-strip-footer">
+          <div class="authentic-strip-studio" style="color: ${subTextColor};">${studioFooter}</div>
+          <div class="authentic-strip-date" style="color: ${accentColor};">${dateText}</div>
+        </div>
+      `;
+
+      innerHtml = `
+        <div class="authentic-strip-wrapper authentic-double-4r" style="background-color: ${bgColor}; color: ${textColor}; border-color: ${borderColor};">
+          <div class="authentic-strip-half left-half">
+            ${columnHtml}
+          </div>
+          <div class="authentic-cutter-line" style="border-right-color: ${cuttingColor};">
+            <span class="authentic-cutter-glyph" style="color: ${cuttingColor};">&#9986;</span>
+          </div>
+          <div class="authentic-strip-half right-half">
+            ${columnHtml}
+          </div>
+          ${isCustom && t.overlayUrl ? `<img src="${t.overlayUrl}" class="authentic-overlay-img" alt="Frame Overlay"/>` : ''}
+        </div>
+      `;
+    }
+
+    canvas.innerHTML = innerHtml;
+
+    const placeholder = document.getElementById('photostrip-preview-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
   }
 
   updateModalSummary() {
@@ -822,25 +1089,32 @@ class RTFTPSelection {
 
     const t = this.templates.find(item => item.id === this.activeTemplateId);
     const templateName = t ? t.name : 'Classic White';
-    const isDouble = t ? (t.outputFormat !== 'single_strip') : true;
+    const isGrid = t ? t.layout === 'grid_2x2' : false;
+    const isDouble = t ? (t.outputFormat !== 'single_strip' && !isGrid) : true;
+    const formatName = isGrid ? 'Grid 4R Postcard' : (isDouble ? 'Double Strip 4R' : 'Single Strip');
 
     summaryEl.innerHTML = `
       <span style="color: var(--text-secondary); font-size: 0.8rem;">Status:</span>
       <strong style="color: var(--color-blue-text); font-weight: 700; margin-left: 4px; font-size: 0.86rem;">${this.totalItems}/${this.maxSlots} Foto</strong>
       <span style="display: inline-flex; align-items: center; margin-left: 8px; background: var(--color-slate-bg); color: var(--color-slate-text); border: 1px solid var(--color-slate-border); padding: 1px 8px; border-radius: var(--radius-xs); font-weight: 700; font-size: 0.75rem; font-family: var(--font-mono);">
-        ${templateName} (${isDouble ? 'Double Strip 4R' : 'Single Strip'})
+        ${templateName} (${formatName})
       </span>
     `;
 
     const formatText = document.getElementById('photostrip-preview-format-text');
     if (formatText) {
-      formatText.textContent = isDouble
-        ? 'Format Cetak: Double Strip 2x6 (Kertas 4R - Sekali Cetak Jadi 2 Lembar)'
-        : 'Format Cetak: Single Strip 2x6 (Potong Langsung)';
+      if (isGrid) {
+        formatText.textContent = 'Format Cetak: 4R Grid Postcard / Mini Poster (2x2 Kolom)';
+      } else if (isDouble) {
+        formatText.textContent = 'Format Cetak: Double Strip 2x6 (Kertas 4R - Sekali Cetak Jadi 2 Lembar)';
+      } else {
+        formatText.textContent = 'Format Cetak: Single Strip 2x6 (Potong Langsung)';
+      }
     }
   }
 
   requestPreview() {
+    this.renderModalAuthenticCanvas();
     if (this.totalItems === 0) return;
     const requestId = (this.previewRequestId || 0) + 1;
     this.previewRequestId = requestId;
@@ -852,8 +1126,6 @@ class RTFTPSelection {
     const previewImg = document.getElementById('photostrip-preview-img');
     const previewLoading = document.getElementById('photostrip-preview-loading');
     const previewPlaceholder = document.getElementById('photostrip-preview-placeholder');
-
-    if (previewLoading) previewLoading.style.display = 'flex';
 
     this.previewDebounceTimer = setTimeout(async () => {
       try {
@@ -871,7 +1143,6 @@ class RTFTPSelection {
           if (previewPlaceholder) previewPlaceholder.style.display = 'none';
           if (previewImg) {
             previewImg.src = res.dataUrl;
-            previewImg.style.display = 'block';
           }
         }
       } catch (err) {
