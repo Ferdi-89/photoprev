@@ -49,12 +49,42 @@ class RTFTPSelection {
     // Dock Buttons
     const reviewBtn = document.getElementById('dock-review-btn');
     if (reviewBtn) {
-      reviewBtn.addEventListener('click', () => this.openModal());
+      reviewBtn.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+          this.openDrawer();
+        } else {
+          this.openModal();
+        }
+      });
     }
 
     const dockClearBtn = document.getElementById('dock-clear-btn');
     if (dockClearBtn) {
       dockClearBtn.addEventListener('click', () => this.confirmClearAll());
+    }
+
+    // Mobile Drawer Close Buttons & Backdrop
+    const closeDrawerBtn = document.getElementById('btn-close-strip-drawer');
+    if (closeDrawerBtn) {
+      closeDrawerBtn.addEventListener('click', () => this.closeDrawer());
+    }
+
+    const backdrop = document.getElementById('live-strip-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => this.closeDrawer());
+    }
+
+    // Live Sidebar Actions
+    const livePrintBtn = document.getElementById('btn-live-print-submit');
+    if (livePrintBtn) {
+      livePrintBtn.addEventListener('click', async () => {
+        await this.submitOrder();
+      });
+    }
+
+    const liveClearBtn = document.getElementById('btn-live-clear-all');
+    if (liveClearBtn) {
+      liveClearBtn.addEventListener('click', () => this.confirmClearAll());
     }
 
     // Toolbar Clear Button
@@ -73,14 +103,17 @@ class RTFTPSelection {
       modalCancelBtn.addEventListener('click', () => this.closeModal());
     }
 
-    // ESC to close modal
+    // ESC to close modal or drawer
     window.addEventListener('keydown', (e) => {
-      if (this.modal && this.modal.classList.contains('active') && e.key === 'Escape') {
-        this.closeModal();
+      if (e.key === 'Escape') {
+        if (this.modal && this.modal.classList.contains('active')) {
+          this.closeModal();
+        }
+        this.closeDrawer();
       }
     });
 
-    // Confirm & Submit order
+    // Confirm & Submit order in modal
     const modalSubmitBtn = document.getElementById('modal-submit-btn');
     if (modalSubmitBtn) {
       modalSubmitBtn.addEventListener('click', async () => {
@@ -94,35 +127,62 @@ class RTFTPSelection {
       modalClearBtn.addEventListener('click', () => this.confirmClearAll());
     }
 
-    // Template Select Change
-    const templateSelect = document.getElementById('select-strip-template');
-    if (templateSelect) {
-      templateSelect.addEventListener('change', () => {
-        this.activeTemplateId = templateSelect.value;
+    // Template Select Change (both sidebar and modal)
+    document.querySelectorAll('#select-strip-template, #select-modal-strip-template, .strip-template-select').forEach(select => {
+      select.addEventListener('change', (e) => {
+        this.activeTemplateId = e.target.value;
+        this.populateTemplateSelect();
         this.updateModalSummary();
         this.renderModalItems();
+        this.renderLiveStrip();
         this.requestPreview();
       });
-    }
+    });
 
-    // Filter Chips Click
+    // Filter Chips Click (both sidebar and modal)
     document.querySelectorAll('.btn-strip-filter').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.btn-strip-filter').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        this.activeFilter = e.target.getAttribute('data-filter') || 'normal';
+        const targetBtn = e.target.closest('.btn-strip-filter');
+        if (!targetBtn) return;
+        const newFilter = targetBtn.getAttribute('data-filter') || 'normal';
+        this.activeFilter = newFilter;
+        document.querySelectorAll('.btn-strip-filter').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-filter') === newFilter);
+        });
+        this.renderLiveStrip();
         this.requestPreview();
       });
     });
   }
 
-  populateTemplateSelect() {
-    const select = document.getElementById('select-strip-template');
-    if (!select || this.templates.length === 0) return;
+  openDrawer() {
+    const sidebar = document.getElementById('live-photostrip-sidebar');
+    const backdrop = document.getElementById('live-strip-backdrop');
+    if (sidebar) sidebar.classList.add('active');
+    if (backdrop) backdrop.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
 
-    select.innerHTML = this.templates.map(t =>
+  closeDrawer() {
+    const sidebar = document.getElementById('live-photostrip-sidebar');
+    const backdrop = document.getElementById('live-strip-backdrop');
+    if (sidebar) sidebar.classList.remove('active');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  populateTemplateSelect() {
+    const selects = document.querySelectorAll('#select-strip-template, #select-modal-strip-template, .strip-template-select');
+    if (!selects.length || this.templates.length === 0) return;
+
+    const html = this.templates.map(t =>
       `<option value="${t.id}" ${t.id === this.activeTemplateId ? 'selected' : ''}>${t.name} (${t.slots} Foto)</option>`
     ).join('');
+
+    selects.forEach(select => {
+      select.innerHTML = html;
+      select.value = this.activeTemplateId;
+    });
   }
 
   getSessionPath() {
@@ -269,6 +329,9 @@ class RTFTPSelection {
   }
 
   updateUI() {
+    // Synchronize live single photostrip canvas directly on page
+    this.renderLiveStrip();
+
     // Update floating dock
     if (this.dock) {
       if (this.totalItems > 0) {
@@ -318,6 +381,144 @@ class RTFTPSelection {
     const toolbarClearBtn = document.getElementById('toolbar-clear-btn');
     if (toolbarClearBtn) {
       toolbarClearBtn.style.display = this.totalItems > 0 ? 'inline-flex' : 'none';
+    }
+  }
+
+  renderLiveStrip() {
+    const card = document.getElementById('live-single-strip-card');
+    const container = document.getElementById('live-strip-slots-container');
+    const statusText = document.getElementById('live-strip-status-text');
+    const readyBadge = document.getElementById('live-strip-ready-badge');
+    const printBtn = document.getElementById('btn-live-print-submit');
+    const clearBtn = document.getElementById('btn-live-clear-all');
+    const brandEvent = document.getElementById('strip-brand-event');
+    const brandFooter = document.getElementById('strip-brand-footer');
+    const brandDate = document.getElementById('strip-brand-date');
+
+    if (!container || !card) return;
+
+    const t = this.templates.find(item => item.id === this.activeTemplateId) || this.templates[0] || {};
+    const slotCount = t.slots || 3;
+    const items = Array.from(this.selections.values());
+
+    // Update physical card background and typography colors based on template
+    card.style.backgroundColor = t.bgColor || '#ffffff';
+    card.style.color = t.textColor || '#18181b';
+    card.style.borderColor = t.frameBorderColor || '#e4e4e7';
+
+    // Update header event title and footer texts
+    if (brandEvent) {
+      brandEvent.textContent = (t.name ? t.name.replace(/\s*\(\d+\s*Foto\)/i, '') : 'PHOTOBOOTH MEMORIES').toUpperCase();
+      brandEvent.style.color = t.accentColor || t.textColor || '#18181b';
+    }
+    if (brandFooter) {
+      brandFooter.textContent = 'RTFTP PHOTO LAB';
+      brandFooter.style.color = t.subTextColor || '#71717a';
+    }
+    if (brandDate) {
+      const now = new Date();
+      brandDate.textContent = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+      brandDate.style.color = t.subTextColor || '#71717a';
+    }
+
+    container.innerHTML = '';
+
+    const sPath = this.getSessionPath();
+    const stId = this.getStationId();
+    const sQuery = sPath
+      ? `?session=${encodeURIComponent(sPath)}`
+      : (stId ? `?station=${encodeURIComponent(stId)}` : '');
+
+    for (let i = 0; i < slotCount; i++) {
+      const slotEl = document.createElement('div');
+      slotEl.className = `live-strip-slot ${slotCount === 4 ? 'slot-count-4' : ''}`;
+      slotEl.setAttribute('data-slot-index', i);
+
+      const photoItem = items[i];
+
+      if (photoItem) {
+        slotEl.classList.add('filled');
+        const isFirst = i === 0;
+        const isLast = i === items.length - 1;
+        const photoSrc = `/api/photo/${encodeURIComponent(photoItem.filename)}/thumb${sQuery}`;
+
+        slotEl.innerHTML = `
+          <img src="${photoSrc}" class="slot-photo-img filter-${this.activeFilter}" alt="Slot ${i + 1}" />
+          <span class="slot-badge">#${i + 1}</span>
+          <div class="slot-filled-overlay">
+            <div></div>
+            <div class="slot-micro-actions">
+              <button type="button" class="btn-slot-action btn-move-up" title="Pindah ke atas" ${isFirst ? 'disabled' : ''} aria-label="Pindah ke atas">
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="18 15 12 9 6 15"></polyline></svg>
+              </button>
+              <button type="button" class="btn-slot-action btn-move-down" title="Pindah ke bawah" ${isLast ? 'disabled' : ''} aria-label="Pindah ke bawah">
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <button type="button" class="btn-slot-action btn-slot-remove" title="Keluarkan dari strip" aria-label="Hapus dari strip">
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          </div>
+        `;
+
+        slotEl.querySelector('.btn-move-up').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.moveSlot(i, i - 1);
+        });
+        slotEl.querySelector('.btn-move-down').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.moveSlot(i, i + 1);
+        });
+        slotEl.querySelector('.btn-slot-remove').addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await this.toggleSelect(photoItem.filename);
+        });
+      } else {
+        slotEl.classList.add('empty');
+        slotEl.innerHTML = `
+          <div class="slot-empty-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+          </div>
+          <span class="slot-empty-label">Slot #${i + 1}</span>
+          <span class="slot-empty-hint">Pilih foto dari galeri</span>
+        `;
+        slotEl.addEventListener('click', () => {
+          window.showToast(`Klik salah satu foto di galeri untuk mengisi Slot #${i + 1}`, 'info', 2500);
+        });
+      }
+
+      container.appendChild(slotEl);
+    }
+
+    // Update bottom status & buttons
+    if (statusText) {
+      statusText.textContent = `${items.length} / ${slotCount} Foto Terisi`;
+    }
+
+    const isFull = items.length >= slotCount;
+    if (readyBadge) {
+      readyBadge.style.display = isFull ? 'inline-block' : 'none';
+    }
+
+    if (clearBtn) {
+      clearBtn.style.display = items.length > 0 ? 'inline-flex' : 'none';
+    }
+
+    if (printBtn) {
+      if (items.length === 0) {
+        printBtn.disabled = true;
+        printBtn.innerHTML = `<span>Pilih ${slotCount} Foto dari Galeri</span>`;
+      } else if (!isFull) {
+        printBtn.disabled = false;
+        printBtn.innerHTML = `<span>Cetak Strip (${items.length}/${slotCount} Foto)</span>`;
+      } else {
+        printBtn.disabled = false;
+        printBtn.innerHTML = `<span>Cetak Foto Strip Sekarang</span>`;
+      }
     }
   }
 
@@ -380,6 +581,7 @@ class RTFTPSelection {
       await window.api.setSelectionsBatch(items, this.getSessionPath(), this.getStationId());
     }
 
+    this.renderLiveStrip();
     this.renderModalItems();
     this.requestPreview();
   }
@@ -511,10 +713,18 @@ class RTFTPSelection {
   async submitOrder() {
     if (this.totalItems === 0) return;
 
+    const modalBtn = document.getElementById('modal-submit-btn');
+    const liveBtn = document.getElementById('btn-live-print-submit');
+
     try {
-      const submitBtn = document.getElementById('modal-submit-btn');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Memproses Render Strip...';
+      if (modalBtn) {
+        modalBtn.disabled = true;
+        modalBtn.textContent = 'Memproses Render Strip...';
+      }
+      if (liveBtn) {
+        liveBtn.disabled = true;
+        liveBtn.innerHTML = '<span>Memproses Render Strip...</span>';
+      }
 
       const res = await window.api.exportPrint(
         this.getSessionPath(),
@@ -529,17 +739,18 @@ class RTFTPSelection {
       if (res.success) {
         window.showToast('Foto Strip Photobooth berhasil disusun dan siap dicetak!', 'success');
         this.closeModal();
+        this.closeDrawer();
       } else {
         window.showToast('Gagal memproses strip: ' + res.error, 'danger');
       }
     } catch (err) {
       window.showToast('Terjadi kesalahan: ' + err.message, 'danger');
     } finally {
-      const submitBtn = document.getElementById('modal-submit-btn');
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Konfirmasi & Siapkan Cetak Strip';
+      if (modalBtn) {
+        modalBtn.disabled = false;
+        modalBtn.textContent = 'Konfirmasi & Siapkan Cetak Strip';
       }
+      this.renderLiveStrip();
     }
   }
 }
