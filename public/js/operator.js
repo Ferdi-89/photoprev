@@ -1063,7 +1063,7 @@ class RTFTPOperator {
                 Hasil Foto Strip Photobooth Siap Cetak (300 DPI)
               </div>
               <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
-                File: <span style="font-family: 'JetBrains Mono', monospace; color: var(--text-primary); font-weight: 600;">${session.photostrip.exportedFile}</span> &bull; Template: <span style="font-weight: 600; color: var(--accent-gold);">${session.photostrip.templateId || 'Standar'}</span> &bull; Format: <span style="font-weight: 600;">${session.photostrip.outputFormat === 'single_strip' ? '1 Strip (2x6")' : '2 Strip 4R (1200x1800)'}</span>
+                File: <span style="font-family: 'JetBrains Mono', monospace; color: var(--text-primary); font-weight: 600;">${session.photostrip.exportedFile}</span> &bull; Template: <span style="font-weight: 600; color: var(--accent-gold);">${session.photostrip.templateId || 'Standar'}</span> &bull; Format: <span style="font-weight: 600;">${session.photostrip.outputFormat === 'single_strip' ? '1 Strip (2x6")' : (session.photostrip.outputFormat === 'grid_2x2' ? 'Mini Poster 2x2 (4R)' : '2 Strip 4R (1200x1800)')}</span> &bull; Cetak: <span style="font-weight: 700; color: var(--accent-green);">${session.photostrip.copies || session.totalCopies || 1} Lembar</span>
               </div>
             </div>
           </div>
@@ -1125,7 +1125,7 @@ class RTFTPOperator {
               </svg>
               <span>Konfirmasi Selesai</span>
             </button>
-            <button class="btn btn-sm btn-print-session" data-path="${session.sessionPath}" title="Buka jendela cetak langsung untuk semua foto sesi ini (${session.totalCopies} lembar)" style="background: var(--color-blue-bg); border: 1px solid var(--color-blue-border); color: var(--accent-blue); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+            <button class="btn btn-sm btn-print-session" data-path="${session.sessionPath}" title="Buka jendela cetak langsung untuk sesi ini (${session.totalCopies} lembar)" style="background: var(--color-blue-bg); border: 1px solid var(--color-blue-border); color: var(--accent-blue); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="6 9 6 2 18 2 18 9"></polyline>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
@@ -1188,8 +1188,15 @@ class RTFTPOperator {
       const btnPrintSession = card.querySelector('.btn-print-session');
       if (btnPrintSession) {
         btnPrintSession.addEventListener('click', () => {
-          window.api.openDirectPrintWindow(session.sessionPath, null, null, true);
-          this.log(`Membuka jendela cetak batch untuk sesi: ${session.sessionName} (${session.totalCopies} lembar)`, 'info');
+          if (hasPhotostrip && session.photostrip && session.photostrip.exportedFile) {
+            const stripQty = Math.max(1, parseInt(session.photostrip.copies || session.totalCopies || 1, 10));
+            const stripSize = session.photostrip.size || (session.photostrip.outputFormat === 'single_strip' ? '2x6 Strip' : (session.photostrip.outputFormat === 'grid_2x2' ? '4R Grid 2x2' : '4R Double Strip'));
+            window.api.openDirectPrintWindow(session.sessionPath, session.photostrip.exportedFile, [{ size: stripSize, qty: stripQty }]);
+            this.log(`Membuka jendela cetak strip untuk sesi: ${session.sessionName} (${stripQty} lembar)`, 'info');
+          } else {
+            window.api.openDirectPrintWindow(session.sessionPath, null, null, true);
+            this.log(`Membuka jendela cetak batch untuk sesi: ${session.sessionName} (${session.totalCopies} lembar)`, 'info');
+          }
         });
       }
 
@@ -1284,8 +1291,10 @@ class RTFTPOperator {
         const btnPrintStrip = card.querySelector('.btn-print-strip');
         if (btnPrintStrip) {
           btnPrintStrip.addEventListener('click', () => {
-            window.api.openDirectPrintWindow(session.sessionPath, session.photostrip.exportedFile, [{ size: '4R Strip', qty: 1 }]);
-            this.log(`Membuka jendela cetak untuk foto strip: ${session.photostrip.exportedFile}`, 'info');
+            const stripQty = Math.max(1, parseInt(session.photostrip.copies || session.totalCopies || 1, 10));
+            const stripSize = session.photostrip.size || (session.photostrip.outputFormat === 'single_strip' ? '2x6 Strip' : (session.photostrip.outputFormat === 'grid_2x2' ? '4R Grid 2x2' : '4R Double Strip'));
+            window.api.openDirectPrintWindow(session.sessionPath, session.photostrip.exportedFile, [{ size: stripSize, qty: stripQty }]);
+            this.log(`Membuka jendela cetak untuk foto strip: ${session.photostrip.exportedFile} (${stripQty} lembar)`, 'info');
           });
         }
 
@@ -1313,7 +1322,7 @@ class RTFTPOperator {
             window.lightbox.open([{
               filename: session.photostrip.exportedFile,
               sessionPath: session.sessionPath,
-              sizes: [{ size: '4R Strip', qty: 1 }],
+              sizes: [{ size: session.photostrip.size || '4R Double Strip', qty: session.photostrip.copies || 1 }],
               isSelected: true
             }], 0);
           });
@@ -1341,23 +1350,33 @@ class RTFTPOperator {
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid var(--border-subtle)';
 
-        const sizesText = item.sizes
-          ? item.sizes.map(s => {
-              let bg = 'var(--color-blue-bg)';
-              let color = 'var(--color-blue-text)';
-              let border = 'var(--color-blue-border)';
-              if (s.size.includes('8R') || s.size.includes('10R')) {
-                bg = 'var(--color-slate-bg)';
-                color = 'var(--color-slate-text)';
-                border = 'var(--color-slate-border)';
-              } else if (s.size.includes('12R') || s.size.includes('Kanvas')) {
-                bg = 'var(--color-amber-bg)';
-                color = 'var(--color-amber-text)';
-                border = 'var(--color-amber-border)';
-              }
-              return `<span class="badge-size" style="background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 2px 8px; border-radius: var(--radius-xs); font-size: 0.78rem; margin-right: 4px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">${s.size} (${s.qty}x)</span>`;
-            }).join(' ')
-          : `<span class="badge-size" style="background: var(--color-blue-bg); color: var(--color-blue-text); border: 1px solid var(--color-blue-border); padding: 2px 8px; border-radius: var(--radius-xs); font-size: 0.78rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;">4R (1x)</span>`;
+        let sizesText = '';
+        if (hasPhotostrip) {
+          const slotNum = typeof item.slot === 'number' ? item.slot : (typeof item.order === 'number' ? item.order + 1 : index + 1);
+          let cropInfo = '';
+          if (typeof item.cropOffsetY === 'number') {
+            cropInfo = item.cropOffsetY <= 25 ? 'Fokus Atas' : (item.cropOffsetY >= 75 ? 'Fokus Bawah' : 'Tengah');
+          }
+          sizesText = `<span class="badge-size" style="background: rgba(99, 102, 241, 0.12); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.35); padding: 3px 8px; border-radius: var(--radius-xs); font-size: 0.78rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;">Slot #${slotNum}${cropInfo ? ` (${cropInfo})` : ''}</span>`;
+        } else if (item.sizes) {
+          sizesText = item.sizes.map(s => {
+            let bg = 'var(--color-blue-bg)';
+            let color = 'var(--color-blue-text)';
+            let border = 'var(--color-blue-border)';
+            if (s.size.includes('8R') || s.size.includes('10R')) {
+              bg = 'var(--color-slate-bg)';
+              color = 'var(--color-slate-text)';
+              border = 'var(--color-slate-border)';
+            } else if (s.size.includes('12R') || s.size.includes('Kanvas')) {
+              bg = 'var(--color-amber-bg)';
+              color = 'var(--color-amber-text)';
+              border = 'var(--color-amber-border)';
+            }
+            return `<span class="badge-size" style="background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 2px 8px; border-radius: var(--radius-xs); font-size: 0.78rem; margin-right: 4px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">${s.size} (${s.qty}x)</span>`;
+          }).join(' ');
+        } else {
+          sizesText = `<span class="badge-size" style="background: var(--color-blue-bg); color: var(--color-blue-text); border: 1px solid var(--color-blue-border); padding: 2px 8px; border-radius: var(--radius-xs); font-size: 0.78rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;">4R (1x)</span>`;
+        }
 
         tr.innerHTML = `
           <td style="padding: 12px 16px; font-size: 0.78rem; font-family: 'JetBrains Mono', monospace;">

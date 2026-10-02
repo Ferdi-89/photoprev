@@ -277,6 +277,29 @@
                 </svg>
                 <span id="btn-tab-print-text">Cetak 1 Lembar Foto Strip Sekarang</span>
               </button>
+
+              <div id="template-order-success-card" class="order-success-card" style="display: none; margin-top: 14px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: var(--radius-sm); padding: 16px; text-align: left;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                  <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent-green); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </div>
+                  <div>
+                    <strong style="font-size: 0.95rem; color: var(--accent-green); display: block;">Pesanan Siap Cetak Berhasil Dikirim!</strong>
+                    <span id="success-order-meta" style="font-size: 0.8rem; color: var(--text-secondary);">Sesi Anda telah masuk ke antrean cetak operator studio.</span>
+                  </div>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 6px;">
+                  Operator akan segera memproses pencetakan foto strip Anda di mesin cetak studio. Silakan hubungi operator jika memerlukan bantuan.
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" id="btn-success-back-gallery" class="btn btn-sm btn-secondary" style="flex: 1;">
+                    Kembali ke Galeri Foto
+                  </button>
+                  <button type="button" id="btn-success-dismiss" class="btn btn-sm btn-secondary" style="padding: 6px 12px;">
+                    Tutup
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -1669,6 +1669,7 @@ class RTFTPSelection {
         window.showToast(`Foto Strip Photobooth berhasil disusun dan siap dicetak (${this.printCopies} Lembar)!`, 'success', 5000);
         this.closeModal();
         this.closeDrawer();
+        this.showOrderSuccessConfirmation(res.report || res);
       } else {
         window.showToast('Gagal memproses strip: ' + res.error, 'danger');
       }
@@ -1685,6 +1686,45 @@ class RTFTPSelection {
       }
       this.renderLiveStrip();
       this.renderTemplateTab();
+    }
+  }
+
+  showOrderSuccessConfirmation(report) {
+    const card = document.getElementById('template-order-success-card');
+    const metaEl = document.getElementById('success-order-meta');
+    if (!card) return;
+
+    const t = this.templates.find(item => item.id === this.activeTemplateId) || {};
+    const tName = t.name || this.activeTemplateId;
+    const copies = this.printCopies || 1;
+
+    if (metaEl) {
+      metaEl.textContent = `Template: ${tName} - ${copies} Lembar Cetak siap di mesin cetak operator.`;
+    }
+
+    card.style.display = 'block';
+
+    if (window.gsap) {
+      gsap.fromTo(card,
+        { autoAlpha: 0, y: 10, scale: 0.98 },
+        { autoAlpha: 1, y: 0, scale: 1, duration: 0.28, ease: "back.out(1.7)", clearProps: "transform,opacity,visibility" }
+      );
+    }
+
+    const backBtn = document.getElementById('btn-success-back-gallery');
+    if (backBtn && !backBtn._wired) {
+      backBtn._wired = true;
+      backBtn.addEventListener('click', () => {
+        this.switchTab('gallery');
+      });
+    }
+
+    const dismissBtn = document.getElementById('btn-success-dismiss');
+    if (dismissBtn && !dismissBtn._wired) {
+      dismissBtn._wired = true;
+      dismissBtn.addEventListener('click', () => {
+        card.style.display = 'none';
+      });
     }
   }
 }

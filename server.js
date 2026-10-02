@@ -903,10 +903,15 @@ app.get('/api/print/render', (req, res) => {
     let pages = [];
 
     if (filename) {
-      // Single photo
-      const photoPath = path.join(sessionPath, filename);
+      // Single photo or photostrip composite
+      let photoPath = path.join(sessionPath, filename);
       if (!fs.existsSync(photoPath)) {
-        return res.status(404).send('File foto tidak ditemukan di sesi ini');
+        const siapPath = path.join(sessionPath, '_SIAP_CETAK', filename);
+        if (fs.existsSync(siapPath)) {
+          photoPath = siapPath;
+        } else {
+          return res.status(404).send('File foto tidak ditemukan di sesi ini');
+        }
       }
 
       let parsedSizes = [];
@@ -933,26 +938,68 @@ app.get('/api/print/render', (req, res) => {
         }
       });
     } else if (isBatch) {
-      // All selections in session
-      const selections = printManager.getSelections(sessionPath);
-      if (selections.length === 0) {
-        return res.status(400).send('Belum ada foto yang dipilih untuk dicetak pada sesi ini');
+      // Check if session has a photostrip composite in _SIAP_CETAK
+      const siapDir = path.join(sessionPath, '_SIAP_CETAK');
+      const manifestFile = path.join(siapDir, 'order_manifest.json');
+      let photostripFiles = [];
+      let photostripCopies = 1;
+      let photostripSize = 'Photostrip (Double 4R)';
+
+      if (fs.existsSync(manifestFile)) {
+        try {
+          const m = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+          if (m.photostrip && m.photostrip.exportedFile) {
+            photostripFiles.push(m.photostrip.exportedFile);
+            if (m.photostrip.copies) photostripCopies = m.photostrip.copies;
+            else if (m.totalCopies) photostripCopies = m.totalCopies;
+            if (m.photostrip.size) photostripSize = m.photostrip.size;
+          }
+        } catch (_) {}
       }
 
-      selections.forEach(item => {
-        const sizes = item.sizes || [{ size: '4R', qty: 1 }];
-        sizes.forEach(s => {
-          const qty = Math.max(1, parseInt(s.qty, 10) || 1);
-          for (let i = 0; i < qty; i++) {
-            pages.push({
-              filename: item.filename,
-              size: s.size || '4R',
-              copyNum: i + 1,
-              totalCopies: qty
-            });
+      if (photostripFiles.length === 0 && fs.existsSync(siapDir)) {
+        try {
+          const files = fs.readdirSync(siapDir);
+          const strips = files.filter(f => f.startsWith('STRIP_') && (f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.png')));
+          if (strips.length > 0) {
+            photostripFiles = strips;
+            photostripCopies = strips.length;
           }
+        } catch (_) {}
+      }
+
+      if (photostripFiles.length > 0) {
+        const baseStrip = photostripFiles[0];
+        for (let i = 0; i < photostripCopies; i++) {
+          pages.push({
+            filename: baseStrip,
+            size: photostripSize,
+            copyNum: i + 1,
+            totalCopies: photostripCopies
+          });
+        }
+      } else {
+        // Individual selections in session
+        const selections = printManager.getSelections(sessionPath);
+        if (selections.length === 0) {
+          return res.status(400).send('Belum ada foto yang dipilih untuk dicetak pada sesi ini');
+        }
+
+        selections.forEach(item => {
+          const sizes = item.sizes || [{ size: '4R', qty: 1 }];
+          sizes.forEach(s => {
+            const qty = Math.max(1, parseInt(s.qty, 10) || 1);
+            for (let i = 0; i < qty; i++) {
+              pages.push({
+                filename: item.filename,
+                size: s.size || '4R',
+                copyNum: i + 1,
+                totalCopies: qty
+              });
+            }
+          });
         });
-      });
+      }
     } else {
       return res.status(400).send('Parameter pencetakan tidak valid (harus menyertakan file atau batch=true)');
     }
