@@ -3,6 +3,7 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const sharp = require('sharp');
 const { WebSocketServer, WebSocket } = require('ws');
 
 const { loadConfig, saveConfig, getConfig } = require('./lib/config');
@@ -599,16 +600,38 @@ app.get('/api/photostrip/templates', (req, res) => {
   }
 });
 
-app.post('/api/photostrip/templates/upload', (req, res) => {
+app.post('/api/photostrip/templates/upload', async (req, res) => {
   try {
     const { name, filename, imageBase64, slots, outputFormat } = req.body || {};
-    if (!imageBase64) {
+    if (typeof imageBase64 !== 'string') {
       return res.status(400).json({ success: false, error: 'Data gambar PNG template tidak ditemukan' });
     }
+    if (typeof name !== 'string' || !name.trim() || name.trim().length > 80) {
+      return res.status(400).json({ success: false, error: 'Nama template wajib diisi (maksimal 80 karakter)' });
+    }
+    if (![3, 4].includes(Number(slots)) || !['double_4r', 'single_strip'].includes(outputFormat)) {
+      return res.status(400).json({ success: false, error: 'Jumlah slot atau format template tidak valid' });
+    }
+    const match = imageBase64.match(/^data:image\/png;base64,([A-Za-z0-9+/]+=*)$/);
+    if (!match || match[1].length > 35 * 1024 * 1024) {
+      return res.status(400).json({ success: false, error: 'File harus PNG valid dengan ukuran maksimal 25 MB' });
+    }
+    const buffer = Buffer.from(match[1], 'base64');
+    if (!buffer.length || buffer.length > 25 * 1024 * 1024) {
+      return res.status(400).json({ success: false, error: 'Ukuran PNG maksimal 25 MB' });
+    }
+    let imageInfo;
+    try {
+      imageInfo = await sharp(buffer, { limitInputPixels: 25_000_000 }).metadata();
+    } catch (_) {
+      return res.status(400).json({ success: false, error: 'File tidak dapat dibaca sebagai PNG' });
+    }
+    const expectedDimensions = outputFormat === 'single_strip' ? [600, 1800] : [1200, 1800];
+    if (imageInfo.format !== 'png' || imageInfo.width !== expectedDimensions[0] || imageInfo.height !== expectedDimensions[1]) {
+      return res.status(400).json({ success: false, error: `Dimensi PNG harus ${expectedDimensions[0]}x${expectedDimensions[1]} piksel` });
+    }
 
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    const safeName = filename || `${name || 'custom_frame'}.png`;
+    const safeName = filename || `${name.trim()}.png`;
 
     const saved = templateManager.saveCustomTemplate(safeName, buffer, {
       name: name || path.basename(safeName, path.extname(safeName)),
@@ -657,6 +680,8 @@ app.post('/api/photostrip/preview', async (req, res) => {
   try {
     const {
       filenames,
+      items,
+      cropOffsets,
       sessionPath,
       templateId,
       eventTitle,
@@ -667,27 +692,50 @@ app.post('/api/photostrip/preview', async (req, res) => {
     } = req.body || {};
 
     const targetSession = sessionPath ? path.resolve(sessionPath) : resolveSessionForRequest(req);
-    const photoFiles = Array.isArray(filenames) ? filenames : [];
+    const photoObjects = [];
 
-    const photoPaths = [];
-    for (const fn of photoFiles) {
-      const found = findPhotoInAnySession(path.basename(fn), targetSession);
-      if (found && fs.existsSync(found.fullPath)) {
-        photoPaths.push(found.fullPath);
+    if (Array.isArray(items) && items.length > 0) {
+      for (const item of items) {
+        const fn = typeof item === 'string' ? item : (item && item.filename);
+        if (!fn) continue;
+        const found = findPhotoInAnySession(path.basename(fn), targetSession);
+        if (found && fs.existsSync(found.fullPath)) {
+          photoObjects.push({
+            path: found.fullPath,
+            filename: path.basename(fn),
+            cropOffsetY: typeof item.cropOffsetY === 'number' ? item.cropOffsetY : 50,
+            cropOffsetX: typeof item.cropOffsetX === 'number' ? item.cropOffsetX : 50
+          });
+        }
       }
+    } else {
+      const photoFiles = Array.isArray(filenames) ? filenames : [];
+      photoFiles.forEach((fn, idx) => {
+        const found = findPhotoInAnySession(path.basename(fn), targetSession);
+        if (found && fs.existsSync(found.fullPath)) {
+          const cY = (Array.isArray(cropOffsets) && typeof cropOffsets[idx] === 'number') ? cropOffsets[idx] : 50;
+          photoObjects.push({
+            path: found.fullPath,
+            filename: path.basename(fn),
+            cropOffsetY: cY,
+            cropOffsetX: 50
+          });
+        }
+      });
     }
 
-    if (photoPaths.length === 0) {
+    if (photoObjects.length === 0) {
       return res.status(400).json({ success: false, error: 'Tidak ada foto valid yang dipilih untuk preview strip' });
     }
 
     const tId = templateId || (config.photostrip && config.photostrip.activeTemplateId) || 'classic-white-3';
     const eTitle = eventTitle || (config.photostrip && config.photostrip.eventTitle) || 'PHOTOBOOTH MEMORIES';
     const sFooter = studioFooter || (config.photostrip && config.photostrip.studioFooter) || 'RTFTP PHOTO STUDIO';
-    const dText = dateText || (config.photostrip && config.photostrip.showDate ? new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '');
+    const psConfig = config.photostrip || {};
+    const dText = dateText !== undefined ? dateText : (psConfig.showDate === false ? '' : new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }));
     const outFmt = outputFormat || (config.photostrip && config.photostrip.outputFormat) || 'double_4r';
 
-    const renderRes = await renderPhotostrip(photoPaths, {
+    const renderRes = await renderPhotostrip(photoObjects, {
       templateId: tId,
       eventTitle: eTitle,
       studioFooter: sFooter,

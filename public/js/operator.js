@@ -3,6 +3,10 @@
  * Multi-view left-sidebar navigation with persistent real-time WebSocket connection.
  */
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+}
+
 class RTFTPOperator {
   constructor() {
     // Navigation & Views (Desktop Sidebar + Mobile Drawer)
@@ -53,6 +57,8 @@ class RTFTPOperator {
     this.primaryLanUrl = '';
 
     // Studio Sessions Hub & Filter Elements
+    this.navTemplatesBadge = document.getElementById('nav-templates-badge');
+    this.mobileNavTemplatesBadge = document.getElementById('mobile-nav-templates-badge');
     this.navSessionsBadge = document.getElementById('nav-sessions-badge') || document.getElementById('nav-directories-badge');
     this.mobileNavSessionsBadge = document.getElementById('mobile-nav-sessions-badge') || document.getElementById('mobile-nav-directories-badge');
     this.navDirectoriesBadge = this.navSessionsBadge;
@@ -703,14 +709,6 @@ class RTFTPOperator {
       }
     });
 
-    window.api.on('TEMPLATES_UPDATED', () => {
-      this.loadPhotostripTemplates();
-    });
-
-    window.api.on('PHOTOSTRIP_CONFIG_CHANGED', () => {
-      this.loadPhotostripTemplates();
-    });
-
     // Session Timer & Customer Pacing WebSocket Events
     window.api.on('TIMER_TICK', (data) => {
       this.renderTimerTick(data);
@@ -839,14 +837,12 @@ class RTFTPOperator {
       this.renderDirectorySessions(data);
     });
 
-    window.api.on('PHOTOSTRIP_CONFIG_CHANGED', (data) => {
+    window.api.on('PHOTOSTRIP_CONFIG_CHANGED', () => {
       this.log('Konfigurasi template photostrip diperbarui', 'info');
-      this.loadPhotostripTemplates();
     });
 
-    window.api.on('TEMPLATES_UPDATED', (data) => {
+    window.api.on('TEMPLATES_UPDATED', () => {
       this.log('Koleksi template photostrip diperbarui', 'info');
-      this.loadPhotostripTemplates();
     });
   }
 
@@ -1067,7 +1063,7 @@ class RTFTPOperator {
                 Hasil Foto Strip Photobooth Siap Cetak (300 DPI)
               </div>
               <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
-                File: <span style="font-family: 'JetBrains Mono', monospace; color: var(--text-primary); font-weight: 600;">${session.photostrip.exportedFile}</span> &bull; Template: <span style="font-weight: 600; color: var(--accent-gold);">${session.photostrip.templateId || 'Standar'}</span> &bull; Format: <span style="font-weight: 600;">${session.photostrip.format === 'single_strip' ? '1 Strip (2x6")' : '2 Strip 4R (1200x1800)'}</span>
+                File: <span style="font-family: 'JetBrains Mono', monospace; color: var(--text-primary); font-weight: 600;">${session.photostrip.exportedFile}</span> &bull; Template: <span style="font-weight: 600; color: var(--accent-gold);">${session.photostrip.templateId || 'Standar'}</span> &bull; Format: <span style="font-weight: 600;">${session.photostrip.outputFormat === 'single_strip' ? '1 Strip (2x6")' : '2 Strip 4R (1200x1800)'}</span>
               </div>
             </div>
           </div>
@@ -2767,7 +2763,7 @@ class RTFTPOperator {
         this.statDirDiskPercent.textContent = `${usedPercent}% Terpakai dari ${totalGB}`;
       }
       if (this.dirDiskProgress) {
-        this.dirDiskProgress.style.width = `${Math.min(100, Math.max(0, usedPercent))}%`;
+        this.dirDiskProgress.style.transform = `scaleX(${Math.min(100, Math.max(0, usedPercent)) / 100})`;
       }
       if (this.dirDiskWarning) {
         this.dirDiskWarning.style.display = isLowSpace ? 'block' : 'none';
@@ -3290,7 +3286,7 @@ class RTFTPOperator {
 
     if (this.operatorTimerProgressFill) {
       const pct = timer.totalSeconds > 0 ? Math.max(0, Math.min(100, (timer.remainingSeconds / timer.totalSeconds) * 100)) : 0;
-      this.operatorTimerProgressFill.style.width = pct + '%';
+      this.operatorTimerProgressFill.style.transform = `scaleX(${pct / 100})`;
     }
 
     if (this.timerClockBox) {
@@ -3436,6 +3432,8 @@ class RTFTPOperator {
     if (this.formPhotostripSettings) {
       this.formPhotostripSettings.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const submitBtn = this.formPhotostripSettings.querySelector('[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
         const updates = {
           eventTitle: this.inputPsEventTitle ? this.inputPsEventTitle.value.trim() : '',
           studioFooter: this.inputPsStudioFooter ? this.inputPsStudioFooter.value.trim() : '',
@@ -3452,6 +3450,8 @@ class RTFTPOperator {
           }
         } catch (err) {
           window.showToast('Error: ' + err.message, 'danger');
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
         }
       });
     }
@@ -3469,6 +3469,11 @@ class RTFTPOperator {
         this.modalUploadTemplate.classList.remove('active');
         this.modalUploadTemplate.setAttribute('aria-hidden', 'true');
       }
+      if (this.formUploadTemplate && !this.btnSubmitUploadTemplate?.disabled) {
+        this.formUploadTemplate.reset();
+        selectedTemplateBase64 = null;
+        if (this.templateDropText) this.templateDropText.textContent = 'Pilih File PNG atau Tarik ke Sini';
+      }
     };
 
     if (this.btnOpenUploadTemplate) {
@@ -3485,11 +3490,15 @@ class RTFTPOperator {
     let selectedTemplateBase64 = null;
 
     const handleTemplateFile = (file) => {
-      if (!file || !file.type.includes('png')) {
+      if (!file || (file.type !== 'image/png' && !file.name.toLowerCase().endsWith('.png'))) {
+        selectedTemplateBase64 = null;
+        if (this.templateFileInput) this.templateFileInput.value = '';
         window.showToast('File harus berformat PNG dengan area foto transparan', 'danger');
         return;
       }
       if (file.size > 25 * 1024 * 1024) {
+        selectedTemplateBase64 = null;
+        if (this.templateFileInput) this.templateFileInput.value = '';
         window.showToast('Ukuran file maksimal 25 MB', 'danger');
         return;
       }
@@ -3500,12 +3509,23 @@ class RTFTPOperator {
           this.templateDropText.textContent = `File siap: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
         }
       };
+      reader.onerror = () => window.showToast('Gagal membaca file PNG', 'danger');
       reader.readAsDataURL(file);
     };
 
     if (this.templateDropZone && this.templateFileInput) {
-      this.templateDropZone.addEventListener('click', () => {
-        this.templateFileInput.click();
+      this.templateDropZone.setAttribute('role', 'button');
+      this.templateDropZone.setAttribute('tabindex', '0');
+      this.templateDropZone.setAttribute('aria-label', 'Pilih file template PNG');
+      this.templateDropZone.addEventListener('click', () => this.templateFileInput.click());
+      this.templateDropZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.templateFileInput.click();
+        }
+      });
+      this.modalUploadTemplate?.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeUploadModal();
       });
 
       this.templateDropZone.addEventListener('dragover', (e) => {
@@ -3541,7 +3561,9 @@ class RTFTPOperator {
         e.preventDefault();
         const name = this.templateUploadName ? this.templateUploadName.value.trim() : '';
         const slots = this.templateUploadSlots ? parseInt(this.templateUploadSlots.value, 10) : 3;
-        const format = this.templateUploadFormat ? this.templateUploadFormat.value : 'double_4r';
+        const outputFormat = this.templateUploadFormat ? this.templateUploadFormat.value : 'double_4r';
+        const selectedFile = this.templateFileInput?.files?.[0];
+        const uploadFilename = selectedFile ? `${name}.png` : '';
 
         if (!name) {
           window.showToast('Nama template harus diisi', 'danger');
@@ -3560,8 +3582,9 @@ class RTFTPOperator {
         try {
           const res = await window.api.uploadPhotostripTemplate({
             name,
+            filename: uploadFilename,
             slots,
-            format,
+            outputFormat,
             imageBase64: selectedTemplateBase64
           });
 
@@ -3587,7 +3610,7 @@ class RTFTPOperator {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-              <span>Simpan & Terapkan Template</span>
+              <span>Simpan Template</span>
             `;
           }
         }
@@ -3600,10 +3623,13 @@ class RTFTPOperator {
    */
   async loadPhotostripTemplates() {
     try {
+      const requestId = (this.photostripTemplatesRequestId || 0) + 1;
+      this.photostripTemplatesRequestId = requestId;
       const res = await window.api.getPhotostripTemplates();
-      if (!res.success) return;
+      if (requestId !== this.photostripTemplatesRequestId) return;
+      if (!res.success) throw new Error(res.error || 'Gagal memuat template');
 
-      const { templates, activeTemplateId, config } = res;
+      const { templates = [], activeTemplateId, config } = res;
 
       // Sync Branding Form Fields (if not actively edited)
       if (config) {
@@ -3621,12 +3647,23 @@ class RTFTPOperator {
         }
       }
 
+      if (this.navTemplatesBadge) {
+        this.navTemplatesBadge.textContent = templates.length;
+      }
+      if (this.mobileNavTemplatesBadge) {
+        this.mobileNavTemplatesBadge.textContent = templates.length;
+      }
+      if (this.templatesCountBadge) {
+        this.templatesCountBadge.textContent = `${templates.length} Template`;
+      }
+
       // Render Template Cards
       if (!this.templatesCardsGrid) return;
       this.templatesCardsGrid.innerHTML = '';
 
-      if (this.templatesCountBadge) {
-        this.templatesCountBadge.textContent = `${templates.length} Template`;
+      if (!Array.isArray(templates) || templates.length === 0) {
+        this.templatesCardsGrid.textContent = 'Belum ada template tersedia.';
+        return;
       }
 
       templates.forEach(tpl => {
@@ -3643,12 +3680,14 @@ class RTFTPOperator {
         card.style.gap = '14px';
         card.style.position = 'relative';
 
-        const isDouble = tpl.format === 'double_4r';
+        const isDouble = tpl.outputFormat !== 'single_strip';
+        const isCustom = tpl.type === 'custom';
         const formatBadge = isDouble ? 'Double 4R' : 'Single Strip';
-        const originBadge = tpl.isCustom ? 'Kustom PNG' : 'Bawaan Studio';
-        const originBg = tpl.isCustom ? 'var(--color-purple-bg)' : 'var(--color-blue-bg)';
-        const originColor = tpl.isCustom ? 'var(--color-purple-text)' : 'var(--color-blue-text)';
-        const originBorder = tpl.isCustom ? 'var(--color-purple-border)' : 'var(--color-blue-border)';
+        const originBadge = isCustom ? 'Kustom PNG' : 'Bawaan Studio';
+        const originBg = isCustom ? 'var(--color-purple-bg)' : 'var(--color-blue-bg)';
+        const originColor = isCustom ? 'var(--color-purple-text)' : 'var(--color-blue-text)';
+        const originBorder = isCustom ? 'var(--color-purple-border)' : 'var(--color-blue-border)';
+        const frameBackground = /^#[0-9a-f]{6}$/i.test(tpl.bgColor || '') ? tpl.bgColor : '#ffffff';
 
         // Miniature Frame Preview
         const slotRects = [];
@@ -3662,7 +3701,7 @@ class RTFTPOperator {
 
         const miniFramePreview = `
           <div style="display: flex; gap: 8px; justify-content: center; padding: 14px; background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
-            <div style="width: 58px; height: 160px; background: ${tpl.background || '#ffffff'}; border-radius: 3px; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;">
+            <div style="width: 58px; height: 160px; background: ${frameBackground}; border-radius: 3px; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;">
               ${slotRects.join('')}
               <div style="height: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                 <div style="width: 80%; height: 3px; background: rgba(0,0,0,0.25); border-radius: 1px; margin-bottom: 2px;"></div>
@@ -3670,7 +3709,7 @@ class RTFTPOperator {
               </div>
             </div>
             ${isDouble ? `
-              <div style="width: 58px; height: 160px; background: ${tpl.background || '#ffffff'}; border-radius: 3px; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;">
+              <div style="width: 58px; height: 160px; background: ${frameBackground}; border-radius: 3px; padding: 6px 5px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;">
                 ${slotRects.join('')}
                 <div style="height: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                   <div style="width: 80%; height: 3px; background: rgba(0,0,0,0.25); border-radius: 1px; margin-bottom: 2px;"></div>
@@ -3685,7 +3724,7 @@ class RTFTPOperator {
           <div>
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
               <div>
-                <h4 style="margin: 0; font-size: 0.96rem; font-weight: 700; color: var(--text-main);">${tpl.name}</h4>
+                <h4 style="margin: 0; font-size: 0.96rem; font-weight: 700; color: var(--text-main);">${escapeHtml(tpl.name)}</h4>
                 <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
                   <span class="badge-station" style="background: ${originBg}; color: ${originColor}; border-color: ${originBorder}; font-size: 0.72rem;">${originBadge}</span>
                   <span class="badge-station badge-station-lan" style="font-size: 0.72rem;">${tpl.slots || 3} Foto</span>
@@ -3700,7 +3739,7 @@ class RTFTPOperator {
             ${miniFramePreview}
 
             <p style="font-size: 0.78rem; color: var(--text-muted); margin: 10px 0 0; line-height: 1.4;">
-              ${tpl.description || 'Template foto strip studio resolusi tinggi 300 DPI.'}
+              ${escapeHtml(tpl.description || 'Template foto strip studio resolusi tinggi 300 DPI.')}
             </p>
           </div>
 
@@ -3737,6 +3776,17 @@ class RTFTPOperator {
         this.templatesCardsGrid.appendChild(card);
       });
     } catch (err) {
+      if (this.templatesCardsGrid) {
+        this.templatesCardsGrid.replaceChildren();
+        const message = document.createElement('p');
+        message.textContent = `Gagal memuat template: ${err.message}`;
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'btn btn-secondary';
+        retry.textContent = 'Coba Lagi';
+        retry.addEventListener('click', () => this.loadPhotostripTemplates());
+        this.templatesCardsGrid.append(message, retry);
+      }
       console.warn('Gagal memuat template photostrip:', err.message);
     }
   }

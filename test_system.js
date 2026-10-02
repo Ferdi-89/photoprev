@@ -262,6 +262,28 @@ async function runAsyncTests() {
   assert(classicTpl, 'classic-white-3 template must exist');
   assert.strictEqual(classicTpl.slots, 3, 'classic-white-3 must have 3 slots');
   assert.strictEqual(classicTpl.outputFormat, 'double_4r', 'Default format must be double_4r');
+  assert(allTemplates.every(t => ['double_4r', 'single_strip'].includes(t.outputFormat)), 'Every template must expose a valid outputFormat');
+
+  const testTemplateBase = `self-check-${process.pid}-${Date.now()}`;
+  const testPngPath = path.join(templateManager.CUSTOM_TEMPLATES_DIR, `${testTemplateBase}.png`);
+  const testMetaPath = path.join(templateManager.CUSTOM_TEMPLATES_DIR, `${testTemplateBase}.json`);
+  try {
+    const uploaded = templateManager.saveCustomTemplate(`${testTemplateBase}.png`, Buffer.from('test'), {
+      name: 'Self Check', slots: 4, outputFormat: 'single_strip'
+    });
+    assert.strictEqual(uploaded.outputFormat, 'single_strip', 'Custom template output format must persist');
+    assert.throws(() => templateManager.saveCustomTemplate(`${testTemplateBase}.png`, Buffer.from('overwrite'), {}), /already used|sudah digunakan/i, 'Existing custom templates must not be overwritten');
+  } finally {
+    for (const file of [testPngPath, testMetaPath]) {
+      if (fs.existsSync(file)) fs.unlinkSync(file);
+    }
+  }
+
+  const sharp = require('sharp');
+  const testPng = await sharp({ create: { width: 600, height: 1800, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 0 } } }).png().toBuffer();
+  const testPngInfo = await sharp(testPng).metadata();
+  assert.strictEqual(testPngInfo.format, 'png', 'Upload fixture must be an actual PNG');
+  assert.deepStrictEqual([testPngInfo.width, testPngInfo.height], [600, 1800], 'Single strip upload dimensions must match canvas');
 
   const photoStripEngine = require('./lib/photoStripEngine');
   const demoPhotoPaths = [
@@ -287,13 +309,25 @@ async function runAsyncTests() {
   assert.strictEqual(stripResult.dpi, 300, 'Rendered strip must be 300 DPI');
   assert(stripResult.buffer.length > 50000, 'High-resolution composite buffer should be substantial in size');
 
-  // Render fast client preview
+  // Render fast client preview with custom cropOffsets (Top, Center, Bottom)
   const previewDataUrl = await photoStripEngine.renderPhotostripPreview({
     photoPaths: demoPhotoPaths,
     templateId: 'classic-white-3',
+    cropOffsets: [15, 50, 85],
     filter: 'bw'
   });
   assert(typeof previewDataUrl === 'string' && previewDataUrl.startsWith('data:image/jpeg;base64,'), 'Preview must return valid dataUrl');
+
+  // Verify render with photo object items containing cropOffsetY
+  const customCropResult = await photoStripEngine.renderPhotostrip([
+    { path: demoPhotoPaths[0], cropOffsetY: 15 },
+    { path: demoPhotoPaths[1], cropOffsetY: 50 },
+    { path: demoPhotoPaths[2], cropOffsetY: 85 }
+  ], {
+    templateId: 'classic-white-3'
+  });
+  assert(customCropResult && customCropResult.buffer, 'Photostrip render with custom cropOffsetY must return a valid buffer');
+  assert.strictEqual(customCropResult.width, 1200, 'Render width must match double 4R');
 
   console.log('[OK] Photostrip Engine 300 DPI composite rendering & Template Manager validation OK');
 

@@ -1017,6 +1017,46 @@
   flex: 1;
 }
 
+/* Postcard 2x2 Grid Layout (Baskara Style) */
+.live-single-strip-card.layout-grid-2x2 {
+  width: 320px;
+  min-height: 480px;
+  padding: 16px 14px 18px 14px;
+}
+
+.live-single-strip-card.layout-grid-2x2 .strip-card-header {
+  text-align: left;
+  margin-bottom: 12px;
+}
+
+.live-single-strip-card.layout-grid-2x2 .strip-brand-event {
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+}
+
+.live-single-strip-card.layout-grid-2x2 .strip-header-divider {
+  display: none;
+}
+
+.live-single-strip-card.layout-grid-2x2 .live-strip-slots-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 10px;
+}
+
+.live-single-strip-card.layout-grid-2x2 .live-strip-slot {
+  aspect-ratio: 1 / 1.15;
+  border: 1.5px solid #18181b;
+  border-radius: 1px;
+}
+
+.live-single-strip-card.layout-grid-2x2 .live-strip-slot.empty {
+  border: 1.5px dashed rgba(0, 0, 0, 0.4);
+}
+
 /* Single Strip Individual Slot */
 .live-strip-slot {
   aspect-ratio: 5 / 3.8;
@@ -1164,6 +1204,82 @@
 .btn-slot-action.btn-slot-remove:hover {
   background: #ef4444;
   color: #ffffff;
+}
+
+/* Photostrip Slot Framing & Position Controls */
+.slot-framing-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(18, 19, 22, 0.9);
+  backdrop-filter: blur(6px);
+  padding: 2px 5px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-left: 28px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.framing-tag {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-right: 2px;
+}
+
+.btn-framing-pill {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e4e4e7;
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.btn-framing-pill:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: var(--accent-gold);
+  color: #ffffff;
+}
+
+.btn-framing-pill.active {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #121316;
+  font-weight: 700;
+}
+
+.modal-slot-framing-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.modal-slot-framing-row .btn-framing-pill {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+}
+
+.live-strip-slot.is-dragging-crop {
+  cursor: ns-resize !important;
+  user-select: none;
+}
+
+.live-strip-slot.filled {
+  touch-action: pan-x;
+  cursor: grab;
+}
+
+.live-strip-slot.filled:active {
+  cursor: grabbing;
 }
 
 .strip-card-footer {

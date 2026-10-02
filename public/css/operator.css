@@ -1308,8 +1308,8 @@ th {
 }
 
 .btn-print-item:hover {
-  background: #b45309;
-  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.25);
+  background: var(--accent-blue-hover);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -1346,7 +1346,7 @@ th {
 .btn-print-session:hover {
   background: #2563eb !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  box-shadow: var(--shadow-md);
 }
 
 /* ==========================================================================
@@ -1556,9 +1556,9 @@ th {
 }
 
 .shortcuts-label {
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  color: var(--text-dim);
+  color: var(--text-secondary);
   letter-spacing: 0.06em;
 }
 
@@ -1724,12 +1724,11 @@ th {
   background: var(--bg-card);
   color: var(--text-main);
   outline: none;
-  width: 150px;
-  transition: width 0.2s ease, border-color 0.15s ease;
+  width: 190px;
+  transition: border-color 0.15s ease;
 }
 
 .folder-search-wrap input:focus {
-  width: 190px;
   border-color: var(--accent-blue);
   box-shadow: 0 0 0 2px var(--accent-blue-subtle);
 }
@@ -1904,8 +1903,8 @@ th {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.72rem;
-  color: var(--text-dim);
+  font-size: 0.76rem;
+  color: var(--text-secondary);
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -1965,11 +1964,7 @@ th {
   }
 
   .folder-search-wrap input {
-    width: 110px;
-  }
-
-  .folder-search-wrap input:focus {
-    width: 140px;
+    width: min(150px, 38vw);
   }
 }
 
@@ -2085,9 +2080,9 @@ th {
 }
 
 .type-touchscreen {
-  background: #f3e8ff;
-  color: #7e22ce;
-  border: 1px solid #e9d5ff;
+  background: var(--color-blue-bg);
+  color: var(--color-blue-text);
+  border: 1px solid var(--color-blue-border);
 }
 
 .station-note {
@@ -2187,10 +2182,10 @@ th {
 }
 
 .badge-station-session-custom {
-  background: var(--color-purple-bg, #faf5ff);
-  color: var(--color-purple-text, #7e22ce);
-  border: 1px solid var(--color-purple-border, #e9d5ff);
-  font-size: 0.68rem;
+  background: var(--color-blue-bg);
+  color: var(--color-blue-text);
+  border: 1px solid var(--color-blue-border);
+  font-size: 0.72rem;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: var(--radius-xs);
@@ -2351,7 +2346,7 @@ th {
 
 .session-dir-card.is-active {
   border: 1.5px solid var(--accent-gold);
-  box-shadow: 0 8px 24px rgba(180, 83, 9, 0.12);
+  box-shadow: var(--shadow-md);
 }
 
 .session-dir-card.is-active::before {
@@ -2563,8 +2558,8 @@ th {
 }
 
 .btn-dir-activate:hover {
-  background: #b45309;
-  box-shadow: 0 2px 8px rgba(180, 83, 9, 0.25);
+  background: var(--accent-blue-hover);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-dir-activate.is-current {
@@ -2619,9 +2614,9 @@ th {
 }
 
 .btn-dir-assign-station:hover {
-  background: var(--color-purple-bg, #faf5ff);
-  border-color: var(--color-purple-border, #e9d5ff);
-  color: var(--color-purple-text, #7e22ce);
+  background: var(--color-blue-bg);
+  border-color: var(--color-blue-border);
+  color: var(--color-blue-text);
 }
 
 .session-assigned-stations-row {
@@ -2689,7 +2684,7 @@ th {
   border-color: var(--color-blue-border);
   color: var(--color-blue-text);
   font-weight: 700;
-  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.12);
+  box-shadow: var(--shadow-sm);
 }
 
 .session-dir-card.is-completed {
@@ -2712,7 +2707,7 @@ th {
 .btn-reopen-session:hover {
   background: #2563eb !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  box-shadow: var(--shadow-md);
 }
 
 /* Disk Storage Progress Meter */
@@ -2726,10 +2721,12 @@ th {
 }
 
 .disk-progress-fill {
+  width: 100%;
   height: 100%;
   background: linear-gradient(90deg, var(--accent-green) 0%, #f59e0b 70%, var(--accent-red) 90%);
   border-radius: 999px;
-  transition: width 0.4s ease;
+  transform: scaleX(0);
+  transform-origin: left;
 }
 
 /* Template Preset Pills */
@@ -2864,13 +2861,13 @@ th {
 .operator-timer-clock-box.is-warning {
   border-color: #f59e0b;
   background: linear-gradient(180deg, #fffbeb 0%, var(--bg-primary) 100%);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+  box-shadow: var(--shadow-sm);
 }
 
 .operator-timer-clock-box.is-expired {
   border-color: #ef4444;
   background: linear-gradient(180deg, #fef2f2 0%, var(--bg-primary) 100%);
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .operator-timer-clock-box.is-paused {
@@ -2928,10 +2925,13 @@ th {
 }
 
 .operator-timer-progress-fill {
+  width: 100%;
   height: 100%;
   background: var(--accent-blue);
   border-radius: 999px;
-  transition: width 0.3s ease, background-color 0.3s ease;
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: transform 0.3s ease, background-color 0.3s ease;
 }
 
 .operator-timer-clock-box.is-warning .operator-timer-progress-fill {

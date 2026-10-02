@@ -9,6 +9,7 @@ class RTFTPSelection {
     this.activeTemplateId = 'classic-white-3';
     this.activeFilter = 'normal'; // 'normal' | 'bw' | 'vintage'
     this.previewDebounceTimer = null;
+    this.previewRequestId = 0;
 
     this.dock = document.getElementById('selection-dock');
     this.dockCount = document.getElementById('dock-count');
@@ -130,6 +131,7 @@ class RTFTPSelection {
     // Template Select Change (both sidebar and modal)
     document.querySelectorAll('#select-strip-template, #select-modal-strip-template, .strip-template-select').forEach(select => {
       select.addEventListener('change', (e) => {
+        this.userSelectedTemplateManually = true;
         this.activeTemplateId = e.target.value;
         this.populateTemplateSelect();
         this.updateModalSummary();
@@ -138,6 +140,39 @@ class RTFTPSelection {
         this.requestPreview();
       });
     });
+
+    // Real-Time Server Broadcast Listeners for Templates
+    if (window.api && window.api.on) {
+      window.api.on('TEMPLATES_UPDATED', async (data) => {
+        if (data && Array.isArray(data.templates)) {
+          this.templates = data.templates;
+          if (data.newTemplateId) {
+            this.activeTemplateId = data.newTemplateId;
+          }
+          this.populateTemplateSelect();
+          this.renderLiveStrip();
+          this.renderModalItems();
+          this.requestPreview();
+        } else {
+          await this.loadTemplates();
+        }
+      });
+
+      window.api.on('PHOTOSTRIP_CONFIG_CHANGED', async (data) => {
+        if (data && data.photostrip) {
+          if (data.photostrip.activeTemplateId && !this.userSelectedTemplateManually) {
+            this.activeTemplateId = data.photostrip.activeTemplateId;
+          }
+          if (data.photostrip.filter) {
+            this.activeFilter = data.photostrip.filter;
+          }
+          this.populateTemplateSelect();
+          this.renderLiveStrip();
+          this.renderModalItems();
+          this.requestPreview();
+        }
+      });
+    }
 
     // Filter Chips Click (both sidebar and modal)
     document.querySelectorAll('.btn-strip-filter').forEach(btn => {
@@ -175,9 +210,28 @@ class RTFTPSelection {
     const selects = document.querySelectorAll('#select-strip-template, #select-modal-strip-template, .strip-template-select');
     if (!selects.length || this.templates.length === 0) return;
 
-    const html = this.templates.map(t =>
+    const customTemplates = this.templates.filter(t => t.type === 'custom');
+    const singleStripTemplates = this.templates.filter(t => t.type !== 'custom' && t.outputFormat === 'single_strip');
+    const gridTemplates = this.templates.filter(t => t.type !== 'custom' && t.layout === 'grid_2x2');
+    const double4rTemplates = this.templates.filter(t => t.type !== 'custom' && t.outputFormat !== 'single_strip' && t.layout !== 'grid_2x2');
+
+    const renderOptions = (list) => list.map(t =>
       `<option value="${t.id}" ${t.id === this.activeTemplateId ? 'selected' : ''}>${t.name} (${t.slots} Foto)</option>`
     ).join('');
+
+    let html = '';
+    if (double4rTemplates.length > 0) {
+      html += `<optgroup label="Double Strip 4R (Standar Studio - ${double4rTemplates.length})">${renderOptions(double4rTemplates)}</optgroup>`;
+    }
+    if (singleStripTemplates.length > 0) {
+      html += `<optgroup label="Single Strip 2x6 (Potong Langsung - ${singleStripTemplates.length})">${renderOptions(singleStripTemplates)}</optgroup>`;
+    }
+    if (gridTemplates.length > 0) {
+      html += `<optgroup label="Grid / Mini Poster 4R - ${gridTemplates.length}">${renderOptions(gridTemplates)}</optgroup>`;
+    }
+    if (customTemplates.length > 0) {
+      html += `<optgroup label="Template Kustom PNG (${customTemplates.length})">${renderOptions(customTemplates)}</optgroup>`;
+    }
 
     selects.forEach(select => {
       select.innerHTML = html;
@@ -229,6 +283,8 @@ class RTFTPSelection {
       selectionsArray.forEach((item, idx) => {
         this.selections.set(item.filename, {
           ...item,
+          cropOffsetY: typeof item.cropOffsetY === 'number' ? item.cropOffsetY : 50,
+          cropOffsetX: typeof item.cropOffsetX === 'number' ? item.cropOffsetX : 50,
           order: typeof item.order === 'number' ? item.order : idx,
           slot: typeof item.slot === 'number' ? item.slot : (idx + 1)
         });
@@ -278,6 +334,8 @@ class RTFTPSelection {
         slot: nextSlot,
         order: this.totalItems,
         sizes: [{ size: '4R', qty: 1 }],
+        cropOffsetY: 50,
+        cropOffsetX: 50,
         notes: ''
       };
       this.selections.set(filename, defaultData);
@@ -384,6 +442,39 @@ class RTFTPSelection {
     }
   }
 
+  async setPhotoPosition(filename, cropOffsetY) {
+    const item = this.selections.get(filename);
+    if (!item) return;
+
+    item.cropOffsetY = Math.max(0, Math.min(100, Math.round(cropOffsetY)));
+    this.selections.set(filename, item);
+
+    // Update inline style immediately for zero latency on all matching previews
+    document.querySelectorAll(`[data-photo-filename="${CSS.escape(filename)}"] .slot-photo-img`).forEach(img => {
+      img.style.objectPosition = `50% ${item.cropOffsetY}%`;
+    });
+
+    document.querySelectorAll(`[data-photo-filename="${CSS.escape(filename)}"] .photostrip-slot-thumb`).forEach(img => {
+      img.style.objectPosition = `50% ${item.cropOffsetY}%`;
+    });
+
+    // Update active pill button state in both sidebar and modal
+    document.querySelectorAll(`[data-photo-filename="${CSS.escape(filename)}"] .btn-framing-pill`).forEach(btn => {
+      const pos = parseInt(btn.getAttribute('data-pos'), 10);
+      const isTarget = (pos === 15 && item.cropOffsetY <= 25) ||
+                       (pos === 50 && item.cropOffsetY > 25 && item.cropOffsetY < 75) ||
+                       (pos === 85 && item.cropOffsetY >= 75);
+      btn.classList.toggle('active', isTarget);
+    });
+
+    const items = Array.from(this.selections.values());
+    if (window.api.setSelectionsBatch) {
+      await window.api.setSelectionsBatch(items, this.getSessionPath(), this.getStationId());
+    }
+
+    this.requestPreview();
+  }
+
   renderLiveStrip() {
     const card = document.getElementById('live-single-strip-card');
     const container = document.getElementById('live-strip-slots-container');
@@ -399,25 +490,33 @@ class RTFTPSelection {
 
     const t = this.templates.find(item => item.id === this.activeTemplateId) || this.templates[0] || {};
     const slotCount = t.slots || 3;
+    const isGrid2x2 = t.layout === 'grid_2x2';
     const items = Array.from(this.selections.values());
 
-    // Update physical card background and typography colors based on template
+    // Update physical card layout
+    card.classList.toggle('layout-grid-2x2', isGrid2x2);
     card.style.backgroundColor = t.bgColor || '#ffffff';
     card.style.color = t.textColor || '#18181b';
     card.style.borderColor = t.frameBorderColor || '#e4e4e7';
 
     // Update header event title and footer texts
     if (brandEvent) {
-      brandEvent.textContent = (t.name ? t.name.replace(/\s*\(\d+\s*Foto\)/i, '') : 'PHOTOBOOTH MEMORIES').toUpperCase();
-      brandEvent.style.color = t.accentColor || t.textColor || '#18181b';
+      if (isGrid2x2) {
+        brandEvent.innerHTML = `<span style="display:inline-block;width:4px;height:14px;background:#b91c1c;margin-right:6px;vertical-align:middle;"></span>BASKARA STUDIO`;
+      } else {
+        brandEvent.textContent = (t.name ? t.name.replace(/\s*\(\d+\s*Foto\)/i, '') : 'PHOTOBOOTH MEMORIES').toUpperCase();
+      }
+      brandEvent.style.color = t.textColor || '#18181b';
     }
     if (brandFooter) {
-      brandFooter.textContent = 'RTFTP PHOTO LAB';
+      brandFooter.textContent = isGrid2x2 ? 'POSTCARD MINI POSTER (2X2)' : 'RTFTP PHOTO LAB';
       brandFooter.style.color = t.subTextColor || '#71717a';
     }
     if (brandDate) {
       const now = new Date();
-      brandDate.textContent = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+      brandDate.textContent = isGrid2x2 
+        ? now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')
+        : now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
       brandDate.style.color = t.subTextColor || '#71717a';
     }
 
@@ -438,15 +537,22 @@ class RTFTPSelection {
 
       if (photoItem) {
         slotEl.classList.add('filled');
+        slotEl.setAttribute('data-photo-filename', photoItem.filename);
         const isFirst = i === 0;
         const isLast = i === items.length - 1;
         const photoSrc = `/api/photo/${encodeURIComponent(photoItem.filename)}/thumb${sQuery}`;
+        const curY = typeof photoItem.cropOffsetY === 'number' ? photoItem.cropOffsetY : 50;
 
         slotEl.innerHTML = `
-          <img src="${photoSrc}" class="slot-photo-img filter-${this.activeFilter}" alt="Slot ${i + 1}" />
+          <img src="${photoSrc}" class="slot-photo-img filter-${this.activeFilter}" style="object-position: 50% ${curY}%;" alt="Slot ${i + 1}" draggable="false" />
           <span class="slot-badge">#${i + 1}</span>
           <div class="slot-filled-overlay">
-            <div></div>
+            <div class="slot-framing-toolbar">
+              <span class="framing-tag">Pos:</span>
+              <button type="button" class="btn-framing-pill ${curY <= 25 ? 'active' : ''}" data-pos="15" title="Fokus Atas (Kepala)">Atas</button>
+              <button type="button" class="btn-framing-pill ${curY > 25 && curY < 75 ? 'active' : ''}" data-pos="50" title="Posisi Tengah (Simetris)">Tengah</button>
+              <button type="button" class="btn-framing-pill ${curY >= 75 ? 'active' : ''}" data-pos="85" title="Fokus Bawah (Badan)">Bawah</button>
+            </div>
             <div class="slot-micro-actions">
               <button type="button" class="btn-slot-action btn-move-up" title="Pindah ke atas" ${isFirst ? 'disabled' : ''} aria-label="Pindah ke atas">
                 <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="18 15 12 9 6 15"></polyline></svg>
@@ -473,6 +579,52 @@ class RTFTPSelection {
           e.stopPropagation();
           await this.toggleSelect(photoItem.filename);
         });
+
+        // Quick framing position buttons
+        slotEl.querySelectorAll('.btn-framing-pill').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const pos = parseInt(btn.getAttribute('data-pos'), 10);
+            await this.setPhotoPosition(photoItem.filename, pos);
+          });
+        });
+
+        // Touch & Mouse Drag to Pan vertically
+        const imgEl = slotEl.querySelector('.slot-photo-img');
+        let startY = 0;
+        let startCropY = curY;
+        let isDragging = false;
+
+        const onPointerDown = (e) => {
+          if (e.target.closest('.slot-micro-actions') || e.target.closest('.slot-framing-toolbar')) return;
+          startY = e.clientY;
+          startCropY = typeof photoItem.cropOffsetY === 'number' ? photoItem.cropOffsetY : 50;
+          isDragging = true;
+          slotEl.classList.add('is-dragging-crop');
+          window.addEventListener('pointermove', onPointerMove);
+          window.addEventListener('pointerup', onPointerUp);
+        };
+
+        const onPointerMove = (e) => {
+          if (!isDragging) return;
+          const deltaY = e.clientY - startY;
+          const slotHeight = slotEl.offsetHeight || 120;
+          const pctDelta = -(deltaY / slotHeight) * 100;
+          const newY = Math.max(0, Math.min(100, Math.round(startCropY + pctDelta)));
+          imgEl.style.objectPosition = `50% ${newY}%`;
+          photoItem.cropOffsetY = newY;
+        };
+
+        const onPointerUp = async (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          slotEl.classList.remove('is-dragging-crop');
+          window.removeEventListener('pointermove', onPointerMove);
+          window.removeEventListener('pointerup', onPointerUp);
+          await this.setPhotoPosition(photoItem.filename, photoItem.cropOffsetY);
+        };
+
+        slotEl.addEventListener('pointerdown', onPointerDown);
       } else {
         slotEl.classList.add('empty');
         slotEl.innerHTML = `
@@ -606,16 +758,23 @@ class RTFTPSelection {
     items.forEach((item, index) => {
       const row = document.createElement('div');
       row.className = 'photostrip-slot-row';
+      row.setAttribute('data-photo-filename', item.filename);
 
       const isFirst = index === 0;
       const isLast = index === items.length - 1;
+      const curY = typeof item.cropOffsetY === 'number' ? item.cropOffsetY : 50;
 
       row.innerHTML = `
         <span class="photostrip-slot-badge">Slot #${index + 1}</span>
-        <img class="photostrip-slot-thumb" src="/api/photo/${encodeURIComponent(item.filename)}/thumb${sQuery}" alt="Slot ${index + 1}"/>
+        <img class="photostrip-slot-thumb" src="/api/photo/${encodeURIComponent(item.filename)}/thumb${sQuery}" style="object-position: 50% ${curY}%;" alt="Slot ${index + 1}"/>
         <div class="photostrip-slot-info">
           <div class="photostrip-slot-title">${item.filename}</div>
-          <div style="font-size: 0.72rem; color: var(--text-muted);">Urutan foto ke-${index + 1} pada strip</div>
+          <div class="modal-slot-framing-row">
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Posisi:</span>
+            <button type="button" class="btn-framing-pill ${curY <= 25 ? 'active' : ''}" data-pos="15" title="Fokus Atas (Kepala)">Atas</button>
+            <button type="button" class="btn-framing-pill ${curY > 25 && curY < 75 ? 'active' : ''}" data-pos="50" title="Posisi Tengah (Simetris)">Tengah</button>
+            <button type="button" class="btn-framing-pill ${curY >= 75 ? 'active' : ''}" data-pos="85" title="Fokus Bawah (Badan)">Bawah</button>
+          </div>
         </div>
         <div class="photostrip-slot-actions">
           <button type="button" class="btn-slot-move btn-move-up" title="Pindah ke atas" ${isFirst ? 'disabled' : ''} aria-label="Pindah ke atas">
@@ -640,6 +799,15 @@ class RTFTPSelection {
         } else {
           this.requestPreview();
         }
+      });
+
+      row.querySelectorAll('.btn-framing-pill').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const pos = parseInt(btn.getAttribute('data-pos'), 10);
+          await this.setPhotoPosition(item.filename, pos);
+          this.renderModalItems();
+          this.renderLiveStrip();
+        });
       });
 
       listContainer.appendChild(row);
@@ -674,6 +842,8 @@ class RTFTPSelection {
 
   requestPreview() {
     if (this.totalItems === 0) return;
+    const requestId = (this.previewRequestId || 0) + 1;
+    this.previewRequestId = requestId;
 
     if (this.previewDebounceTimer) {
       clearTimeout(this.previewDebounceTimer);
@@ -687,14 +857,16 @@ class RTFTPSelection {
 
     this.previewDebounceTimer = setTimeout(async () => {
       try {
-        const filenames = Array.from(this.selections.keys());
+        const items = Array.from(this.selections.values());
         const res = await window.api.getPhotostripPreview({
-          filenames,
+          filenames: items.map(it => it.filename),
+          items,
           sessionPath: this.getSessionPath(),
           templateId: this.activeTemplateId,
           filter: this.activeFilter
         });
 
+        if (requestId !== this.previewRequestId) return;
         if (res.success && res.dataUrl) {
           if (previewPlaceholder) previewPlaceholder.style.display = 'none';
           if (previewImg) {
@@ -703,9 +875,9 @@ class RTFTPSelection {
           }
         }
       } catch (err) {
-        console.warn('Error fetching photostrip preview:', err.message);
+        if (requestId === this.previewRequestId) console.warn('Error fetching photostrip preview:', err.message);
       } finally {
-        if (previewLoading) previewLoading.style.display = 'none';
+        if (requestId === this.previewRequestId && previewLoading) previewLoading.style.display = 'none';
       }
     }, 180);
   }
@@ -726,13 +898,15 @@ class RTFTPSelection {
         liveBtn.innerHTML = '<span>Memproses Render Strip...</span>';
       }
 
+      const items = Array.from(this.selections.values());
       const res = await window.api.exportPrint(
         this.getSessionPath(),
         false,
         this.getStationId(),
         {
           templateId: this.activeTemplateId,
-          filter: this.activeFilter
+          filter: this.activeFilter,
+          photoItems: items
         }
       );
 
