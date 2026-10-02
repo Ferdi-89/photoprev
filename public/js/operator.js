@@ -596,13 +596,17 @@ class RTFTPOperator {
       });
     }
 
-    // Unbreakable Global Delegated Click Listener for Explorer & Location Reveal Buttons
+    // Unbreakable Global Delegated Click Listener for Explorer & Location Reveal Buttons (with 1.2s rapid-click debounce)
     document.addEventListener('click', async (e) => {
       // 1. Session Directory Card "Buka di Explorer"
       const dirBtn = e.target.closest('.btn-dir-explorer');
       if (dirBtn) {
         e.preventDefault();
         e.stopPropagation();
+        if (dirBtn.dataset.opening === 'true') return;
+        dirBtn.dataset.opening = 'true';
+        setTimeout(() => { delete dirBtn.dataset.opening; }, 1200);
+
         const p = dirBtn.getAttribute('data-path') || '';
         try {
           const res = await window.api.openInExplorer(p);
@@ -623,6 +627,10 @@ class RTFTPOperator {
       if (queueExpBtn) {
         e.preventDefault();
         e.stopPropagation();
+        if (queueExpBtn.dataset.opening === 'true') return;
+        queueExpBtn.dataset.opening = 'true';
+        setTimeout(() => { delete queueExpBtn.dataset.opening; }, 1200);
+
         const p = queueExpBtn.getAttribute('data-path') || '';
         try {
           const res = await window.api.openInExplorer(p);
@@ -643,6 +651,10 @@ class RTFTPOperator {
       if (locateBtn) {
         e.preventDefault();
         e.stopPropagation();
+        if (locateBtn.dataset.opening === 'true') return;
+        locateBtn.dataset.opening = 'true';
+        setTimeout(() => { delete locateBtn.dataset.opening; }, 1200);
+
         const tr = locateBtn.closest('tr');
         const sessionCard = locateBtn.closest('.session-queue-card');
         const sessionPath = locateBtn.getAttribute('data-path')
@@ -673,6 +685,10 @@ class RTFTPOperator {
       if (stripLocateBtn) {
         e.preventDefault();
         e.stopPropagation();
+        if (stripLocateBtn.dataset.opening === 'true') return;
+        stripLocateBtn.dataset.opening = 'true';
+        setTimeout(() => { delete stripLocateBtn.dataset.opening; }, 1200);
+
         const sessionPath = stripLocateBtn.getAttribute('data-path') || '';
         const filename = stripLocateBtn.getAttribute('data-filename') || '';
         if (filename) {
@@ -1204,6 +1220,10 @@ class RTFTPOperator {
       if (btnExplorerSession) {
         btnExplorerSession.addEventListener('click', async (e) => {
           if (e) e.stopPropagation();
+          if (btnExplorerSession.dataset.opening === 'true') return;
+          btnExplorerSession.dataset.opening = 'true';
+          setTimeout(() => { delete btnExplorerSession.dataset.opening; }, 1200);
+
           try {
             const res = await window.api.openInExplorer(session.sessionPath);
             if (res.success) {
@@ -1302,6 +1322,10 @@ class RTFTPOperator {
         if (btnLocateStrip) {
           btnLocateStrip.addEventListener('click', async (e) => {
             if (e) e.stopPropagation();
+            if (btnLocateStrip.dataset.opening === 'true') return;
+            btnLocateStrip.dataset.opening = 'true';
+            setTimeout(() => { delete btnLocateStrip.dataset.opening; }, 1200);
+
             try {
               const res = await window.api.openFileLocation(session.sessionPath, session.photostrip.exportedFile);
               if (res.success) {
@@ -1440,6 +1464,10 @@ class RTFTPOperator {
         if (btnLocateItem) {
           btnLocateItem.addEventListener('click', async (e) => {
             if (e) e.stopPropagation();
+            if (btnLocateItem.dataset.opening === 'true') return;
+            btnLocateItem.dataset.opening = 'true';
+            setTimeout(() => { delete btnLocateItem.dataset.opening; }, 1200);
+
             try {
               const targetName = btnLocateItem.getAttribute('data-filename') || item.exportedFilename || item.filename;
               const res = await window.api.openFileLocation(session.sessionPath, targetName);
@@ -2417,6 +2445,13 @@ class RTFTPOperator {
     // Open Root Directory in Windows Explorer
     const handleOpenRootExplorer = async (e) => {
       if (e) e.stopPropagation();
+      const targetBtn = e && (e.currentTarget || e.target);
+      if (targetBtn && targetBtn.dataset && targetBtn.dataset.opening === 'true') return;
+      if (targetBtn && targetBtn.dataset) {
+        targetBtn.dataset.opening = 'true';
+        setTimeout(() => { delete targetBtn.dataset.opening; }, 1200);
+      }
+
       try {
         const targetDir = this.directoryRootPath
           || (this.dirCurrentRootPath ? this.dirCurrentRootPath.textContent.trim() : '')
@@ -3023,6 +3058,10 @@ class RTFTPOperator {
       if (explorerBtn) {
         explorerBtn.addEventListener('click', async (e) => {
           if (e) e.stopPropagation();
+          if (explorerBtn.dataset.opening === 'true') return;
+          explorerBtn.dataset.opening = 'true';
+          setTimeout(() => { delete explorerBtn.dataset.opening; }, 1200);
+
           const p = explorerBtn.getAttribute('data-path') || s.path;
           try {
             const res = await window.api.openInExplorer(p);
@@ -3434,10 +3473,15 @@ class RTFTPOperator {
     // 1. Open Templates Folder in Explorer
     if (this.btnOpenTemplatesFolder) {
       this.btnOpenTemplatesFolder.addEventListener('click', async () => {
+        if (this.btnOpenTemplatesFolder.dataset.opening === 'true') return;
+        this.btnOpenTemplatesFolder.dataset.opening = 'true';
+        setTimeout(() => { delete this.btnOpenTemplatesFolder.dataset.opening; }, 1200);
+
         try {
           const res = await window.api.openInExplorer('templates');
           if (res.success) {
             window.showToast('Folder templates dibuka di Windows Explorer', 'blue');
+            this.log(`Folder templates dibuka di Windows Explorer: ${res.openedPath}`, 'info');
           } else {
             window.showToast('Gagal membuka folder templates: ' + res.error, 'danger');
           }
