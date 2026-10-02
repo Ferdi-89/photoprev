@@ -49,6 +49,14 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+process.on('uncaughtException', (err) => {
+  console.error('[Server] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Server] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use('/templates', express.static(path.join(__dirname, 'templates')));
