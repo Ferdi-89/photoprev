@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUMEN PROOFING LAB — Photo Strip Studio Builder (Midnight Cyan)</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,600;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with forms & container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "midnight-bg": "#050811",
+            "midnight-surface": "#070b16",
+            "midnight-card": "#0c1322",
+            "midnight-high": "#131d35",
+            "midnight-border": "#1b294b",
+            "cyan-glow": "#00f0ff",
+            "cyan-primary": "#38bdf8",
+            "cyan-accent": "#0ea5e9",
+            "cyan-light": "#a5f3fc",
+            "cyan-dark": "#0369a1",
+            "on-surface": "#e2e8f0",
+            "on-surface-variant": "#94a3b8",
+            "outline": "#475569",
+            "outline-variant": "#1e293b",
+          },
+          fontFamily: {
+            "body-lg": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "title-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "label-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-md": ["Plus Jakarta Sans", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"],
+            "serif": ["Playfair Display", "serif"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #070b16;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #1b294b;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #00f0ff;
+    }
+    .strip-canvas-shadow {
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 35px -5px rgba(0, 240, 255, 0.12), 0 0 0 1px rgba(0, 240, 255, 0.15);
+    }
+    .glow-cyan-box {
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+    }
+    .glow-cyan-text {
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-midnight-bg text-on-surface antialiased overflow-hidden min-h-screen flex flex-col font-body-md select-none">
+<!-- ========================================================================= -->
+<!-- 1. TOP STUDIO HEADER (Midnight Royal Navy & Glowing Ice Cyan Glassmorphism) -->
+<!-- ========================================================================= -->
+<header class="h-16 flex-none bg-midnight-surface/90 backdrop-blur-md border-b border-midnight-border flex items-center justify-between px-5 z-50 shadow-md">
+<!-- Left: Brand, Breadcrumbs, Session Badge -->
+<div class="flex items-center gap-5">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-midnight-high border border-cyan-glow/40 flex items-center justify-center text-cyan-glow shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">camera</span>
+</div>
+<div class="flex flex-col">
+<span class="text-title-md font-title-md tracking-wider font-semibold text-cyan-light uppercase leading-tight flex items-center gap-1.5">
+          LUMEN PROOFING LAB
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-glow animate-ping"></span>
+</span>
+<span class="text-[10px] font-mono tracking-widest text-cyan-primary/70">MIDNIGHT ICE CYAN • DYE-SUB PRO</span>
+</div>
+</div>
+<div class="h-6 w-px bg-midnight-border hidden lg:block"></div>
+<!-- Breadcrumbs -->
+<nav class="hidden lg:flex items-center gap-2 text-body-sm font-body-sm text-on-surface-variant">
+<a class="hover:text-cyan-light transition-colors" href="#">Dashboard</a>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<a class="hover:text-cyan-light transition-colors" href="#">Photobooth Sessions</a>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<span class="text-cyan-light font-semibold">Wedding Session Andi &amp; Siti</span>
+</nav>
+<!-- Live Booth Status Pill -->
+<div class="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-midnight-card border border-cyan-primary/30 shadow-[0_0_8px_rgba(0,240,255,0.15)]">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-glow opacity-80"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-glow"></span>
+</span>
+<span class="text-[11px] font-mono text-cyan-light font-semibold tracking-wider">ONLINE BOOTH #03 • CYAN PROOF</span>
+</div>
+</div>
+<!-- Center: Navigation Links with Cyan Active Indicators -->
+<nav class="hidden md:flex items-center gap-6 h-full pt-1">
+<button class="text-on-surface-variant hover:text-cyan-light pb-1 text-label-md font-label-md transition-colors">
+        Gallery Proofs
+      </button>
+<button class="text-cyan-glow font-semibold border-b-2 border-cyan-glow pb-1 text-label-md font-label-md glow-cyan-text flex items-center gap-1">
+<span>Strip Layouts</span>
+<span class="px-1 py-0.2 rounded bg-cyan-primary/20 text-[9px] font-mono">4-SLOT</span>
+</button>
+<button class="text-on-surface-variant hover:text-cyan-light pb-1 text-label-md font-label-md transition-colors">
+        Color Grading LUTs
+      </button>
+<button class="text-on-surface-variant hover:text-cyan-light pb-1 text-label-md font-label-md transition-colors">
+        Print Telemetry
+      </button>
+</nav>
+<!-- Right: Telemetry Chips, Live Timer, Actions & Operator -->
+<div class="flex items-center gap-3">
+<!-- Print Telemetry Chips -->
+<div class="hidden 2xl:flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded bg-midnight-card border border-cyan-primary/40 text-[11px] font-mono text-cyan-light flex items-center gap-1.5 shadow-[0_0_6px_rgba(0,240,255,0.1)]">
+<span class="material-symbols-outlined text-[13px] text-cyan-glow">verified</span>
+          300 DPI LAB PRINT READY
+        </span>
+<span class="px-2.5 py-0.5 rounded bg-midnight-card border border-midnight-border text-[11px] font-mono text-on-surface-variant">
+          ICC: Display P3 / Cyan Lab
+        </span>
+</div>
+<!-- Live Session Countdown Timer -->
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-midnight-high border border-cyan-glow/40 text-cyan-glow font-mono text-label-md shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+<span class="material-symbols-outlined text-[16px] animate-pulse">timer</span>
+<span class="font-bold tracking-wider">12:45</span>
+<span class="text-[10px] text-cyan-primary/70 uppercase tracking-normal">sisa</span>
+</div>
+<!-- Quick Action Icons -->
+<div class="flex items-center gap-1">
+<button class="w-9 h-9 rounded-lg hover:bg-midnight-high text-on-surface-variant hover:text-cyan-glow flex items-center justify-center transition-colors" title="Aspect Ratio Adjust">
+<span class="material-symbols-outlined text-[19px]">aspect_ratio</span>
+</button>
+<button class="w-9 h-9 rounded-lg hover:bg-midnight-high text-on-surface-variant hover:text-cyan-glow flex items-center justify-center transition-colors" title="Kalibrasi Warna Cyan Engine">
+<span class="material-symbols-outlined text-[19px]">tune</span>
+</button>
+<button class="w-9 h-9 rounded-lg hover:bg-midnight-high text-on-surface-variant hover:text-cyan-glow flex items-center justify-center transition-colors" title="System Settings">
+<span class="material-symbols-outlined text-[19px]">settings</span>
+</button>
+</div>
+<div class="h-6 w-px bg-midnight-border"></div>
+<!-- Trailing Action: Save Draft -->
+<button class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-midnight-border hover:border-cyan-glow/40 bg-midnight-card text-on-surface text-label-md font-label-md transition-colors active:scale-95 hover:text-cyan-light">
+<span class="material-symbols-outlined text-[16px]">bookmark_border</span>
+        Save Draft
+      </button>
+<!-- Trailing Action: Dispatch to Print -->
+<button class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-cyan-glow via-cyan-primary to-cyan-accent text-midnight-bg text-label-md font-label-md font-bold transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)] active:scale-95 hover:brightness-110">
+<span class="material-symbols-outlined text-[18px]">print</span>
+<span>Dispatch to Print</span>
+</button>
+<!-- Session Operator Profile -->
+<div class="flex items-center pl-1 border-l border-midnight-border ml-1">
+<div class="w-8 h-8 rounded-full ring-2 ring-cyan-glow/50 overflow-hidden bg-midnight-high flex items-center justify-center text-xs font-mono font-bold text-cyan-glow shadow-[0_0_8px_rgba(0,240,255,0.3)]">
+          OP
+        </div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE: CANVAS + RIGHT CONTROL SIDEBAR -->
+<!-- ========================================================================= -->
+<div class="flex-1 flex overflow-hidden relative">
+<!-- ========================================================================= -->
+<!-- 2. MAIN INTERACTIVE CANVAS (Midnight Royal Navy & Glowing Ice Cyan) -->
+<!-- ========================================================================= -->
+<main class="flex-1 flex flex-col bg-midnight-bg relative overflow-hidden">
+<!-- Canvas Sub-Toolbar: Viewport Controls & Grid Guides -->
+<div class="h-12 flex-none bg-midnight-surface/80 backdrop-blur-md border-b border-midnight-border px-6 flex items-center justify-between z-20">
+<!-- Zoom & View Tools -->
+<div class="flex items-center gap-2 text-label-md font-label-md">
+<div class="flex items-center bg-midnight-card rounded-lg p-0.5 border border-midnight-border">
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-midnight-high text-xs font-mono transition-colors">75%</button>
+<button class="px-2.5 py-1 rounded bg-midnight-high text-cyan-glow font-mono text-xs font-semibold shadow-xs border border-cyan-glow/30">100%</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-midnight-high text-xs font-mono transition-colors">Fit</button>
+</div>
+<div class="h-4 w-px bg-midnight-border mx-1"></div>
+<!-- Guide overlays toggle with glowing cyan indicators -->
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-midnight-card border border-cyan-glow/40 text-cyan-glow text-xs shadow-[0_0_8px_rgba(0,240,255,0.2)]">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">grid_4x4</span>
+<span>Guide Overlay: Active</span>
+</button>
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-midnight-card hover:bg-midnight-high border border-cyan-primary/30 text-cyan-light text-xs transition-colors">
+<span class="material-symbols-outlined text-[15px] text-cyan-glow">straighten</span>
+<span>Bleed Margin: 3.0 mm</span>
+</button>
+<div class="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded bg-midnight-card border border-midnight-border text-[11px] font-mono text-outline">
+<span class="material-symbols-outlined text-[13px] text-cyan-primary">grid_goldenratio</span>
+<span>4-Slot Editorial Sequence</span>
+</div>
+</div>
+<!-- Canvas Status & Print Specs Indicator -->
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1.5 text-xs font-mono text-cyan-light">
+<span class="w-2 h-2 rounded-full bg-cyan-glow animate-ping"></span>
+            Realtime 4R Dual 4-Grid Preview
+          </span>
+<div class="h-3.5 w-px bg-midnight-border"></div>
+<span class="text-xs font-mono text-cyan-primary/80">ICC: Ice Cyan Calibrated</span>
+</div>
+</div>
+<!-- Canvas Stage: Interactive Dark Room Layout with 4R Double 4-Photo Strip -->
+<div class="flex-1 overflow-auto flex items-center justify-center p-6 lg:p-10 relative custom-scrollbar bg-[radial-gradient(#131d35_1px,transparent_1px)] [background-size:20px_20px]">
+<!-- ========================================================================= -->
+<!-- REALISTIC 4R DOUBLE PHOTO STRIP CONTAINER (4x6 Aspect Ratio, 4-photo grid each) -->
+<!-- ========================================================================= -->
+<div class="relative bg-midnight-surface rounded-xl strip-canvas-shadow border border-cyan-glow/30 p-4 md:p-6 w-[560px] md:w-[680px] max-w-full transition-all">
+<!-- 4R Aspect Outer Frame (4x6 Ratio, holds two 2x6 strips side by side) -->
+<div class="relative bg-[#060a14] border border-cyan-primary/30 rounded-lg p-3.5 grid grid-cols-2 gap-0 overflow-hidden shadow-2xl">
+<!-- =============================================================== -->
+<!-- LEFT STRIP (2x6 inch Editorial 4-Photo Strip) -->
+<!-- =============================================================== -->
+<div class="flex flex-col bg-[#0a101f] p-3 rounded-l border-r border-dashed border-cyan-glow/60 relative group">
+<!-- Top Subtle Margin Branding -->
+<div class="flex justify-between items-center mb-2 px-1">
+<span class="text-[9px] font-mono tracking-widest text-cyan-glow/80 font-bold">STRIP A • #842-1</span>
+<span class="text-[9px] font-mono text-cyan-primary/60">4-SLOT EDITORIAL</span>
+</div>
+<!-- 4 Photo Slots (Vertical Stack: Slot 01 to Slot 04) -->
+<div class="space-y-2 flex-1">
+<!-- Slot 1: Couple Editorial Portrait -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-midnight-card border border-cyan-primary/30 group/slot transition-all hover:border-cyan-glow hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<img alt="Couple Editorial" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+<div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-midnight-surface/85 backdrop-blur-sm text-[9px] font-mono text-cyan-glow font-bold border border-cyan-glow/30">01</div>
+</div>
+<!-- Slot 2: Traditional Javanese Couple Candid Laugh -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-midnight-card border border-cyan-primary/30 group/slot transition-all hover:border-cyan-glow hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<img alt="Candid Couple Laugh" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VnwALwphgTJQ4M7JFMuxNPCtF6gmRTFUmKtcTQImnd-EGE47ppmjTbRrMzprw59GNkuFBmTJJ45LUUU-V2ngAC4SMPCNwSPg5PuJSzxgk_zQQFxzTckVbi1YZz1gnrdVpL5opBWynE2WFHQDwlaD6qwzctVyZnRwGRPJeNhWqiZ-Kxz41CkZeJu7Et5qmjjGtyw5NOcZiQi8JuZwkI5K2WD17XP5pCyWS10HR9ZsV2ni6vkMGRxoPlS-4"/>
+<div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-midnight-surface/85 backdrop-blur-sm text-[9px] font-mono text-cyan-glow font-bold border border-cyan-glow/30">02</div>
+</div>
+<!-- Slot 3: Close-up Wedding Rings & Orchid Bouquet -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-midnight-card border border-cyan-primary/30 group/slot transition-all hover:border-cyan-glow hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<img alt="Close-up Ring &amp; Bouquet" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UNySppbNeCqovsCSbbJDBnPae3_qGZ0bP-lg2us5RKcnXckHwBNX_rfiPnZJp7-aV5DH6jBCIQemIi4RKHwFSKMYyVt9DLCZEIEGQsrsHkIsgT-_NiD3e3xYMsbxBtnR06cMqDPliOEANwn4na_7LDi0ZjZgNUKMfQfk9BtizxQgbBfqZfUvLib0V1pY8-CJ5CB6izKaRYKpdC27rVPESSi_J_e_BiWV1GaPVd_6Ix6fGXFbqoPzxAno8"/>
+<div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-midnight-surface/85 backdrop-blur-sm text-[9px] font-mono text-cyan-glow font-bold border border-cyan-glow/30">03</div>
+</div>
+<!-- Slot 4: Elegant Editorial Gown & Pose -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-midnight-card border border-cyan-primary/30 group/slot transition-all hover:border-cyan-glow hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<img alt="Editorial Couple Pose" class="w-full h-full object-cover object-top" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+<div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-midnight-surface/85 backdrop-blur-sm text-[9px] font-mono text-cyan-glow font-bold border border-cyan-glow/30">04</div>
+</div>
+</div>
+<!-- Bottom Editorial Ice Cyan Typography & Event Branding Section -->
+<div class="mt-3 pt-2.5 border-t border-cyan-glow/20 text-center flex flex-col items-center">
+<span class="text-[8px] font-mono tracking-[0.3em] text-cyan-primary uppercase mb-0.5 font-medium">THE WEDDING CELEBRATION</span>
+<h4 class="font-serif tracking-[0.22em] text-cyan-light text-[13px] md:text-[14px] font-semibold leading-tight uppercase glow-cyan-text">
+                  ANDI &amp; SITI
+                </h4>
+<div class="flex items-center gap-1.5 my-1">
+<span class="h-px w-4 bg-cyan-glow/50"></span>
+<span class="text-[9px] font-mono text-on-surface tracking-wider font-medium">01 OKTOBER 2026</span>
+<span class="h-px w-4 bg-cyan-glow/50"></span>
+</div>
+<span class="text-[7.5px] font-mono tracking-widest text-cyan-primary/60 uppercase">
+                  LUMEN PHOTO LAB • JAKARTA
+                </span>
+</div>
+</div>
+<!-- =============================================================== -->
+<!-- CENTER VERTICAL CUT LINE INDICATOR (Glowing Neon Ice Cyan Guide) -->
+<!-- =============================================================== -->
+<div class="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-between py-6 pointer-events-none z-30">
+<!-- Top Cut Guide Badge -->
+<div class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-midnight-surface/95 border border-cyan-glow text-[9px] font-mono text-cyan-glow shadow-[0_0_12px_rgba(0,240,255,0.4)] backdrop-blur-sm">
+<span class="material-symbols-outlined text-[12px] text-cyan-glow animate-pulse">content_cut</span>
+<span class="font-semibold tracking-wider">GARIS POTONG / 2x6 CUT GUIDE</span>
+</div>
+<!-- Glowing Neon Cyan Dashed Cut Line -->
+<div class="w-px h-full border-r-2 border-dashed border-cyan-glow my-1 shadow-[0_0_10px_rgba(0,240,255,0.7)]"></div>
+<!-- Bottom Precision Millimeter Rulers -->
+<div class="flex items-center gap-1 px-2 py-0.5 rounded bg-midnight-card border border-cyan-primary/50 text-[8px] font-mono text-cyan-light shadow-[0_0_8px_rgba(0,240,255,0.2)]">
+<span class="material-symbols-outlined text-[10px] text-cyan-glow">straighten</span>
+<span class="font-bold">50.8 mm (2.00 IN)</span>
+</div>
+</div>
+<!-- =============================================================== -->
+<!-- RIGHT STRIP (2x6 inch Mirror 4-Photo Strip for Double Print) -->
+<!-- =============================================================== -->
+<div class="flex flex-col bg-[#0a101f] p-3 rounded-r relative group">
+<!-- Top Subtle Margin Branding -->
+<div class="flex justify-between items-center mb-2 px-1">
+<span class="text-[9px] font-mono tracking-widest text-cyan-glow/80 font-bold">STRIP B • #842-2</span>
+<span class="text-[9px] font-mono text-cyan-primary/60">DYE-SUB COPY</span>
+</div>
+<!-- 4 Photo Slots (Vertical Stack: Slot 01 to Slot 04) -->
+<div class="space-y-2 flex-1">
+<!-- Slot 1 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-midnight-card border border-cyan-primary/30 group/slot transition-all hover:border-cyan-glow hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<img alt="Couple Editorial" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+<div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-midnight-surface/85 backdrop-blur-sm text-[9px] font-mono text-cyan-glow font-bold border border-cyan-glow/30">01</div>
+</div>
+<!-- Slot 2 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-midnight-card border border-cyan-primary/30 group/slot transition-all hover:border-cyan-glow hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<img alt="Candid Couple Laugh" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VnwALwphgTJQ4M7JFMuxNPCtF6gmRTFUmKtcTQImnd-EGE47ppmjTbRrMzprw59GNkuFBmTJJ45LUUU-V2ngAC4SMPCNwSPg5PuJSzxgk_zQQFxzTckVbi1YZz1gnrdVpL5opBWynE2WFHQDwlaD6qwzctVyZnRwGRPJeNhWqiZ-Kxz41CkZeJu7Et5qmjjGtyw5NOcZiQi8JuZwkI5K2WD17XP5pCyWS10HR9ZsV2ni6vkMGRxoPlS-4"/>
+<div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-midnight-surface/85 backdrop-blur-sm text-[9px] font-mono text-cyan-glow font-bold border border-cyan-glow/30">02</div>
+</div>
+<!-- Slot 3 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-midnight-card border border-cyan-primary/30 group/slot transition-all hover:border-cyan-glow hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<img alt="Close-up Ring &amp; Bouquet" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UNySppbNeCqovsCSbbJDBnPae3_qGZ0bP-lg2us5RKcnXckHwBNX_rfiPnZJp7-aV5DH6jBCIQemIi4RKHwFSKMYyVt9DLCZEIEGQsrsHkIsgT-_NiD3e3xYMsbxBtnR06cMqDPliOEANwn4na_7LDi0ZjZgNUKMfQfk9BtizxQgbBfqZfUvLib0V1pY8-CJ5CB6izKaRYKpdC27rVPESSi_J_e_BiWV1GaPVd_6Ix6fGXFbqoPzxAno8"/>
+<div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-midnight-surface/85 backdrop-blur-sm text-[9px] font-mono text-cyan-glow font-bold border border-cyan-glow/30">03</div>
+</div>
+<!-- Slot 4 -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-midnight-card border border-cyan-primary/30 group/slot transition-all hover:border-cyan-glow hover:shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+<img alt="Editorial Couple Pose" class="w-full h-full object-cover object-top" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+<div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-midnight-surface/85 backdrop-blur-sm text-[9px] font-mono text-cyan-glow font-bold border border-cyan-glow/30">04</div>
+</div>
+</div>
+<!-- Bottom Editorial Ice Cyan Typography & Event Branding Section -->
+<div class="mt-3 pt-2.5 border-t border-cyan-glow/20 text-center flex flex-col items-center">
+<span class="text-[8px] font-mono tracking-[0.3em] text-cyan-primary uppercase mb-0.5 font-medium">THE WEDDING CELEBRATION</span>
+<h4 class="font-serif tracking-[0.22em] text-cyan-light text-[13px] md:text-[14px] font-semibold leading-tight uppercase glow-cyan-text">
+                  ANDI &amp; SITI
+                </h4>
+<div class="flex items-center gap-1.5 my-1">
+<span class="h-px w-4 bg-cyan-glow/50"></span>
+<span class="text-[9px] font-mono text-on-surface tracking-wider font-medium">01 OKTOBER 2026</span>
+<span class="h-px w-4 bg-cyan-glow/50"></span>
+</div>
+<span class="text-[7.5px] font-mono tracking-widest text-cyan-primary/60 uppercase">
+                  LUMEN PHOTO LAB • JAKARTA
+                </span>
+</div>
+</div>
+</div>
+<!-- Neon Cyan Precision Crop Marks (Standard Lab Print Precision Guides) -->
+<div class="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-cyan-glow pointer-events-none shadow-[0_0_8px_rgba(0,240,255,0.6)]"></div>
+<div class="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-cyan-glow pointer-events-none shadow-[0_0_8px_rgba(0,240,255,0.6)]"></div>
+<div class="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-cyan-glow pointer-events-none shadow-[0_0_8px_rgba(0,240,255,0.6)]"></div>
+<div class="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-cyan-glow pointer-events-none shadow-[0_0_8px_rgba(0,240,255,0.6)]"></div>
+</div>
+</div>
+<!-- Canvas Bottom Status Info Bar with Cyan Telemetry Indicators -->
+<footer class="h-10 flex-none bg-midnight-surface border-t border-midnight-border px-6 flex items-center justify-between text-xs font-mono text-on-surface-variant z-10">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5 text-cyan-glow font-semibold">
+<span class="material-symbols-outlined text-[14px]">photo_size_select_actual</span>
+            Dimensi Cetak: 102 x 152 mm (4R Dual 2x6)
+          </span>
+<span class="text-midnight-border">•</span>
+<span class="text-cyan-light">1200 x 1800 px @ 300 DPI</span>
+<span class="text-midnight-border">•</span>
+<span class="text-cyan-glow flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-glow"></span>
+            Dye-Sublimation High Gloss Ready
+          </span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[11px] text-cyan-primary/70">Auto-Save Aktif: 4 dtk lalu</span>
+<span class="w-2 h-2 rounded-full bg-cyan-glow animate-pulse"></span>
+</div>
+</footer>
+</main>
+<!-- ========================================================================= -->
+<!-- 3. RIGHT CONTROL PANEL (Obsidian-Navy Glassmorphism Sidebar, fixed 380px) -->
+<!-- ========================================================================= -->
+<aside class="w-[380px] flex-none bg-midnight-surface/95 backdrop-blur-md border-l border-midnight-border flex flex-col justify-between z-40 shadow-2xl overflow-hidden">
+<!-- Sidebar Header -->
+<div class="p-4 border-b border-midnight-border bg-midnight-surface flex-none">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-midnight-high border border-cyan-glow/40 flex items-center justify-center text-cyan-glow shadow-[0_0_10px_rgba(0,240,255,0.25)]">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</div>
+<div>
+<h2 class="text-title-md font-title-md font-bold text-on-surface leading-snug flex items-center gap-1.5">
+              Studio Builder
+              <span class="px-1.5 py-0.5 rounded bg-cyan-glow/10 border border-cyan-glow/40 text-[9px] font-mono text-cyan-glow font-bold">4-GRID</span>
+</h2>
+<p class="text-body-sm font-body-sm text-cyan-primary/70">Session #842 • 4R Midnight Cyan Strip</p>
+</div>
+</div>
+<button class="text-outline hover:text-cyan-glow p-1 rounded hover:bg-midnight-high transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Customizer Navigation Tabs with Cyan Highlight -->
+<div class="grid grid-cols-4 gap-1 p-1 bg-midnight-card rounded-lg border border-midnight-border text-xs font-label-md">
+<button class="py-1.5 rounded text-center font-bold bg-midnight-high text-cyan-glow border border-cyan-glow/40 shadow-[0_0_8px_rgba(0,240,255,0.2)]">
+            Template
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-cyan-light hover:bg-midnight-high/50 transition-colors">
+            Urutan
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-cyan-light hover:bg-midnight-high/50 transition-colors">
+            LUTs
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-cyan-light hover:bg-midnight-high/50 transition-colors">
+            Teks/QR
+          </button>
+</div>
+</div>
+<!-- Scrollable Customizer Settings Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar text-body-sm">
+<!-- 1. TEMPLATE SELECTION: Midnight Cyan Focus -->
+<section class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-cyan-glow">dashboard_customize</span>
+              Template Presets
+            </label>
+<span class="text-[11px] font-mono text-cyan-primary/70">4-Slot Active</span>
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Active: Midnight Royal Navy & Glowing Ice Cyan -->
+<div class="cursor-pointer p-2.5 rounded-lg bg-midnight-high border-2 border-cyan-glow relative group shadow-[0_0_12px_rgba(0,240,255,0.2)]">
+<div class="aspect-[3/4] rounded bg-[#0a101f] border border-cyan-glow/40 mb-2 p-1.5 flex flex-col justify-between items-center text-center">
+<div class="w-full space-y-1">
+<div class="h-2 bg-midnight-card border border-cyan-glow/30 rounded-xs"></div>
+<div class="h-2 bg-midnight-card border border-cyan-glow/30 rounded-xs"></div>
+<div class="h-2 bg-midnight-card border border-cyan-glow/30 rounded-xs"></div>
+<div class="h-2 bg-midnight-card border border-cyan-glow/30 rounded-xs"></div>
+</div>
+<span class="text-[7.5px] font-mono text-cyan-glow font-bold tracking-wider">ICE CYAN 4-GRID</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold text-cyan-glow">Midnight Cyan</span>
+<span class="material-symbols-outlined text-[16px] text-cyan-glow" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Option 2: Classic Minimalist White -->
+<div class="cursor-pointer p-2.5 rounded-lg bg-midnight-card hover:bg-midnight-high border border-midnight-border transition-colors group">
+<div class="aspect-[3/4] rounded bg-[#0e172a] mb-2 p-1.5 flex flex-col justify-between items-center text-center border border-midnight-border">
+<div class="w-full space-y-1">
+<div class="h-2 bg-slate-700 rounded-xs"></div>
+<div class="h-2 bg-slate-700 rounded-xs"></div>
+<div class="h-2 bg-slate-700 rounded-xs"></div>
+<div class="h-2 bg-slate-700 rounded-xs"></div>
+</div>
+<span class="text-[7.5px] font-mono text-slate-400">CLASSIC NAVY</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs text-on-surface">Minimal Navy</span>
+<span class="text-[10px] font-mono text-outline">Editorial</span>
+</div>
+</div>
+</div>
+<!-- Custom Frame Upload Dropzone -->
+<div class="p-3 rounded-lg border border-dashed border-cyan-glow/40 bg-midnight-card/60 hover:bg-midnight-card transition-colors flex flex-col items-center justify-center text-center cursor-pointer group">
+<span class="material-symbols-outlined text-[22px] text-cyan-glow group-hover:scale-110 transition-transform mb-1">upload_file</span>
+<span class="text-xs font-semibold text-cyan-light">Unggah Overlay PNG / Frame Neon</span>
+<span class="text-[10px] font-mono text-outline mt-0.5">1200 x 1800 px (4R Dual Cut) • Max 15MB</span>
+</div>
+</section>
+<!-- 2. PHOTO SLOT REORDER LIST (4 Photos: Slot 01 to Slot 04) -->
+<section class="space-y-3 pt-3 border-t border-midnight-border">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-cyan-glow">reorder</span>
+              Urutan Foto (4 Slot Sequence)
+            </label>
+<button class="text-[11px] font-mono text-cyan-glow hover:underline font-semibold">Acak Otomatis</button>
+</div>
+<div class="space-y-2">
+<!-- Slot 1 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-midnight-card border border-midnight-border hover:border-cyan-glow/40 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-midnight-high border border-cyan-glow/30">
+<img alt="Slot 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-cyan-light truncate">01. Formal Couple Editorial</p>
+<p class="text-[10px] font-mono text-outline truncate">RAW_842_A.DNG • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-cyan-primary">
+<button class="w-7 h-7 rounded hover:bg-midnight-high hover:text-cyan-glow flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-midnight-high hover:text-cyan-glow flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+<!-- Slot 2 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-midnight-card border border-midnight-border hover:border-cyan-glow/40 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-midnight-high border border-cyan-glow/30">
+<img alt="Slot 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VnwALwphgTJQ4M7JFMuxNPCtF6gmRTFUmKtcTQImnd-EGE47ppmjTbRrMzprw59GNkuFBmTJJ45LUUU-V2ngAC4SMPCNwSPg5PuJSzxgk_zQQFxzTckVbi1YZz1gnrdVpL5opBWynE2WFHQDwlaD6qwzctVyZnRwGRPJeNhWqiZ-Kxz41CkZeJu7Et5qmjjGtyw5NOcZiQi8JuZwkI5K2WD17XP5pCyWS10HR9ZsV2ni6vkMGRxoPlS-4"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-cyan-light truncate">02. Candid Smile &amp; Laughter</p>
+<p class="text-[10px] font-mono text-outline truncate">RAW_842_B.DNG • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-cyan-primary">
+<button class="w-7 h-7 rounded hover:bg-midnight-high hover:text-cyan-glow flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-midnight-high hover:text-cyan-glow flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+<!-- Slot 3 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-midnight-card border border-midnight-border hover:border-cyan-glow/40 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-midnight-high border border-cyan-glow/30">
+<img alt="Slot 3" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UNySppbNeCqovsCSbbJDBnPae3_qGZ0bP-lg2us5RKcnXckHwBNX_rfiPnZJp7-aV5DH6jBCIQemIi4RKHwFSKMYyVt9DLCZEIEGQsrsHkIsgT-_NiD3e3xYMsbxBtnR06cMqDPliOEANwn4na_7LDi0ZjZgNUKMfQfk9BtizxQgbBfqZfUvLib0V1pY8-CJ5CB6izKaRYKpdC27rVPESSi_J_e_BiWV1GaPVd_6Ix6fGXFbqoPzxAno8"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-cyan-light truncate">03. Ring &amp; White Orchid</p>
+<p class="text-[10px] font-mono text-outline truncate">RAW_842_C.DNG • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-cyan-primary">
+<button class="w-7 h-7 rounded hover:bg-midnight-high hover:text-cyan-glow flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-midnight-high hover:text-cyan-glow flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+<!-- Slot 4 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-midnight-card border border-midnight-border hover:border-cyan-glow/40 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-midnight-high border border-cyan-glow/30">
+<img alt="Slot 4" class="w-full h-full object-cover object-top" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-cyan-light truncate">04. Passionate Studio Pose</p>
+<p class="text-[10px] font-mono text-outline truncate">RAW_842_D.DNG • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-cyan-primary">
+<button class="w-7 h-7 rounded hover:bg-midnight-high hover:text-cyan-glow flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-midnight-high hover:text-cyan-glow flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. PRECISION COLOR GRADING LUTS (Cyber Teal, Arctic Monochrome, High-Key Cinema) -->
+<section class="space-y-3 pt-3 border-t border-midnight-border">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-cyan-glow">tune</span>
+            Precision Color Grading LUTs
+          </label>
+<div class="grid grid-cols-2 gap-2">
+<!-- LUT 1: Cyber Teal (Active) -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-midnight-high border border-cyan-glow text-left shadow-[0_0_10px_rgba(0,240,255,0.25)]">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-600 via-teal-400 to-cyan-200 ring-2 ring-cyan-glow flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-bold text-cyan-glow truncate">Cyber Teal</div>
+<div class="text-[9px] font-mono text-cyan-primary/70">Ice Tint LUT</div>
+</div>
+</button>
+<!-- LUT 2: Arctic Monochrome -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-midnight-card hover:bg-midnight-high border border-midnight-border text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-slate-900 via-cyan-900 to-slate-200 flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-semibold text-on-surface truncate">Arctic Mono</div>
+<div class="text-[9px] font-mono text-outline">Cold Contrast</div>
+</div>
+</button>
+<!-- LUT 3: High-Key Cinema -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-midnight-card hover:bg-midnight-high border border-midnight-border text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-900 via-indigo-600 to-sky-200 flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-semibold text-on-surface truncate">High-Key Cinema</div>
+<div class="text-[9px] font-mono text-outline">Clean Highlights</div>
+</div>
+</button>
+<!-- LUT 4: Royal Midnight Warm -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-midnight-card hover:bg-midnight-high border border-midnight-border text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-slate-950 via-blue-950 to-amber-400 flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-semibold text-on-surface truncate">Royal Amber</div>
+<div class="text-[9px] font-mono text-outline">Warm Ambient</div>
+</div>
+</button>
+</div>
+</section>
+<!-- 4. TYPOGRAPHY & DIGITAL WATERMARK QR GENERATOR -->
+<section class="space-y-3 pt-3 border-t border-midnight-border">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-cyan-glow">qr_code_2</span>
+            Teks &amp; Digital Watermark QR
+          </label>
+<div class="space-y-2.5">
+<div>
+<span class="text-[11px] font-medium text-cyan-light block mb-1">Judul Event / Nama Pengantin</span>
+<input class="w-full px-3 py-1.5 bg-midnight-card border border-cyan-primary/30 rounded-lg text-xs font-serif tracking-wider text-cyan-light focus:border-cyan-glow focus:ring-1 focus:ring-cyan-glow outline-none transition-all" type="text" value="ANDI &amp; SITI"/>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div>
+<span class="text-[11px] font-medium text-cyan-primary/70 block mb-1">Tanggal Acara</span>
+<input class="w-full px-2.5 py-1.5 bg-midnight-card border border-midnight-border rounded-lg text-xs font-mono text-on-surface focus:border-cyan-glow outline-none" type="text" value="01 OKTOBER 2026"/>
+</div>
+<div>
+<span class="text-[11px] font-medium text-cyan-primary/70 block mb-1">Studio Signature</span>
+<input class="w-full px-2.5 py-1.5 bg-midnight-card border border-midnight-border rounded-lg text-xs font-mono text-on-surface focus:border-cyan-glow outline-none" type="text" value="LUMEN PHOTO LAB"/>
+</div>
+</div>
+<!-- QR Generator Micro Box -->
+<div class="p-2.5 rounded-lg bg-midnight-card border border-midnight-border flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded bg-midnight-high border border-cyan-glow/40 flex items-center justify-center text-cyan-glow">
+<span class="material-symbols-outlined text-[16px]">qr_code</span>
+</div>
+<div>
+<div class="text-[11px] font-semibold text-cyan-light">Dynamic QR Cloud Proof</div>
+<div class="text-[9px] font-mono text-outline">Auto-sync hi-res Google Drive</div>
+</div>
+</div>
+<input checked="" class="rounded border-midnight-border bg-midnight-high text-cyan-accent focus:ring-0 w-4 h-4 cursor-pointer" type="checkbox"/>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar Footer: High-Speed Cyan Telemetry & Primary Dispatch CTA -->
+<div class="p-4 border-t border-midnight-border bg-midnight-surface flex-none space-y-3">
+<!-- DNP DS620 High-Speed Cyan Telemetry Monitor -->
+<div class="p-2.5 rounded-lg bg-midnight-card border border-cyan-primary/40 flex items-center justify-between shadow-[0_0_10px_rgba(0,240,255,0.1)]">
+<div class="flex items-center gap-2.5">
+<div class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-glow opacity-80"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-glow"></span>
+</div>
+<div>
+<div class="text-xs font-bold text-cyan-light flex items-center gap-1.5">
+<span>DNP DS620 High-Speed</span>
+<span class="px-1 py-0.2 rounded bg-cyan-glow/20 text-[9px] font-mono text-cyan-glow">CYAN ENGINE</span>
+</div>
+<div class="text-[10px] font-mono text-cyan-primary/70">Kertas: 142 Lbr • 4R Dual Slitter Ready</div>
+</div>
+</div>
+<button class="text-xs font-mono text-cyan-glow hover:underline flex items-center gap-0.5" title="Hardware Telemetry">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+<span>Status</span>
+</button>
+</div>
+<!-- Primary CTA: Glowing Cyan Send to Dye-Sub Printer Button -->
+<button class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-glow via-cyan-primary to-cyan-accent hover:brightness-110 text-midnight-bg font-title-md font-bold text-sm tracking-wide transition-all duration-150 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,240,255,0.45)] active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">print</span>
+<span>Dispatch 4-Slot to Dye-Sub</span>
+</button>
+<!-- Secondary Digital Dispatch Trigger -->
+<button class="w-full py-2 px-3 rounded-lg border border-cyan-glow/30 hover:bg-midnight-high text-cyan-light text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-cyan-glow">qr_code_2</span>
+<span>Kirim Salinan Digital (QR &amp; AirDrop)</span>
+</button>
+</div>
+</aside>
+</div>
+</body></html>

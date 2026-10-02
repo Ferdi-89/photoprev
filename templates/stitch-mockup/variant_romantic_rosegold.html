@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LUMEN PROOFING LAB — Romantic Rose Gold Bridal Strip Studio</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&amp;family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&amp;family=Great+Vibes&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with forms & container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "error": "#ffb4ab",
+            "surface-container-lowest": "#0e090f",
+            "outline-variant": "#543e49",
+            "primary-fixed-dim": "#f4c2c2",
+            "primary-fixed": "#fde8e8",
+            "surface-container": "#201722",
+            "surface-container-high": "#2c1f2f",
+            "outline": "#aa8898",
+            "on-background": "#f5e8ed",
+            "primary": "#f4c2c2",
+            "secondary": "#e8a598",
+            "surface": "#161016",
+            "surface-container-highest": "#38293c",
+            "primary-container": "#e0a4b0",
+            "surface-dim": "#161016",
+            "surface-container-low": "#1a121b",
+            "on-surface-variant": "#dec2cc",
+            "inverse-surface": "#f5e8ed",
+            "on-surface": "#f5e8ed",
+            "surface-bright": "#433248",
+            "secondary-container": "#b76e79",
+            "background": "#120c13",
+            "rosegold": "#e8a598",
+            "rosegold-light": "#fcebe8",
+            "rosegold-foil": "#f7d6d0",
+            "plum-dark": "#161016",
+            "plum-card": "#1c141d",
+            "champagne": "#fbf2e3"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "body-lg": ["Inter"],
+            "headline-sm": ["Plus Jakarta Sans"],
+            "title-md": ["Plus Jakarta Sans"],
+            "body-sm": ["Inter"],
+            "display-lg": ["Plus Jakarta Sans"],
+            "label-sm": ["Plus Jakarta Sans"],
+            "label-lg": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "body-md": ["Inter"],
+            "label-md": ["Plus Jakarta Sans"],
+            "mono": ["JetBrains Mono", "monospace"],
+            "serif": ["Cormorant Garamond", "serif"],
+            "display-serif": ["Playfair Display", "serif"],
+            "script": ["Great Vibes", "cursive"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #120c13;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #38293c;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #e8a598;
+    }
+    .strip-canvas-shadow {
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(244, 194, 194, 0.12), 0 0 45px -5px rgba(232, 165, 152, 0.15);
+    }
+    .rosegold-gradient-text {
+      background: linear-gradient(135deg, #fcebe8 0%, #e8a598 50%, #d88d80 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .rosegold-border-shimmer {
+      border-image: linear-gradient(to bottom, #fcebe8, #e8a598, #b76e79) 1;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased overflow-hidden min-h-screen flex flex-col font-body-md select-none">
+<!-- ========================================================================= -->
+<!-- 1. TOP STUDIO HEADER (Rose Gold Bridal Palette & Calibration Bar) -->
+<!-- ========================================================================= -->
+<header class="h-16 flex-none bg-surface-container-low border-b border-outline-variant/30 flex items-center justify-between px-5 z-50 shadow-sm">
+<!-- Left: Brand, Breadcrumbs, Session Badge -->
+<div class="flex items-center gap-5">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high border border-rosegold/40 flex items-center justify-center text-rosegold shadow-inner">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div class="flex flex-col">
+<span class="text-title-md font-serif tracking-widest font-bold text-rosegold-foil uppercase leading-tight">LUMEN PROOFING LAB</span>
+<span class="text-[9px] font-mono tracking-[0.2em] text-outline">BRIDAL EDITION • 4R DUAL STRIP</span>
+</div>
+</div>
+<div class="h-6 w-px bg-outline-variant/30 hidden lg:block"></div>
+<!-- Breadcrumbs -->
+<nav class="hidden lg:flex items-center gap-2 text-body-sm font-body-sm text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Dashboard</a>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Bridal Sessions</a>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<span class="text-rosegold font-serif italic text-[15px]">The Wedding of Andi &amp; Siti</span>
+</nav>
+<!-- Live Booth Status Pill -->
+<div class="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container border border-rosegold/30">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-rose-400"></span>
+</span>
+<span class="text-label-sm font-label-sm text-rosegold-light tracking-wider">ONLINE BOOTH #03 • BRIDAL SUITE</span>
+</div>
+</div>
+<!-- Center: Navigation Links -->
+<nav class="hidden md:flex items-center gap-6 h-full pt-1">
+<button class="text-on-surface-variant hover:text-on-surface pb-1 text-label-md font-label-md transition-colors">
+        Gallery Proofs
+      </button>
+<button class="text-rosegold font-semibold border-b-2 border-rosegold pb-1 text-label-md font-label-md flex items-center gap-1">
+<span>Strip Layouts</span>
+<span class="text-[10px] px-1.5 py-0.2 rounded bg-rosegold/15 text-rosegold border border-rosegold/30">Rose Gold</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface pb-1 text-label-md font-label-md transition-colors">
+        Bridal Color Grading
+      </button>
+<button class="text-on-surface-variant hover:text-on-surface pb-1 text-label-md font-label-md transition-colors">
+        Foil Hot-Stamp
+      </button>
+</nav>
+<!-- Right: Telemetry Chips, Live Timer, Actions & Operator -->
+<div class="flex items-center gap-3">
+<!-- Print Telemetry Chips -->
+<div class="hidden 2xl:flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded bg-surface-container-high border border-rosegold/30 text-[11px] font-mono text-rosegold flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[13px] text-rosegold">workspace_premium</span>
+          300 DPI PEARL LUSTRE
+        </span>
+<span class="px-2.5 py-0.5 rounded bg-surface-container border border-outline-variant/30 text-[11px] font-mono text-on-surface-variant">
+          FOIL: ROSE GOLD STAMP
+        </span>
+</div>
+<!-- Live Session Countdown Timer -->
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high border border-rosegold/30 text-rosegold font-mono text-label-md">
+<span class="material-symbols-outlined text-[16px] animate-pulse text-rose-300">timer</span>
+<span class="font-semibold tracking-wider">12:45</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-normal">sisa</span>
+</div>
+<!-- Quick Action Icons -->
+<div class="flex items-center gap-1">
+<button class="w-9 h-9 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-rosegold flex items-center justify-center transition-colors" title="Guide Overlays">
+<span class="material-symbols-outlined text-[19px]">aspect_ratio</span>
+</button>
+<button class="w-9 h-9 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-rosegold flex items-center justify-center transition-colors" title="Kalibrasi Warna &amp; Pearl Paper">
+<span class="material-symbols-outlined text-[19px]">tune</span>
+</button>
+<button class="w-9 h-9 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-rosegold flex items-center justify-center transition-colors" title="Studio Settings">
+<span class="material-symbols-outlined text-[19px]">settings</span>
+</button>
+</div>
+<div class="h-6 w-px bg-outline-variant/30"></div>
+<!-- Trailing Action: Save Draft -->
+<button class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-outline-variant/40 hover:bg-surface-container-high text-on-surface text-label-md font-label-md transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[16px]">bookmark_border</span>
+        Save Draft
+      </button>
+<!-- Trailing Action: Dispatch to Print -->
+<button class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-secondary-container via-rosegold to-secondary-container text-surface-container-lowest text-label-md font-label-md font-bold transition-all shadow-md shadow-rose-950/40 active:scale-95 hover:opacity-95">
+<span class="material-symbols-outlined text-[18px]">print</span>
+<span>Dispatch to Print</span>
+</button>
+<!-- Session Operator Profile -->
+<div class="flex items-center pl-1 border-l border-outline-variant/30 ml-1">
+<div class="w-8 h-8 rounded-full ring-1 ring-rosegold/50 overflow-hidden bg-surface-container flex items-center justify-center text-xs font-mono font-bold text-rosegold">
+          OP
+        </div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE: CANVAS + RIGHT CONTROL SIDEBAR -->
+<!-- ========================================================================= -->
+<div class="flex-1 flex overflow-hidden relative">
+<!-- ========================================================================= -->
+<!-- 2. MAIN INTERACTIVE CANVAS (Center Workspace) -->
+<!-- ========================================================================= -->
+<main class="flex-1 flex flex-col bg-surface-container-lowest relative overflow-hidden">
+<!-- Canvas Sub-Toolbar: Viewport Controls & Grid Guides -->
+<div class="h-12 flex-none bg-surface-container/70 backdrop-blur-md border-b border-outline-variant/20 px-6 flex items-center justify-between z-20">
+<!-- Zoom & View Tools -->
+<div class="flex items-center gap-2 text-label-md font-label-md">
+<div class="flex items-center bg-surface-container-high rounded-lg p-0.5 border border-outline-variant/30">
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container text-xs font-mono transition-colors">75%</button>
+<button class="px-2.5 py-1 rounded bg-surface-container text-rosegold font-mono text-xs font-semibold shadow-xs">100%</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container text-xs font-mono transition-colors">Fit</button>
+</div>
+<div class="h-4 w-px bg-outline-variant/30 mx-1"></div>
+<!-- Guide overlays toggle -->
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container border border-rosegold/40 text-rosegold text-xs">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">grid_4x4</span>
+<span>Bridal Bleed &amp; Foil Guide: Active</span>
+</button>
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 text-on-surface-variant text-xs transition-colors">
+<span class="material-symbols-outlined text-[15px]">straighten</span>
+<span>Bleed Margin (3mm)</span>
+</button>
+</div>
+<!-- Canvas Status & Print Specs Indicator -->
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1.5 text-xs font-mono text-rosegold">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+            Realtime 4R Dual-Cut Preview • Rose Gold Foil Overlay
+          </span>
+<div class="h-3.5 w-px bg-outline-variant/30"></div>
+<span class="text-xs font-mono text-outline">Paper: Dye-Sub Pearl Lustre 280gsm</span>
+</div>
+</div>
+<!-- Canvas Stage: Interactive Dark Room Layout with 4R Double Photo Strip -->
+<div class="flex-1 overflow-auto flex items-center justify-center p-6 lg:p-10 relative custom-scrollbar bg-[radial-gradient(#2c1f2f_1px,transparent_1px)] [background-size:24px_24px]">
+<!-- ========================================================================= -->
+<!-- REALISTIC 4R DOUBLE PHOTO STRIP CONTAINER (102 x 152 mm / 4x6 proportion) -->
+<!-- ========================================================================= -->
+<div class="relative bg-[#19111b] rounded-xl strip-canvas-shadow border border-rosegold/30 p-4 md:p-6 w-[560px] md:w-[680px] max-w-full transition-all">
+<!-- 4R Aspect Outer Frame (Deep plum espresso with subtle foil border) -->
+<div class="relative bg-[#130d15] border border-rosegold/40 rounded-lg p-3.5 grid grid-cols-2 gap-0 overflow-hidden shadow-inner">
+<!-- =============================================================== -->
+<!-- LEFT STRIP (2x6 inch Standard Photobooth Strip - Fine Art Bridal) -->
+<!-- =============================================================== -->
+<div class="flex flex-col bg-[#1b131e] p-3.5 rounded-l border-r border-dashed border-rosegold/50 relative group">
+<!-- Fine-art Double Border Inset -->
+<div class="absolute inset-1.5 border border-rosegold/20 rounded pointer-events-none"></div>
+<div class="absolute inset-2 border border-rosegold/10 rounded pointer-events-none"></div>
+<!-- Top Delicate Monogram & Metadata -->
+<div class="flex justify-between items-center mb-2 px-1 relative z-10">
+<div class="flex items-center gap-1">
+<span class="font-script text-rosegold text-base leading-none">A &amp; S</span>
+<span class="text-[8px] font-serif tracking-[0.25em] text-rosegold/70 uppercase">• STRIP A</span>
+</div>
+<span class="text-[8px] font-mono tracking-widest text-outline">4R DUAL SPLIT</span>
+</div>
+<!-- 3 Photo Slots (Vertical Stack with fine-art double borders) -->
+<div class="space-y-2.5 flex-1 relative z-10">
+<!-- Slot 1 (https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ) -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-rosegold/40 group/slot transition-all hover:border-rosegold p-0.5 shadow-sm">
+<!-- Pearl Corner Brackets -->
+<div class="absolute top-1 left-1 w-2 h-2 border-t border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute top-1 right-1 w-2 h-2 border-t border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<img class="w-full h-full object-cover rounded-xs" data-alt="Fashion editorial style portrait photo of modern Indonesian couple in elegant dark wedding suit and minimalist ivory gown looking at camera passionately" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[8px] font-serif italic text-rosegold font-bold">I</div>
+</div>
+<!-- Slot 2 (https://lh3.googleusercontent.com/aida/AEtjO1VnwALwphgTJQ4M7JFMuxNPCtF6gmRTFUmKtcTQImnd-EGE47ppmjTbRrMzprw59GNkuFBmTJJ45LUUU-V2ngAC4SMPCNwSPg5PuJSzxgk_zQQFxzTckVbi1YZz1gnrdVpL5opBWynE2WFHQDwlaD6qwzctVyZnRwGRPJeNhWqiZ-Kxz41CkZeJu7Et5qmjjGtyw5NOcZiQi8JuZwkI5K2WD17XP5pCyWS10HR9ZsV2ni6vkMGRxoPlS-4) -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-rosegold/40 group/slot transition-all hover:border-rosegold p-0.5 shadow-sm">
+<div class="absolute top-1 left-1 w-2 h-2 border-t border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute top-1 right-1 w-2 h-2 border-t border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<img class="w-full h-full object-cover rounded-xs" data-alt="Intimate editorial wedding photography portrait of an Indonesian bride and groom laughing together softly, studio softbox lighting" src="https://lh3.googleusercontent.com/aida/AEtjO1VnwALwphgTJQ4M7JFMuxNPCtF6gmRTFUmKtcTQImnd-EGE47ppmjTbRrMzprw59GNkuFBmTJJ45LUUU-V2ngAC4SMPCNwSPg5PuJSzxgk_zQQFxzTckVbi1YZz1gnrdVpL5opBWynE2WFHQDwlaD6qwzctVyZnRwGRPJeNhWqiZ-Kxz41CkZeJu7Et5qmjjGtyw5NOcZiQi8JuZwkI5K2WD17XP5pCyWS10HR9ZsV2ni6vkMGRxoPlS-4"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[8px] font-serif italic text-rosegold font-bold">II</div>
+</div>
+<!-- Slot 3 (https://lh3.googleusercontent.com/aida/AEtjO1UNySppbNeCqovsCSbbJDBnPae3_qGZ0bP-lg2us5RKcnXckHwBNX_rfiPnZJp7-aV5DH6jBCIQemIi4RKHwFSKMYyVt9DLCZEIEGQsrsHkIsgT-_NiD3e3xYMsbxBtnR06cMqDPliOEANwn4na_7LDi0ZjZgNUKMfQfk9BtizxQgbBfqZfUvLib0V1pY8-CJ5CB6izKaRYKpdC27rVPESSi_J_e_BiWV1GaPVd_6Ix6fGXFbqoPzxAno8) -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-rosegold/40 group/slot transition-all hover:border-rosegold p-0.5 shadow-sm">
+<div class="absolute top-1 left-1 w-2 h-2 border-t border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute top-1 right-1 w-2 h-2 border-t border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<img class="w-full h-full object-cover rounded-xs" data-alt="Fine art wedding editorial candid close-up of Indonesian couple holding hands with sparkling wedding rings, bride holding minimalist white orchids bouquet" src="https://lh3.googleusercontent.com/aida/AEtjO1UNySppbNeCqovsCSbbJDBnPae3_qGZ0bP-lg2us5RKcnXckHwBNX_rfiPnZJp7-aV5DH6jBCIQemIi4RKHwFSKMYyVt9DLCZEIEGQsrsHkIsgT-_NiD3e3xYMsbxBtnR06cMqDPliOEANwn4na_7LDi0ZjZgNUKMfQfk9BtizxQgbBfqZfUvLib0V1pY8-CJ5CB6izKaRYKpdC27rVPESSi_J_e_BiWV1GaPVd_6Ix6fGXFbqoPzxAno8"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[8px] font-serif italic text-rosegold font-bold">III</div>
+</div>
+</div>
+<!-- Bottom Elegant Rose Gold Serif Typography & Laurel Motifs -->
+<div class="mt-4 pt-3 border-t border-rosegold/30 text-center flex flex-col items-center relative z-10">
+<!-- Laurel Monogram Element -->
+<div class="flex items-center justify-center gap-1.5 text-rosegold/70 mb-0.5">
+<span class="text-[10px]">❦</span>
+<span class="text-[7.5px] font-serif tracking-[0.35em] text-rosegold-light uppercase">THE WEDDING CELEBRATION</span>
+<span class="text-[10px]">❦</span>
+</div>
+<h4 class="font-serif tracking-[0.25em] text-rosegold-foil text-[14px] md:text-[15px] font-semibold leading-tight uppercase my-0.5">
+                  ANDI &amp; SITI
+                </h4>
+<div class="flex items-center gap-2 my-1">
+<span class="h-px w-5 bg-gradient-to-r from-transparent to-rosegold/60"></span>
+<span class="text-[8.5px] font-serif italic text-rosegold tracking-wider">Sabtu, 01 Oktober 2026</span>
+<span class="h-px w-5 bg-gradient-to-l from-transparent to-rosegold/60"></span>
+</div>
+<span class="text-[7px] font-mono tracking-widest text-outline/80 uppercase">
+                  LUMEN FINE ART • JAKARTA
+                </span>
+</div>
+</div>
+<!-- =============================================================== -->
+<!-- CENTER VERTICAL CUT LINE INDICATOR -->
+<!-- =============================================================== -->
+<div class="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-between py-6 pointer-events-none z-30">
+<div class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container-high/90 border border-rosegold/40 text-[9px] font-mono text-rosegold shadow-sm backdrop-blur-sm">
+<span class="material-symbols-outlined text-[12px] text-rosegold">content_cut</span>
+<span>GARIS POTONG (2x6" DUAL STRIP)</span>
+</div>
+<div class="w-px h-full border-r border-dashed border-rosegold/60 my-1"></div>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-high/80 text-[8px] font-mono text-rosegold/80">
+<span class="material-symbols-outlined text-[10px]">straighten</span>
+<span>50.8 mm</span>
+</div>
+</div>
+<!-- =============================================================== -->
+<!-- RIGHT STRIP (2x6 inch Mirror Exact Duplicate for Double Print) -->
+<!-- =============================================================== -->
+<div class="flex flex-col bg-[#1b131e] p-3.5 rounded-r relative group">
+<!-- Fine-art Double Border Inset -->
+<div class="absolute inset-1.5 border border-rosegold/20 rounded pointer-events-none"></div>
+<div class="absolute inset-2 border border-rosegold/10 rounded pointer-events-none"></div>
+<!-- Top Delicate Monogram & Metadata -->
+<div class="flex justify-between items-center mb-2 px-1 relative z-10">
+<div class="flex items-center gap-1">
+<span class="font-script text-rosegold text-base leading-none">A &amp; S</span>
+<span class="text-[8px] font-serif tracking-[0.25em] text-rosegold/70 uppercase">• STRIP B</span>
+</div>
+<span class="text-[8px] font-mono tracking-widest text-outline">DYE-SUB COPY</span>
+</div>
+<!-- 3 Photo Slots (Vertical Stack with fine-art double borders) -->
+<div class="space-y-2.5 flex-1 relative z-10">
+<!-- Slot 1 (https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ) -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-rosegold/40 group/slot transition-all hover:border-rosegold p-0.5 shadow-sm">
+<div class="absolute top-1 left-1 w-2 h-2 border-t border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute top-1 right-1 w-2 h-2 border-t border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<img class="w-full h-full object-cover rounded-xs" data-alt="Fashion editorial style portrait photo of modern Indonesian couple in elegant dark wedding suit and minimalist ivory gown looking at camera passionately" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[8px] font-serif italic text-rosegold font-bold">I</div>
+</div>
+<!-- Slot 2 (https://lh3.googleusercontent.com/aida/AEtjO1VnwALwphgTJQ4M7JFMuxNPCtF6gmRTFUmKtcTQImnd-EGE47ppmjTbRrMzprw59GNkuFBmTJJ45LUUU-V2ngAC4SMPCNwSPg5PuJSzxgk_zQQFxzTckVbi1YZz1gnrdVpL5opBWynE2WFHQDwlaD6qwzctVyZnRwGRPJeNhWqiZ-Kxz41CkZeJu7Et5qmjjGtyw5NOcZiQi8JuZwkI5K2WD17XP5pCyWS10HR9ZsV2ni6vkMGRxoPlS-4) -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-rosegold/40 group/slot transition-all hover:border-rosegold p-0.5 shadow-sm">
+<div class="absolute top-1 left-1 w-2 h-2 border-t border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute top-1 right-1 w-2 h-2 border-t border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<img class="w-full h-full object-cover rounded-xs" data-alt="Intimate editorial wedding photography portrait of an Indonesian bride and groom laughing together softly, studio softbox lighting" src="https://lh3.googleusercontent.com/aida/AEtjO1VnwALwphgTJQ4M7JFMuxNPCtF6gmRTFUmKtcTQImnd-EGE47ppmjTbRrMzprw59GNkuFBmTJJ45LUUU-V2ngAC4SMPCNwSPg5PuJSzxgk_zQQFxzTckVbi1YZz1gnrdVpL5opBWynE2WFHQDwlaD6qwzctVyZnRwGRPJeNhWqiZ-Kxz41CkZeJu7Et5qmjjGtyw5NOcZiQi8JuZwkI5K2WD17XP5pCyWS10HR9ZsV2ni6vkMGRxoPlS-4"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[8px] font-serif italic text-rosegold font-bold">II</div>
+</div>
+<!-- Slot 3 (https://lh3.googleusercontent.com/aida/AEtjO1UNySppbNeCqovsCSbbJDBnPae3_qGZ0bP-lg2us5RKcnXckHwBNX_rfiPnZJp7-aV5DH6jBCIQemIi4RKHwFSKMYyVt9DLCZEIEGQsrsHkIsgT-_NiD3e3xYMsbxBtnR06cMqDPliOEANwn4na_7LDi0ZjZgNUKMfQfk9BtizxQgbBfqZfUvLib0V1pY8-CJ5CB6izKaRYKpdC27rVPESSi_J_e_BiWV1GaPVd_6Ix6fGXFbqoPzxAno8) -->
+<div class="relative aspect-[4/3] rounded overflow-hidden bg-surface-container border border-rosegold/40 group/slot transition-all hover:border-rosegold p-0.5 shadow-sm">
+<div class="absolute top-1 left-1 w-2 h-2 border-t border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute top-1 right-1 w-2 h-2 border-t border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-rosegold/80 z-20 pointer-events-none"></div>
+<div class="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-rosegold/80 z-20 pointer-events-none"></div>
+<img class="w-full h-full object-cover rounded-xs" data-alt="Fine art wedding editorial candid close-up of Indonesian couple holding hands with sparkling wedding rings, bride holding minimalist white orchids bouquet" src="https://lh3.googleusercontent.com/aida/AEtjO1UNySppbNeCqovsCSbbJDBnPae3_qGZ0bP-lg2us5RKcnXckHwBNX_rfiPnZJp7-aV5DH6jBCIQemIi4RKHwFSKMYyVt9DLCZEIEGQsrsHkIsgT-_NiD3e3xYMsbxBtnR06cMqDPliOEANwn4na_7LDi0ZjZgNUKMfQfk9BtizxQgbBfqZfUvLib0V1pY8-CJ5CB6izKaRYKpdC27rVPESSi_J_e_BiWV1GaPVd_6Ix6fGXFbqoPzxAno8"/>
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[8px] font-serif italic text-rosegold font-bold">III</div>
+</div>
+</div>
+<!-- Bottom Elegant Rose Gold Serif Typography & Laurel Motifs -->
+<div class="mt-4 pt-3 border-t border-rosegold/30 text-center flex flex-col items-center relative z-10">
+<div class="flex items-center justify-center gap-1.5 text-rosegold/70 mb-0.5">
+<span class="text-[10px]">❦</span>
+<span class="text-[7.5px] font-serif tracking-[0.35em] text-rosegold-light uppercase">THE WEDDING CELEBRATION</span>
+<span class="text-[10px]">❦</span>
+</div>
+<h4 class="font-serif tracking-[0.25em] text-rosegold-foil text-[14px] md:text-[15px] font-semibold leading-tight uppercase my-0.5">
+                  ANDI &amp; SITI
+                </h4>
+<div class="flex items-center gap-2 my-1">
+<span class="h-px w-5 bg-gradient-to-r from-transparent to-rosegold/60"></span>
+<span class="text-[8.5px] font-serif italic text-rosegold tracking-wider">Sabtu, 01 Oktober 2026</span>
+<span class="h-px w-5 bg-gradient-to-l from-transparent to-rosegold/60"></span>
+</div>
+<span class="text-[7px] font-mono tracking-widest text-outline/80 uppercase">
+                  LUMEN FINE ART • JAKARTA
+                </span>
+</div>
+</div>
+</div>
+<!-- Subtle Rose Gold Foil Corner Crop Marks -->
+<div class="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-rosegold pointer-events-none"></div>
+<div class="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-rosegold pointer-events-none"></div>
+<div class="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-rosegold pointer-events-none"></div>
+<div class="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-rosegold pointer-events-none"></div>
+</div>
+</div>
+<!-- Canvas Bottom Status Info Bar -->
+<footer class="h-10 flex-none bg-surface-container-low border-t border-outline-variant/20 px-6 flex items-center justify-between text-xs font-mono text-on-surface-variant z-10">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5 text-rosegold">
+<span class="material-symbols-outlined text-[14px]">photo_size_select_actual</span>
+            Dimensi Cetak: 102 x 152 mm (4R Double Cut)
+          </span>
+<span class="text-outline-variant/40">•</span>
+<span>1200 x 1800 px @ 300 DPI Fine Art</span>
+<span class="text-outline-variant/40">•</span>
+<span class="text-rose-300 flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">palette</span>
+            Finish: Pearl Lustre + Rose Gold Foil
+          </span>
+</div>
+<div class="flex items-center gap-3">
+<span>Auto-Save Aktif: 8 dtk lalu</span>
+<span class="w-2 h-2 rounded-full bg-rose-400"></span>
+</div>
+</footer>
+</main>
+<!-- ========================================================================= -->
+<!-- 3. RIGHT CONTROL PANEL (Bridal-Specific Studio Customizer, fixed 380px) -->
+<!-- ========================================================================= -->
+<aside class="w-[380px] flex-none bg-surface-container border-l border-outline-variant/30 flex flex-col justify-between z-40 shadow-xl overflow-hidden">
+<!-- Sidebar Header -->
+<div class="p-4 border-b border-outline-variant/30 bg-surface-container-low flex-none">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high border border-rosegold/30 flex items-center justify-center text-rosegold">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</div>
+<div>
+<h2 class="text-title-md font-serif font-bold text-on-surface leading-snug">Pengaturan Bridal Studio</h2>
+<p class="text-body-sm font-body-sm text-outline">Session #842 • Romantic Rose Gold</p>
+</div>
+</div>
+<button class="text-outline hover:text-rosegold p-1 rounded hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Customizer Navigation Tabs -->
+<div class="grid grid-cols-4 gap-1 p-1 bg-surface-container-lowest rounded-lg border border-outline-variant/20 text-xs font-label-md">
+<button class="py-1.5 rounded text-center font-semibold bg-surface-container-high text-rosegold border border-rosegold/30 shadow-xs">
+            Template
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-on-surface transition-colors">
+            Foto
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-on-surface transition-colors">
+            Foil &amp; Glow
+          </button>
+<button class="py-1.5 rounded text-center text-on-surface-variant hover:text-on-surface transition-colors">
+            Kaligrafi
+          </button>
+</div>
+</div>
+<!-- Scrollable Customizer Settings Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar text-body-sm">
+<!-- 1. TEMPLATE COLLECTION & PRESETS -->
+<section class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-rosegold">dashboard_customize</span>
+              Pilihan Tema Bridal
+            </label>
+<span class="text-[11px] font-mono text-rosegold">Variant 02</span>
+</div>
+<!-- Template Cards Carousel -->
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Active: Romantic Rose Gold Bridal -->
+<div class="cursor-pointer p-2.5 rounded-lg bg-surface-container-high border-2 border-rosegold relative group shadow-sm">
+<div class="aspect-[3/4] rounded bg-[#1c141d] border border-rosegold/40 mb-2 p-1.5 flex flex-col justify-between items-center text-center">
+<div class="w-full space-y-1">
+<div class="h-3 bg-surface-container-highest border border-rosegold/20 rounded-xs"></div>
+<div class="h-3 bg-surface-container-highest border border-rosegold/20 rounded-xs"></div>
+<div class="h-3 bg-surface-container-highest border border-rosegold/20 rounded-xs"></div>
+</div>
+<span class="text-[8px] font-serif text-rosegold">ROSE GOLD BRIDAL</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-rosegold">Rose Gold Noir</span>
+<span class="material-symbols-outlined text-[16px] text-rosegold" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Option 2: Champagne Pearl Classic -->
+<div class="cursor-pointer p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/30 transition-colors group">
+<div class="aspect-[3/4] rounded bg-[#251e18] mb-2 p-1.5 flex flex-col justify-between items-center text-center">
+<div class="w-full space-y-1">
+<div class="h-3 bg-[#3d3229] rounded-xs"></div>
+<div class="h-3 bg-[#3d3229] rounded-xs"></div>
+<div class="h-3 bg-[#3d3229] rounded-xs"></div>
+</div>
+<span class="text-[8px] font-serif text-[#ffdcb8]">CHAMPAGNE GOLD</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs text-on-surface">Champagne Pearl</span>
+<span class="text-[10px] font-mono text-outline">Gold Foil</span>
+</div>
+</div>
+</div>
+<!-- Foil Hot-Stamping Selector -->
+<div class="pt-2">
+<span class="text-[11px] font-medium text-outline block mb-1.5 uppercase tracking-wider">Pilihan Hot-Stamping Foil</span>
+<div class="grid grid-cols-2 gap-2">
+<button class="flex items-center justify-center gap-1.5 p-2 rounded-lg bg-surface-container-high border border-rosegold text-rosegold text-xs font-serif font-semibold">
+<span class="w-3 h-3 rounded-full bg-gradient-to-tr from-rose-400 to-rose-200"></span>
+<span>Rose Gold Foil</span>
+</button>
+<button class="flex items-center justify-center gap-1.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30 text-on-surface-variant hover:text-on-surface text-xs font-serif">
+<span class="w-3 h-3 rounded-full bg-gradient-to-tr from-amber-400 to-amber-100"></span>
+<span>Champagne Gold</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 2. PHOTO SLOT REORDER LIST (Integrated with Bridal Images) -->
+<section class="space-y-3 pt-4 border-t border-outline-variant/20">
+<div class="flex items-center justify-between">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-rosegold">reorder</span>
+              Foto Wedding (3 Slot)
+            </label>
+<button class="text-[11px] font-serif italic text-rosegold hover:underline">Susun Otomatis</button>
+</div>
+<div class="space-y-2">
+<!-- Slot 1 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30 hover:border-rosegold/50 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-surface-container-highest border border-rosegold/30">
+<img class="w-full h-full object-cover" data-alt="Fashion editorial style portrait photo of modern Indonesian couple in elegant dark wedding suit and minimalist ivory gown looking at camera passionately" src="https://lh3.googleusercontent.com/aida/AEtjO1XTGyRcMUqj9nm0bAsr1yN38V638kzWl-5g89rSHPfn-aCXCMVD5BGXMTPBPmXEynv_83bs3NdQJ3RSdted2RGynFuivzrU872ZXN28OxClAT0UK0oQ3tn26ZYtCCp2O_AhZRgzae6IMm6G6A-lVVSTDv6Hks5Lz_5XVokKtVOcbjHNR1OxYauv0n-d6bN2PGUTMPTQkLaubXxRmStRM8P9ibkfxt79MtyBobChZEwnEK0Cz8pUlu_nXQ"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-on-surface truncate">Foto 01 — Editorial Couple</p>
+<p class="text-[10px] font-mono text-outline truncate">WEDDING_EDITORIAL.RAW • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-outline">
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-rosegold flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-rosegold flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+<!-- Slot 2 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30 hover:border-rosegold/50 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-surface-container-highest border border-rosegold/30">
+<img class="w-full h-full object-cover" data-alt="Intimate editorial wedding photography portrait of an Indonesian bride and groom laughing together softly, studio softbox lighting" src="https://lh3.googleusercontent.com/aida/AEtjO1VnwALwphgTJQ4M7JFMuxNPCtF6gmRTFUmKtcTQImnd-EGE47ppmjTbRrMzprw59GNkuFBmTJJ45LUUU-V2ngAC4SMPCNwSPg5PuJSzxgk_zQQFxzTckVbi1YZz1gnrdVpL5opBWynE2WFHQDwlaD6qwzctVyZnRwGRPJeNhWqiZ-Kxz41CkZeJu7Et5qmjjGtyw5NOcZiQi8JuZwkI5K2WD17XP5pCyWS10HR9ZsV2ni6vkMGRxoPlS-4"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-on-surface truncate">Foto 02 — Laughing Couple</p>
+<p class="text-[10px] font-mono text-outline truncate">CANDID_LAUGHTER.RAW • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-outline">
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-rosegold flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-rosegold flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+<!-- Slot 3 -->
+<div class="flex items-center gap-2.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/30 hover:border-rosegold/50 transition-colors">
+<div class="w-10 h-10 rounded overflow-hidden flex-none bg-surface-container-highest border border-rosegold/30">
+<img class="w-full h-full object-cover" data-alt="Fine art wedding editorial candid close-up of Indonesian couple holding hands with sparkling wedding rings, bride holding minimalist white orchids bouquet" src="https://lh3.googleusercontent.com/aida/AEtjO1UNySppbNeCqovsCSbbJDBnPae3_qGZ0bP-lg2us5RKcnXckHwBNX_rfiPnZJp7-aV5DH6jBCIQemIi4RKHwFSKMYyVt9DLCZEIEGQsrsHkIsgT-_NiD3e3xYMsbxBtnR06cMqDPliOEANwn4na_7LDi0ZjZgNUKMfQfk9BtizxQgbBfqZfUvLib0V1pY8-CJ5CB6izKaRYKpdC27rVPESSi_J_e_BiWV1GaPVd_6Ix6fGXFbqoPzxAno8"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-on-surface truncate">Foto 03 — Bouquet &amp; Rings</p>
+<p class="text-[10px] font-mono text-outline truncate">RINGS_BOUQUET.RAW • 300 DPI</p>
+</div>
+<div class="flex items-center gap-1 text-outline">
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-rosegold flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">crop</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container-high hover:text-rosegold flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. BRIDAL FILTER & DIFFUSION PRESETS -->
+<section class="space-y-3 pt-4 border-t border-outline-variant/20">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-rosegold">filter_vintage</span>
+            Bridal Diffusion &amp; Grading
+          </label>
+<div class="grid grid-cols-2 gap-2">
+<!-- Active Filter: Soft Glow Bridal -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-high border border-rosegold text-left shadow-xs">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-400 via-pink-300 to-rose-100 ring-2 ring-rosegold/40 flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-semibold text-rosegold truncate">Soft Glow Bridal</div>
+<div class="text-[9px] font-mono text-outline">Halation &amp; Silk</div>
+</div>
+</button>
+<!-- Filter: Romantic Rose Noir -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/30 text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-[#2d1b28] via-[#754659] to-[#d89ba9] flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-medium text-on-surface truncate">Rose Noir Tone</div>
+<div class="text-[9px] font-mono text-outline">Fine Art Deep</div>
+</div>
+</button>
+<!-- Filter: Ivory Monochrome -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/30 text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-neutral-900 via-stone-400 to-amber-50 flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-medium text-on-surface truncate">Ivory B&amp;W</div>
+<div class="text-[9px] font-mono text-outline">Silver Gelatin</div>
+</div>
+</button>
+<!-- Filter: Pastel Bloom -->
+<button class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/30 text-left transition-colors">
+<span class="w-5 h-5 rounded-full bg-gradient-to-tr from-[#694851] via-[#aa7783] to-[#f4d1d8] flex-none"></span>
+<div class="min-w-0">
+<div class="text-xs font-medium text-on-surface truncate">Pastel Bloom</div>
+<div class="text-[9px] font-mono text-outline">Ethereal Blush</div>
+</div>
+</button>
+</div>
+</section>
+<!-- 4. CALLIGRAPHY & MONOGRAM CUSTOMIZATION -->
+<section class="space-y-3 pt-4 border-t border-outline-variant/20">
+<label class="text-label-md font-label-md text-on-surface flex items-center gap-1.5 font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-rosegold">format_italic</span>
+            Monogram &amp; Typografi Wedding
+          </label>
+<div class="space-y-2.5">
+<div>
+<span class="text-[11px] font-medium text-outline block mb-1">Nama Pasangan (Foil Stamped)</span>
+<input class="w-full px-3 py-1.5 bg-surface-container-lowest border border-outline-variant/40 rounded-lg text-xs font-serif tracking-widest text-rosegold focus:border-rosegold focus:ring-1 focus:ring-rosegold outline-none transition-all uppercase" type="text" value="ANDI &amp; SITI"/>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div>
+<span class="text-[11px] font-medium text-outline block mb-1">Tanggal Acara</span>
+<input class="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-outline-variant/40 rounded-lg text-xs font-serif text-on-surface focus:border-rosegold outline-none" type="text" value="01 OKTOBER 2026"/>
+</div>
+<div>
+<span class="text-[11px] font-medium text-outline block mb-1">Ornamen Footer</span>
+<select class="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-outline-variant/40 rounded-lg text-xs font-serif text-on-surface focus:border-rosegold outline-none">
+<option>Botanical Laurel ❦</option>
+<option>Pearl Double Ring ⚭</option>
+<option>Classic Monogram</option>
+</select>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar Footer: Printer Telemetry & Primary Dispatch CTA -->
+<div class="p-4 border-t border-outline-variant/30 bg-surface-container-low flex-none space-y-3">
+<!-- Printer Hardware Live Telemetry -->
+<div class="p-2.5 rounded-lg bg-surface-container border border-outline-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></div>
+<div>
+<div class="text-xs font-semibold text-on-surface">DNP DS620 + Foil Module</div>
+<div class="text-[10px] font-mono text-outline">Paper: Pearl Lustre 280g • Foil: Rose Gold</div>
+</div>
+</div>
+<button class="text-xs text-rosegold hover:underline flex items-center gap-0.5" title="Calibrate Printer">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+            Cek
+          </button>
+</div>
+<!-- Primary CTA: Send to Dye-Sub Printer -->
+<button class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-secondary-container via-rosegold to-secondary-container text-surface-container-lowest font-serif font-bold text-sm tracking-wider transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-rose-950/40 active:scale-[0.98] hover:opacity-95">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">print</span>
+<span>Send to Dye-Sub Printer (4R Dual)</span>
+</button>
+<!-- Secondary Digital Dispatch Trigger -->
+<button class="w-full py-2 px-3 rounded-lg border border-outline-variant/40 hover:bg-surface-container-high text-on-surface text-xs font-medium transition-colors flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-rosegold">qr_code_2</span>
+<span>Kirim Salinan Digital ke Tamu (QR &amp; Link)</span>
+</button>
+</div>
+</aside>
+</div>
+</body></html>

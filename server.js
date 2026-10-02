@@ -1299,6 +1299,7 @@ app.post('/api/operator/directory/create', async (req, res) => {
 app.post('/api/operator/directory/open-explorer', async (req, res) => {
   try {
     let folderPath = req.body && req.body.folderPath;
+    if (folderPath === 'templates') folderPath = path.join(__dirname, 'templates');
     if (!folderPath || !fs.existsSync(folderPath)) {
       folderPath = (config.sessionRootPath && fs.existsSync(config.sessionRootPath))
         ? path.resolve(config.sessionRootPath)
